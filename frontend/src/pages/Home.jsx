@@ -12,8 +12,8 @@ const Home = () => {
         <div className="flex-1 flex items-center">
           <div className="max-w-xl">
             <p className="tagline">Nothing beats a Jett3Airlines</p>
-            <h1 className="mb-4">Jett3Airlines</h1>
-            <p className="subtitle">
+            <h1 className="text-black mb-4">Jett3Airlines</h1>
+            <p className="subtitle text-gray-600">
               Welcome aboard Jett3Airline — your ultimate destination for seamless flight booking,
               personalized travel experiences, and effortless check-in management.
             </p>

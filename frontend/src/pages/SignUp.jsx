@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import GrayLogo from "../components/GrayLogo";
 
 const SignUp = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -19,6 +20,48 @@ const SignUp = () => {
       [id]: type === "checkbox" ? checked : value,
     }));
   };
+
+const handleSubmit = (e) => {
+  e.preventDefault();
+
+  const normalizedData = Object.fromEntries(
+    Object.entries(formData).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v])
+  );
+
+  const emptyFields = Object.entries(normalizedData).filter(([key, value]) => {
+    if (key === "agreeTerms") return false;
+    return !value;
+  });
+
+  if (emptyFields.length > 0) {
+    alert("Please fill out all fields before continuing.");
+    return;
+  }
+
+  if (!normalizedData.agreeTerms) {
+    alert("Please agree to the Terms and Conditions before continuing.");
+    return;
+  }
+
+  const isInvalidName = (name) => name.length < 2 || /\d/.test(name);
+
+  if (isInvalidName(normalizedData.firstName)) {
+    alert("Please enter a valid first name.");
+    return;
+  }
+  if (isInvalidName(normalizedData.lastName)) {
+    alert("Please enter a valid last name.");
+    return;
+  }
+
+  if (normalizedData.password !== normalizedData.confirmPassword) {
+    alert("Please confirm the password again.");
+    return;
+  }
+
+  navigate("/info");
+};
+
 
   const fields = [
     [
@@ -54,7 +97,7 @@ const SignUp = () => {
 
       {/* Right Side */}
       <div className="w-1/2 flex items-center justify-center px-16">
-        <form className="w-full max-w-md space-y-6">
+        <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
           <h3 className="text-3xl font-bold mb-6">Create An Account</h3>
 
           {fields.map((row, i) => (
@@ -95,12 +138,12 @@ const SignUp = () => {
           </div>
 
           <div className="w-full">
-            <Link
-                to="/flights"
+            <button
+                type="submit"
                 className="block w-full text-center bg-primary-500 text-white py-3 rounded-md font-medium hover:bg-primary-300 transition"
             >
                 Create Account
-            </Link>
+            </button>
           </div>
 
           <p className="text-center text-sm text-gray-600">

@@ -17,7 +17,7 @@
     }
 
     h1 {
-        @apply text-5xl sm:text-6xl font-extrabold text-black leading-tight tracking-tight;
+        @apply text-5xl sm:text-6xl font-extrabold leading-tight tracking-tight;
     }
 
     h2 {
@@ -28,12 +28,16 @@
         @apply text-3xl font-extrabold;
     }
 
+    p {
+        @apply text-lg font-semibold;
+    }
+    
     .tagline {
         @apply text-sm sm:text-base font-medium text-black tracking-wide mb-2;
     }
 
     .subtitle {
-        @apply text-gray-600 max-w-lg mx-auto sm:text-lg leading-relaxed;
+        @apply max-w-lg mx-auto sm:text-lg leading-relaxed;
     }
 
     main {
