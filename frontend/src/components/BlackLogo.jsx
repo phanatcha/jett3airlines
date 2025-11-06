@@ -4,7 +4,7 @@ const BlackLogo = () => {
   return (
     <div className="flex items-center space-x-2">
       <img
-        src="jett3airlines-black-logo.svg"
+        src="/jett3airlines-black-logo.svg"
         alt="Jett3Airlines logo"
         className="w-8 h-8 object-contain"
       />
