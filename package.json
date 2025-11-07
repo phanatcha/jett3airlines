@@ -1,6 +1,11 @@
 {
   "dependencies": {
+    "html2canvas": "^1.4.1",
+    "html2pdf.js": "^0.12.1",
+    "jspdf": "^3.0.3",
     "lucide-react": "^0.552.0",
+    "react-barcode": "^1.6.1",
+    "react-phone-input-2": "^2.15.1",
     "react-router-dom": "^7.9.4"
   },
   "scripts": {
