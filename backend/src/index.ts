@@ -8,6 +8,7 @@ import paymentsRouter from './routes/payments';
 import seatsRouter from './routes/seats';
 import adminRouter from './routes/admin';
 import authRouter from './routes/auth';
+import reportsRouter from './routes/reports';
 import { securityHeaders, generalRateLimit, corsOptions, securityErrorHandler } from './middleware/security';
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.use('/api/v1/passengers', passengersRouter);
 app.use('/api/v1/payments', paymentsRouter);
 app.use('/api/v1/home', seatsRouter);
 app.use('/api/v1/admin', adminRouter);
+app.use('/api/v1/admin/reports', reportsRouter);
 
 app.get("/", (req, res) => {
   res.json({
@@ -44,7 +46,8 @@ app.get("/", (req, res) => {
       passengers: "/api/v1/passengers",
       payments: "/api/v1/payments",
       seats: "/api/v1/home",
-      admin: "/api/v1/admin"
+      admin: "/api/v1/admin",
+      reports: "/api/v1/admin/reports"
     }
   });
 });

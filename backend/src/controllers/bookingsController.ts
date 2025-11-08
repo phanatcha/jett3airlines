@@ -448,6 +448,85 @@ export class BookingsController {
     }
   }
 
+  // Update booking status (admin only)
+  async updateBookingStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const bookingId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (!status) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Status is required'
+          }
+        });
+        return;
+      }
+
+      // Validate status value
+      const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+      if (!validStatuses.includes(status)) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_STATUS',
+            message: `Status must be one of: ${validStatuses.join(', ')}`
+          }
+        });
+        return;
+      }
+
+      // Check if booking exists
+      const booking = await bookingModel.findBookingById(bookingId);
+      if (!booking) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: 'BOOKING_NOT_FOUND',
+            message: 'Booking not found'
+          }
+        });
+        return;
+      }
+
+      // Update booking status
+      const updateSuccess = await bookingModel.updateBookingStatus(bookingId, status);
+
+      if (!updateSuccess) {
+        res.status(500).json({
+          success: false,
+          error: {
+            code: 'UPDATE_FAILED',
+            message: 'Failed to update booking status'
+          }
+        });
+        return;
+      }
+
+      // Get updated booking
+      const updatedBooking = await bookingModel.getBookingDetails(bookingId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Booking status updated successfully',
+        data: {
+          booking: updatedBooking
+        }
+      });
+    } catch (error) {
+      console.error('Update booking status error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Internal server error while updating booking status'
+        }
+      });
+    }
+  }
+
   // Helper method to calculate booking cost
   private async calculateBookingCost(seatIds: number[]): Promise<number> {
     try {

@@ -20,6 +20,9 @@ router.get('/:bookingId', bookingsController.getBookingDetails);
 // Update booking
 router.put('/:bookingId', validateBookingUpdate, bookingsController.updateBooking);
 
+// Update booking status (admin only)
+router.patch('/:id/status', bookingsController.updateBookingStatus);
+
 // Cancel booking
 router.delete('/:bookingId', bookingsController.cancelBooking);
 
