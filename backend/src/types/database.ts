@@ -6,7 +6,7 @@ type BufferLike = any;
 export interface Client {
   client_id: number;
   username: string;
-  password: BufferLike; // varbinary in database
+  password: string | BufferLike; // varchar(255) in database, stored as argon2 hash
   email: string;
   phone_no: string;
   firstname: string;
@@ -20,6 +20,7 @@ export interface Client {
   card_no: BufferLike; // varbinary in database
   four_digit: string;
   payment_type: string;
+  role?: string; // 'user' or 'admin', defaults to 'user'
 }
 
 export interface Flight {
@@ -27,10 +28,10 @@ export interface Flight {
   depart_when: Date;
   arrive_when: Date;
   status: string;
-  booking_id?: number;
   airplane_id: number;
   depart_airport_id: number;
   arrive_airport_id: number;
+  flight_no?: string; // Flight number (e.g., "JT301")
 }
 
 export interface Booking {
@@ -42,6 +43,7 @@ export interface Booking {
   updated_date?: Date;
   client_id: number;
   flight_id: number;
+  booking_no?: string; // Booking reference number
 }
 
 export interface Passenger {
