@@ -1,15 +1,17 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { BookingModel } from '../models/Booking';
 import { SeatModel } from '../models/Seat';
 import { FlightModel } from '../models/Flight';
 import { PassengerModel } from '../models/Passenger';
-import { BookingRequest, BookingStatus, CreatePassenger, Booking } from '../types/database';
+import { PaymentModel } from '../models/Payment';
+import { BookingRequest, Booking, PaymentStatus } from '../types/database';
 import { AuthenticatedRequest } from '../middleware/auth';
 
 const bookingModel = new BookingModel();
 const seatModel = new SeatModel();
 const flightModel = new FlightModel();
 const passengerModel = new PassengerModel();
+const paymentModel = new PaymentModel();
 
 export class BookingsController {
   // Create new booking with passenger validation and seat conflict prevention
@@ -387,7 +389,7 @@ export class BookingsController {
     }
   }
 
-  // Cancel booking
+  // Cancel booking with automatic refund processing
   async cancelBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -415,6 +417,43 @@ export class BookingsController {
         return;
       }
 
+      // Get booking details
+      const booking = await bookingModel.findBookingById(bookingId);
+      if (!booking) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: 'BOOKING_NOT_FOUND',
+            message: 'Booking not found'
+          }
+        });
+        return;
+      }
+
+      // Check if booking belongs to client
+      if (booking.client_id !== clientId) {
+        res.status(403).json({
+          success: false,
+          error: {
+            code: 'ACCESS_DENIED',
+            message: 'Access denied to this booking'
+          }
+        });
+        return;
+      }
+
+      // Check if booking is already cancelled
+      if (booking.status === 'cancelled') {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'ALREADY_CANCELLED',
+            message: 'Booking is already cancelled'
+          }
+        });
+        return;
+      }
+
       // Check if client can modify this booking
       const canModify = await bookingModel.canModifyBooking(bookingId, clientId);
       if (!canModify) {
@@ -422,18 +461,47 @@ export class BookingsController {
           success: false,
           error: {
             code: 'CANCELLATION_NOT_ALLOWED',
-            message: 'Booking cannot be cancelled at this time'
+            message: 'Booking cannot be cancelled at this time (must be at least 24 hours before departure)'
           }
         });
         return;
       }
 
-      // Cancel the booking
-      await bookingModel.cancelBooking(bookingId);
+      // Check if payment exists and needs refund
+      const payment = await paymentModel.findPaymentByBookingId(bookingId);
+      let refundInfo = null;
+
+      if (payment && payment.status === PaymentStatus.COMPLETED) {
+        // Process refund automatically
+        try {
+          const refundId = await paymentModel.processRefund(bookingId);
+          const refundReceipt = await paymentModel.getPaymentReceipt(refundId);
+          refundInfo = {
+            refund_id: refundId,
+            refund_amount: Math.abs((refundReceipt as any).amount),
+            refund_status: 'refunded',
+            refund_receipt: refundReceipt
+          };
+        } catch (refundError) {
+          console.error('Error processing refund:', refundError);
+          // Continue with cancellation even if refund fails
+          // The refund can be processed manually later
+        }
+      } else {
+        // No payment or payment not completed, just cancel the booking
+        await bookingModel.cancelBooking(bookingId);
+      }
 
       res.json({
         success: true,
-        message: 'Booking cancelled successfully'
+        data: {
+          booking_id: bookingId,
+          status: 'cancelled',
+          refund: refundInfo
+        },
+        message: refundInfo 
+          ? 'Booking cancelled and refund processed successfully' 
+          : 'Booking cancelled successfully'
       });
 
     } catch (error) {

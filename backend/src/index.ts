@@ -9,7 +9,10 @@ import seatsRouter from './routes/seats';
 import adminRouter from './routes/admin';
 import authRouter from './routes/auth';
 import reportsRouter from './routes/reports';
+import baggageRouter from './routes/baggage';
 import { securityHeaders, generalRateLimit, corsOptions, securityErrorHandler } from './middleware/security';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { sanitizeInput } from './middleware/validation';
 
 dotenv.config();
 const app = express();
@@ -22,6 +25,9 @@ app.use(generalRateLimit);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Input sanitization middleware
+app.use(sanitizeInput);
+
 // Database connection is handled by the Database class in db.ts
 
 // API routes
@@ -30,7 +36,8 @@ app.use('/api/v1/flights', flightsRouter);
 app.use('/api/v1/bookings', bookingsRouter);
 app.use('/api/v1/passengers', passengersRouter);
 app.use('/api/v1/payments', paymentsRouter);
-app.use('/api/v1/home', seatsRouter);
+app.use('/api/v1/baggage', baggageRouter);
+app.use('/api/v1/seats', seatsRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/admin/reports', reportsRouter);
 
@@ -45,37 +52,21 @@ app.get("/", (req, res) => {
       bookings: "/api/v1/bookings",
       passengers: "/api/v1/passengers",
       payments: "/api/v1/payments",
-      seats: "/api/v1/home",
+      baggage: "/api/v1/baggage",
+      seats: "/api/v1/seats",
       admin: "/api/v1/admin",
       reports: "/api/v1/admin/reports"
     }
   });
 });
 
+// 404 handler - catch all unmatched routes (must be before error handlers)
+app.use(notFoundHandler);
+
 // Security error handling middleware
 app.use(securityErrorHandler);
 
-// Global error handler
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', error);
-  res.status(500).json({
-    success: false,
-    error: {
-      code: 'INTERNAL_ERROR',
-      message: 'Internal server error'
-    }
-  });
-});
-
-// 404 handler - catch all unmatched routes
-app.use((req: express.Request, res: express.Response) => {
-  res.status(404).json({
-    success: false,
-    error: {
-      code: 'NOT_FOUND',
-      message: 'Endpoint not found'
-    }
-  });
-});
+// Global error handler (must be last)
+app.use(errorHandler);
 
 app.listen(port, () => console.log(`Server running on http://localhost:${port}`));

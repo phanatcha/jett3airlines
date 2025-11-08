@@ -2,7 +2,11 @@ import express from 'express';
 import { ReportsController } from '../controllers/reportsController';
 import { authenticateToken } from '../middleware/auth';
 import { requireAdmin } from '../middleware/adminAuth';
-import { sanitizeInput } from '../middleware/validation';
+import { 
+  sanitizeInput,
+  validateReportDateRange,
+  validateReportExport
+} from '../middleware/validation';
 
 const router = express.Router();
 const reportsController = new ReportsController();
@@ -27,7 +31,7 @@ router.get('/metrics', reportsController.getMetrics);
  * @query endDate - End date (optional, format: YYYY-MM-DD)
  * @query days - Number of days to look back (optional, default: 30)
  */
-router.get('/bookings-per-day', reportsController.getBookingsPerDay);
+router.get('/bookings-per-day', validateReportDateRange, reportsController.getBookingsPerDay);
 
 /**
  * @route GET /api/v1/admin/reports/revenue-per-day
@@ -37,7 +41,7 @@ router.get('/bookings-per-day', reportsController.getBookingsPerDay);
  * @query endDate - End date (optional, format: YYYY-MM-DD)
  * @query days - Number of days to look back (optional, default: 30)
  */
-router.get('/revenue-per-day', reportsController.getRevenuePerDay);
+router.get('/revenue-per-day', validateReportDateRange, reportsController.getRevenuePerDay);
 
 /**
  * @route GET /api/v1/admin/reports/flight-stats
@@ -61,7 +65,7 @@ router.get('/booking-stats', reportsController.getBookingStats);
  * @query startDate - Start date (optional)
  * @query endDate - End date (optional)
  */
-router.get('/export/csv', reportsController.exportCSV);
+router.get('/export/csv', validateReportExport, reportsController.exportCSV);
 
 /**
  * @route GET /api/v1/admin/reports/export/pdf
@@ -71,6 +75,6 @@ router.get('/export/csv', reportsController.exportCSV);
  * @query startDate - Start date (optional)
  * @query endDate - End date (optional)
  */
-router.get('/export/pdf', reportsController.exportPDF);
+router.get('/export/pdf', validateReportExport, reportsController.exportPDF);
 
 export default router;

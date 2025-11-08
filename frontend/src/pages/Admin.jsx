@@ -527,14 +527,17 @@ const Admin = () => {
                 </button>
               </div>
 
-              <div className="flex gap-4">
-                <button className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors">
-                  Export CSV
-                </button>
-                <button className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors">
-                  Download PDF
-                </button>
-              </div>
+              {/* Show Export CSV and Download PDF only in table view */}
+              {reportView === 'table' && (
+                <div className="flex gap-4">
+                  <button className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors">
+                    Export CSV
+                  </button>
+                  <button className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors">
+                    Download PDF
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Table View */}

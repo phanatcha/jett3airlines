@@ -28,8 +28,35 @@ tmp/
 # Kiro specs
 .kiro/specs/
 
-# Project-specific files
+# Documentation and guides (non-functional files)
+README.md
+ARCHITECTURE.md
+INTEGRATION_SUMMARY.md
+INTEGRATION_QUICKSTART.md
+backend/README.md
+backend/API_DOCUMENTATION.md
+backend/TESTING_AND_OPTIMIZATION.md
+backend/DEPLOYMENT_GUIDE.md
+backend/ERROR_HANDLING_IMPLEMENTATION.md
+backend/ADMIN_AUTHENTICATION.md
+backend/FRONTEND_BACKEND_MAPPING.md
+backend/DATABASE_UPDATES.md
+backend/FINAL_TESTING_OPTIMIZATION.md
+backend/QUICK_START_TESTING.md
+backend/TASK_12.2_COMPLETION_SUMMARY.md
+backend/src/middleware/README.md
+backend/src/__tests__/integration/README.md
+frontend/API_INTEGRATION.md
+
+# Helper scripts and test files
+check-integration.ps1
 pull-frontend-changes.ps1
-backend/Jett3 Airline — Backend Decision Tree.png
+backend/test-endpoints.ps1
+backend/create_admin_user.sql
+
+# Database and reference files
 backend/jett3_airline (1).sql
+backend/jett3_airline(1) fixed now.sql
+backend/user of jett3_airline.txt
 brief component code from figma.txt
+backend/Jett3 Airline — Backend Decision Tree.png

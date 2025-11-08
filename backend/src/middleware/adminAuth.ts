@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { AuthenticationError, AuthorizationError } from '../utils/errors';
 
 /**
  * Middleware to check if the authenticated user is an admin
@@ -7,39 +8,18 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction): v
   try {
     // Check if user is authenticated
     if (!req.user) {
-      res.status(401).json({
-        success: false,
-        error: {
-          code: 'AUTHENTICATION_REQUIRED',
-          message: 'Authentication required'
-        }
-      });
-      return;
+      throw new AuthenticationError('Authentication required');
     }
 
     // Check if user has admin role
     if (req.user.role !== 'admin') {
-      res.status(403).json({
-        success: false,
-        error: {
-          code: 'ADMIN_ACCESS_REQUIRED',
-          message: 'Admin access required'
-        }
-      });
-      return;
+      throw new AuthorizationError('Admin access required');
     }
 
     // User is admin, proceed
     next();
   } catch (error) {
-    console.error('Admin auth middleware error:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: 'Internal server error'
-      }
-    });
+    next(error);
   }
 };
 
@@ -50,14 +30,7 @@ export const requireAdminOrSelf = (req: Request, res: Response, next: NextFuncti
   try {
     // Check if user is authenticated
     if (!req.user) {
-      res.status(401).json({
-        success: false,
-        error: {
-          code: 'AUTHENTICATION_REQUIRED',
-          message: 'Authentication required'
-        }
-      });
-      return;
+      throw new AuthenticationError('Authentication required');
     }
 
     // Get the client_id from request params or body
@@ -70,21 +43,8 @@ export const requireAdminOrSelf = (req: Request, res: Response, next: NextFuncti
     }
 
     // User is neither admin nor accessing their own resources
-    res.status(403).json({
-      success: false,
-      error: {
-        code: 'ACCESS_DENIED',
-        message: 'Access denied'
-      }
-    });
+    throw new AuthorizationError('Access denied');
   } catch (error) {
-    console.error('Admin or self auth middleware error:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: 'Internal server error'
-      }
-    });
+    next(error);
   }
 };
