@@ -1,5 +1,5 @@
 import argon2 from 'argon2';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 /**
  * Script to generate SQL for creating an admin user
