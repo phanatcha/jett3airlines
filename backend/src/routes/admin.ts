@@ -28,11 +28,13 @@ import {
   sanitizeInput 
 } from '../middleware/validation';
 import { authenticateToken } from '../middleware/auth';
+import { requireAdmin } from '../middleware/adminAuth';
 
 const router = express.Router();
 
-// Apply authentication and input sanitization to all admin routes
+// Apply authentication, admin check, and input sanitization to all admin routes
 router.use(authenticateToken);
+router.use(requireAdmin);
 router.use(sanitizeInput);
 
 // ============= FLIGHT MANAGEMENT ROUTES =============

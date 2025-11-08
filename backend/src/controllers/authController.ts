@@ -64,7 +64,8 @@ export class AuthController {
       const tokenPayload: JWTPayload = {
         client_id: clientProfile.client_id,
         username: clientProfile.username,
-        email: clientProfile.email
+        email: clientProfile.email,
+        role: 'user' // New registrations are always regular users
       };
 
       const tokens = generateTokenPair(tokenPayload);
@@ -73,7 +74,10 @@ export class AuthController {
         success: true,
         message: 'Client registered successfully',
         data: {
-          client: clientProfile,
+          client: {
+            ...clientProfile,
+            role: 'user'
+          },
           tokens
         }
       });
@@ -111,11 +115,12 @@ export class AuthController {
         return;
       }
 
-      // Generate tokens
+      // Generate tokens with role
       const tokenPayload: JWTPayload = {
         client_id: client.client_id,
         username: client.username,
-        email: client.email
+        email: client.email,
+        role: client.role || 'user'
       };
 
       const tokens = generateTokenPair(tokenPayload);
@@ -127,8 +132,12 @@ export class AuthController {
         success: true,
         message: 'Login successful',
         data: {
-          client: clientProfile,
-          tokens
+          client: {
+            ...clientProfile,
+            role: client.role || 'user'
+          },
+          tokens,
+          isAdmin: client.role === 'admin'
         }
       });
 
@@ -402,7 +411,8 @@ export class AuthController {
       const tokenPayload: JWTPayload = {
         client_id: client.client_id,
         username: client.username,
-        email: client.email
+        email: client.email,
+        role: client.role || 'user'
       };
 
       const tokens = generateTokenPair(tokenPayload);

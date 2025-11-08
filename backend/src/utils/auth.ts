@@ -6,6 +6,7 @@ export interface JWTPayload {
   client_id: number;
   username: string;
   email: string;
+  role?: string;
 }
 
 export interface TokenPair {
