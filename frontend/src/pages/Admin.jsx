@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Admin = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('flights');
   const [selectedFlights, setSelectedFlights] = useState([]);
   const [selectedBookings, setSelectedBookings] = useState([]);
+  const [reportView, setReportView] = useState('table'); // 'table' or 'graph'
   const [formData, setFormData] = useState({
     flightNo: '',
     fromAirport: '',
@@ -16,6 +18,24 @@ const Admin = () => {
     basePrice: '',
     status: ''
   });
+
+  // Sample reports data (mock data)
+  const reportsMetrics = [
+    { metric: 'Total flights', value: '50,000', note: 'Welcome' },
+    { metric: 'Total bookings', value: '10,000,000', note: 'Good morning' },
+    { metric: 'Total revenue', value: '10,000,000,000', note: 'Good afternoon' },
+    { metric: 'Total cancellations', value: '450', note: 'Good night' },
+  ];
+
+  const bookingsPerDayData = [
+    { date: '01/01/2030', bookings: 100000 },
+    { date: '02/01/2030', bookings: 95000 },
+    { date: '03/01/2030', bookings: 125000 },
+    { date: '04/01/2030', bookings: 140000 },
+    { date: '05/01/2030', bookings: 110000 },
+    { date: '06/01/2030', bookings: 125000 },
+    { date: '07/01/2030', bookings: 100000 },
+  ];
 
   // Sample booking data (mock data)
   const [bookings] = useState([
@@ -481,9 +501,115 @@ const Admin = () => {
         )}
 
         {activeTab === 'reports' && (
-          <div className="text-center py-20">
-            <h2 className="text-black mb-4">Reports</h2>
-            <p className="text-gray-600">Coming soon...</p>
+          <div>
+            {/* View Toggle and Export Buttons */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex bg-primary-500 rounded-full overflow-hidden shadow-md">
+                <button
+                  onClick={() => setReportView('table')}
+                  className={`px-6 py-2 font-semibold text-base transition-all duration-300 ${
+                    reportView === 'table'
+                      ? 'bg-primary-300 text-white'
+                      : 'bg-primary-500 text-white hover:bg-primary-400'
+                  }`}
+                >
+                  Table
+                </button>
+                <button
+                  onClick={() => setReportView('graph')}
+                  className={`px-6 py-2 font-semibold text-base transition-all duration-300 ${
+                    reportView === 'graph'
+                      ? 'bg-primary-300 text-white'
+                      : 'bg-primary-500 text-white hover:bg-primary-400'
+                  }`}
+                >
+                  Graph
+                </button>
+              </div>
+
+              <div className="flex gap-4">
+                <button className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors">
+                  Export CSV
+                </button>
+                <button className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors">
+                  Download PDF
+                </button>
+              </div>
+            </div>
+
+            {/* Table View */}
+            {reportView === 'table' && (
+              <div className="bg-primary-500/50 rounded-3xl overflow-hidden shadow-xl">
+                {/* Table Header */}
+                <div className="bg-primary-500 px-8 py-4">
+                  <div className="grid grid-cols-3 gap-4 text-white font-semibold text-lg items-center">
+                    <div>Metric</div>
+                    <div>Value</div>
+                    <div>Note</div>
+                  </div>
+                </div>
+
+                {/* Table Body */}
+                <div className="divide-y divide-gray-300">
+                  {reportsMetrics.map((item, index) => (
+                    <div
+                      key={index}
+                      className="grid grid-cols-3 gap-4 px-8 py-4 text-black font-medium text-lg"
+                    >
+                      <div>{item.metric}</div>
+                      <div>{item.value}</div>
+                      <div>{item.note}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Graph View */}
+            {reportView === 'graph' && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-bold text-black">Bookings/day</h3>
+                  <button className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors">
+                    Download PDF
+                  </button>
+                </div>
+
+                <div className="bg-white rounded-3xl shadow-xl p-8">
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={bookingsPerDayData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#666"
+                        style={{ fontSize: '14px' }}
+                      />
+                      <YAxis 
+                        stroke="#666"
+                        style={{ fontSize: '14px' }}
+                        tickFormatter={(value) => `${value / 1000}k`}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#fff', 
+                          border: '1px solid #ccc',
+                          borderRadius: '8px'
+                        }}
+                        formatter={(value) => [`${value.toLocaleString()} bookings`, 'Bookings']}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="bookings" 
+                        stroke="#4A90A4" 
+                        strokeWidth={2}
+                        dot={{ fill: '#E74C3C', r: 6 }}
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
