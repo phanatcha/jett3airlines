@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Flights from './pages/Flights'
 import Admin from './pages/Admin'
 import EditFlight from './pages/EditFlight'
+import EditBooking from './pages/EditBooking'
 import SignUp from './pages/SignUp'
 import Login from './pages/Login'
 import Info from './pages/Info'
@@ -29,6 +30,7 @@ const App = () => {
           <Route path="/info" element={<Info />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/edit-flight" element={<EditFlight />} />
+          <Route path="/admin/edit-booking" element={<EditBooking />} />
           <Route path="/book" element={<Book />} />
           <Route path="/experience" element={<Experience />} />
           <Route path="/contact" element={<Contact />} />

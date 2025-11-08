@@ -5,6 +5,7 @@ const Admin = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('flights');
   const [selectedFlights, setSelectedFlights] = useState([]);
+  const [selectedBookings, setSelectedBookings] = useState([]);
   const [formData, setFormData] = useState({
     flightNo: '',
     fromAirport: '',
@@ -15,6 +16,25 @@ const Admin = () => {
     basePrice: '',
     status: ''
   });
+
+  // Sample booking data (mock data)
+  const [bookings] = useState([
+    { id: 1, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 2, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 3, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 4, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 5, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 6, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 7, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 8, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 9, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 10, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 11, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 12, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 13, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 14, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+    { id: 15, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+  ]);
 
   // Sample flight data with IDs
   const [flights] = useState([
@@ -106,6 +126,21 @@ const Admin = () => {
     // Navigate to edit page with the selected flight ID
     const selectedFlight = flights.find(f => f.id === selectedFlights[0]);
     navigate('/admin/edit-flight', { state: { flight: selectedFlight } });
+  };
+
+  const handleSelectBooking = (bookingId) => {
+    // Only allow one selection at a time (radio button behavior)
+    setSelectedBookings([bookingId]);
+  };
+
+  const handleEditBooking = () => {
+    if (selectedBookings.length === 0) {
+      alert('Please select a booking to edit');
+      return;
+    }
+    // Navigate to edit booking page with the selected booking ID
+    const selectedBooking = bookings.find(b => b.id === selectedBookings[0]);
+    navigate('/admin/edit-booking', { state: { booking: selectedBooking } });
   };
 
   return (
@@ -387,9 +422,61 @@ const Admin = () => {
         )}
 
         {activeTab === 'bookings' && (
-          <div className="text-center py-20">
-            <h2 className="text-black mb-4">Bookings Management</h2>
-            <p className="text-gray-600">Coming soon...</p>
+          <div>
+            <div className="flex items-center justify-end mb-6">
+              <button 
+                onClick={handleEditBooking}
+                className="text-gray-500 text-base font-semibold underline hover:text-primary-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={selectedBookings.length === 0}
+              >
+                Edit {selectedBookings.length > 0 && `(${selectedBookings.length})`}
+              </button>
+            </div>
+
+            <div className="bg-primary-500/50 rounded-3xl overflow-hidden shadow-xl">
+              {/* Table Header */}
+              <div className="bg-primary-500 px-8 py-4">
+                <div className="grid grid-cols-6 gap-4 text-white font-semibold text-lg items-center">
+                  <div>Select</div>
+                  <div>Booking no</div>
+                  <div>Flight no</div>
+                  <div>Fast track</div>
+                  <div>Capacity</div>
+                  <div>Status</div>
+                </div>
+              </div>
+
+              {/* Table Body */}
+              <div className="divide-y divide-gray-300">
+                {bookings.map((booking) => (
+                  <div
+                    key={booking.id}
+                    className={`grid grid-cols-6 gap-4 px-8 py-4 text-black font-medium text-lg transition-colors cursor-pointer ${
+                      selectedBookings.includes(booking.id)
+                        ? 'bg-primary-300/40'
+                        : 'hover:bg-primary-500/30'
+                    }`}
+                    onClick={() => handleSelectBooking(booking.id)}
+                  >
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        name="selectedBooking"
+                        checked={selectedBookings.includes(booking.id)}
+                        onChange={() => handleSelectBooking(booking.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-5 h-5 cursor-pointer accent-primary-300"
+                      />
+                    </div>
+                    <div>{booking.bookingNo}</div>
+                    <div>{booking.flightNo}</div>
+                    <div>{booking.fastTrack}</div>
+                    <div>{booking.capacity}</div>
+                    <div>{booking.status}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
