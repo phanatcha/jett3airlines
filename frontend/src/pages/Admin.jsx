@@ -109,9 +109,9 @@ const Admin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-primary-500 to-primary-300 px-16 py-6 shadow-lg">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with Sky Background */}
+      <header className="bg-[url('/main-bg.png')] bg-cover bg-center text-white px-16 py-6 shadow-lg rounded-b-3xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img
@@ -119,7 +119,7 @@ const Admin = () => {
               alt="Jett3Airlines logo"
               className="w-10 h-10 object-contain"
             />
-            <p className="text-gray-100 text-2xl font-semibold">Jett3Airlines</p>
+            <p className="text-white text-2xl font-semibold">Jett3Airlines</p>
           </div>
           <p className="text-white text-2xl font-bold">Welcome Admin!</p>
         </div>
