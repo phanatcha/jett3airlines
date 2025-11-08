@@ -25,3 +25,11 @@ tmp/
 *.sql~
 *.pid
 *.sock
+# Kiro specs
+.kiro/specs/
+
+# Project-specific files
+pull-frontend-changes.ps1
+backend/Jett3 Airline — Backend Decision Tree.png
+backend/jett3_airline (1).sql
+brief component code from figma.txt

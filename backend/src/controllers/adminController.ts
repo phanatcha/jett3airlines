@@ -1,2 +1,2 @@
 import { Request, Response } from 'express';
-import { db } from '../db';
+import database from '../db';

@@ -31,6 +31,12 @@ const Home = () => {
               >
                 Log in
               </Link>
+              <Link
+                to="/admin"
+                className="bg-gray-800 text-white px-6 py-3 rounded-md font-medium shadow-md hover:bg-gray-700 transition"
+              >
+                Admin
+              </Link>
             </div>
           </div>
         </div>
