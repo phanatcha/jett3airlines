@@ -102,10 +102,28 @@ const handleSubmit = async (e) => {
   if (result.success) {
     // Clear stored data
     sessionStorage.removeItem('signupBasicInfo');
-    // Redirect to flights page
-    navigate("/flights");
+    // Redirect to success page after successful registration
+    navigate("/signup-success");
   } else {
-    setError(result.error || "Registration failed. Please try again.");
+    // Handle different error types
+    if (result.error) {
+      // Check if it's a validation error with details
+      if (typeof result.error === 'object' && result.error.details) {
+        // Format validation errors
+        const errorMessages = result.error.details.map(detail => 
+          `${detail.field}: ${detail.message}`
+        ).join('\n');
+        setError(errorMessages);
+      } else if (typeof result.error === 'string') {
+        setError(result.error);
+      } else if (result.error.message) {
+        setError(result.error.message);
+      } else {
+        setError("Registration failed. Please try again.");
+      }
+    } else {
+      setError("Registration failed. Please try again.");
+    }
   }
 };
 

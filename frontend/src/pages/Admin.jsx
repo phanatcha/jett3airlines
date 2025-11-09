@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { adminAPI } from '../services/api';
+import CountryAirportSelector from '../components/CountryAirportSelector';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -19,106 +21,299 @@ const Admin = () => {
     status: ''
   });
 
-  // Sample reports data (mock data)
-  const reportsMetrics = [
-    { metric: 'Total flights', value: '50,000', note: 'Welcome' },
-    { metric: 'Total bookings', value: '10,000,000', note: 'Good morning' },
-    { metric: 'Total revenue', value: '10,000,000,000', note: 'Good afternoon' },
-    { metric: 'Total cancellations', value: '450', note: 'Good night' },
-  ];
+  // Country selection state for add flight form
+  const [departureCountry, setDepartureCountry] = useState('');
+  const [arrivalCountry, setArrivalCountry] = useState('');
 
-  const bookingsPerDayData = [
-    { date: '01/01/2030', bookings: 100000 },
-    { date: '02/01/2030', bookings: 95000 },
-    { date: '03/01/2030', bookings: 125000 },
-    { date: '04/01/2030', bookings: 140000 },
-    { date: '05/01/2030', bookings: 110000 },
-    { date: '06/01/2030', bookings: 125000 },
-    { date: '07/01/2030', bookings: 100000 },
-  ];
-
-  // Sample booking data (mock data)
-  const [bookings] = useState([
-    { id: 1, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 2, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 3, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 4, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 5, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 6, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 7, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 8, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 9, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 10, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 11, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 12, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 13, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 14, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
-    { id: 15, bookingNo: 'ABC123', flightNo: 'JT123', fastTrack: 'Yes', capacity: 10, status: 'Confirmed' },
+  // Real reports data from API
+  const [reportsMetrics, setReportsMetrics] = useState([
+    { metric: 'Total flights', value: '0', note: 'All flights in system' },
+    { metric: 'Total bookings', value: '0', note: 'All bookings made' },
+    { metric: 'Total revenue', value: '0.00', note: 'Completed payments' },
+    { metric: 'Total cancellations', value: '0', note: 'Cancelled bookings' },
   ]);
+
+  const [bookingsPerDayData, setBookingsPerDayData] = useState([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
+
+  // Fetch real booking data from API
+  const [bookings, setBookings] = useState([]);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(false);
 
   // Sample flight data with IDs
-  const [flights] = useState([
-    {
-      id: 1,
-      flightNo: 'JT123',
-      route: 'BKK→BER',
-      fromAirport: 'BKK',
-      toAirport: 'BER',
-      airplane: 'A320',
-      departureTime: '10/11/2030 12:30:00',
-      arrivalTime: '11/11/2030 00:30:00',
-      basePrice: '500',
-      status: 'Scheduled'
-    },
-    {
-      id: 2,
-      flightNo: 'JT124',
-      route: 'BKK→BER',
-      fromAirport: 'BKK',
-      toAirport: 'BER',
-      airplane: 'B737',
-      departureTime: '10/11/2030 12:30:00',
-      arrivalTime: '11/11/2030 00:30:00',
-      basePrice: '550',
-      status: 'Scheduled'
-    },
-    {
-      id: 3,
-      flightNo: 'JT125',
-      route: 'BKK→BER',
-      fromAirport: 'BKK',
-      toAirport: 'BER',
-      airplane: 'A380',
-      departureTime: '10/11/2030 12:30:00',
-      arrivalTime: '11/11/2030 00:30:00',
-      basePrice: '600',
-      status: 'Scheduled'
-    },
-    {
-      id: 4,
-      flightNo: 'JT126',
-      route: 'BKK→BER',
-      fromAirport: 'BKK',
-      toAirport: 'BER',
-      airplane: 'B777',
-      departureTime: '10/11/2030 12:30:00',
-      arrivalTime: '11/11/2030 00:30:00',
-      basePrice: '650',
-      status: 'Scheduled'
-    },
-    {
-      id: 5,
-      flightNo: 'JT127',
-      route: 'BKK→BER',
-      fromAirport: 'BKK',
-      toAirport: 'BER',
-      airplane: 'A350',
-      departureTime: '10/11/2030 12:30:00',
-      arrivalTime: '11/11/2030 00:30:00',
-      basePrice: '700',
-      status: 'Scheduled'
+  // Fetch real flight data from API
+  const [flights, setFlights] = useState([]);
+  const [isLoadingFlights, setIsLoadingFlights] = useState(true);
+  
+  // Airports and Airplanes data for dropdowns
+  const [airports, setAirports] = useState([]);
+  const [airplanes, setAirplanes] = useState([]);
+  const [isLoadingAirports, setIsLoadingAirports] = useState(false);
+  const [isLoadingAirplanes, setIsLoadingAirplanes] = useState(false);
+
+  // Function to fetch flights from API
+  const fetchFlights = async () => {
+    try {
+      setIsLoadingFlights(true);
+      const token = localStorage.getItem('token');
+      // Request a large limit to get all flights (or implement proper pagination later)
+      const response = await fetch('http://localhost:8080/api/v1/admin/flights?limit=1000', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Transform API data to match component structure
+        const transformedFlights = result.data.map(flight => ({
+          id: flight.flight_id,
+          flightNo: flight.flight_no,
+          route: `${flight.depart_airport?.code || flight.depart_airport_id}→${flight.arrive_airport?.code || flight.arrive_airport_id}`,
+          fromAirport: flight.depart_airport_id,
+          toAirport: flight.arrive_airport_id,
+          airplane: flight.airplane_id,
+          departureTime: new Date(flight.depart_when).toLocaleString('en-GB', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+          }).replace(',', ''),
+          arrivalTime: new Date(flight.arrive_when).toLocaleString('en-GB', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+          }).replace(',', ''),
+          basePrice: flight.base_price,
+          status: flight.status
+        }));
+        setFlights(transformedFlights);
+      }
+    } catch (error) {
+      console.error('Error fetching flights:', error);
+      alert('Failed to load flights. Please try again.');
+    } finally {
+      setIsLoadingFlights(false);
     }
-  ]);
+  };
+
+  // Function to fetch airports from API
+  const fetchAirports = async () => {
+    try {
+      setIsLoadingAirports(true);
+      const response = await fetch('http://localhost:8080/api/v1/airports');
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setAirports(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching airports:', error);
+    } finally {
+      setIsLoadingAirports(false);
+    }
+  };
+
+  // Function to fetch airplanes from API
+  const fetchAirplanes = async () => {
+    try {
+      setIsLoadingAirplanes(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/v1/admin/airplanes', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setAirplanes(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching airplanes:', error);
+    } finally {
+      setIsLoadingAirplanes(false);
+    }
+  };
+
+  // Function to fetch bookings from API
+  const fetchBookings = async () => {
+    try {
+      setIsLoadingBookings(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/v1/admin/bookings', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Transform API data to match component structure
+        const transformedBookings = result.data.map(booking => ({
+          id: booking.booking_id,
+          bookingNo: booking.booking_no || `BK${booking.booking_id}`,
+          flightNo: booking.flight?.flight_no || 'N/A',
+          fastTrack: booking.fasttrack ? 'Yes' : 'No',
+          support: booking.support ? 'Yes' : 'No',
+          capacity: booking.passengers?.length || 0,
+          status: booking.status || 'Pending'
+        }));
+        setBookings(transformedBookings);
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      alert('Failed to load bookings. Please try again.');
+    } finally {
+      setIsLoadingBookings(false);
+    }
+  };
+
+  // Fetch flights, airports, and airplanes on component mount
+  useEffect(() => {
+    fetchFlights();
+    fetchAirports();
+    fetchAirplanes();
+  }, []);
+
+  // Fetch bookings when bookings tab is active
+  useEffect(() => {
+    if (activeTab === 'bookings') {
+      fetchBookings();
+    }
+  }, [activeTab]);
+
+  // Function to fetch reports data from API
+  const fetchReportsData = async () => {
+    try {
+      setIsLoadingReports(true);
+      const token = localStorage.getItem('token');
+      
+      // Fetch metrics
+      const metricsResponse = await fetch('http://localhost:8080/api/v1/admin/reports/metrics', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const metricsData = await metricsResponse.json();
+      
+      if (metricsData.success) {
+        setReportsMetrics([
+          { 
+            metric: 'Total flights', 
+            value: metricsData.data.totalFlights.toLocaleString(), 
+            note: 'All flights in system' 
+          },
+          { 
+            metric: 'Total bookings', 
+            value: metricsData.data.totalBookings.toLocaleString(), 
+            note: 'All bookings made' 
+          },
+          { 
+            metric: 'Total revenue', 
+            value: `$${parseFloat(metricsData.data.totalRevenue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+            note: 'Completed payments' 
+          },
+          { 
+            metric: 'Total cancellations', 
+            value: metricsData.data.totalCancellations.toLocaleString(), 
+            note: 'Cancelled bookings' 
+          }
+        ]);
+      }
+      
+      // Fetch bookings per day for graph
+      const bookingsResponse = await fetch('http://localhost:8080/api/v1/admin/reports/bookings-per-day?days=7', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const bookingsData = await bookingsResponse.json();
+      
+      if (bookingsData.success) {
+        setBookingsPerDayData(bookingsData.data.map(item => ({
+          date: new Date(item.date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
+          bookings: item.bookings
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching reports data:', error);
+      alert('Failed to load reports data. Please try again.');
+    } finally {
+      setIsLoadingReports(false);
+    }
+  };
+
+  // Fetch reports data when reports tab is active
+  useEffect(() => {
+    if (activeTab === 'reports') {
+      fetchReportsData();
+    }
+  }, [activeTab]);
+
+  // Export CSV handler
+  const handleExportCSV = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const type = reportView === 'table' ? 'metrics' : 'bookings';
+      
+      const response = await fetch(`http://localhost:8080/api/v1/admin/reports/export/csv?type=${type}&days=30`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `jett3-report-${type}-${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to export CSV: ${errorData.error?.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Failed to export CSV. Please try again.');
+    }
+  };
+
+  // Export PDF handler
+  const handleExportPDF = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const type = reportView === 'table' ? 'metrics' : 'chart';
+      
+      const response = await fetch(`http://localhost:8080/api/v1/admin/reports/export/pdf?type=${type}&days=30`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `jett3-report-${type}-${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to export PDF: ${errorData.error?.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -128,9 +323,106 @@ const Admin = () => {
     }));
   };
 
-  const handleAddFlight = () => {
-    console.log('Adding flight:', formData);
-    // Add flight logic here
+  const handleAddFlight = async () => {
+    try {
+      // Validate all required fields (flight_no and basePrice are optional for the API)
+      if (!formData.fromAirport || !formData.toAirport || 
+          !formData.airplane || !formData.departureTime || !formData.arrivalTime || 
+          !formData.status) {
+        alert('Please fill in all required fields (From, To, Airplane, Departure Time, Arrival Time, Status)');
+        return;
+      }
+
+      // Validate that departure time is before arrival time
+      const departureDate = new Date(formData.departureTime);
+      const arrivalDate = new Date(formData.arrivalTime);
+      
+      if (departureDate >= arrivalDate) {
+        alert('Departure time must be before arrival time');
+        return;
+      }
+
+      // Validate that departure time is in the future
+      const now = new Date();
+      if (departureDate <= now) {
+        alert('Departure time must be in the future');
+        return;
+      }
+
+      // Parse and validate IDs
+      const departAirportId = parseInt(formData.fromAirport);
+      const arriveAirportId = parseInt(formData.toAirport);
+      const airplaneId = parseInt(formData.airplane);
+
+      if (isNaN(departAirportId) || isNaN(arriveAirportId) || isNaN(airplaneId)) {
+        alert('Airport IDs and Airplane ID must be valid numbers');
+        return;
+      }
+
+      if (departAirportId === arriveAirportId) {
+        alert('Departure and arrival airports must be different');
+        return;
+      }
+
+      // Format data for API
+      const flightData = {
+        flight_no: formData.flightNo || undefined, // Send flight_no if provided, otherwise backend will auto-generate
+        depart_airport_id: departAirportId,
+        arrive_airport_id: arriveAirportId,
+        airplane_id: airplaneId,
+        depart_when: departureDate.toISOString(),
+        arrive_when: arrivalDate.toISOString(),
+        status: formData.status
+      };
+
+      // Call API
+      const response = await adminAPI.createFlight(flightData);
+      
+      if (response.success) {
+        alert('Flight created successfully!');
+        
+        // Reset form
+        setFormData({
+          flightNo: '',
+          fromAirport: '',
+          toAirport: '',
+          airplane: '',
+          departureTime: '',
+          arrivalTime: '',
+          basePrice: '',
+          status: ''
+        });
+        
+        // Reset country selections
+        setDepartureCountry('');
+        setArrivalCountry('');
+        
+        // Refresh flights list
+        await fetchFlights();
+      } else {
+        alert(`Failed to create flight: ${response.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error creating flight:', error);
+      
+      // Handle specific error messages
+      let errorMessage = 'Failed to create flight. Please check all fields and try again.';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error) {
+        // Handle error object
+        if (typeof error.error === 'string') {
+          errorMessage = error.error;
+        } else if (error.error.message) {
+          errorMessage = error.error.message;
+        } else {
+          errorMessage = JSON.stringify(error.error);
+        }
+      }
+      
+      alert(`Failed to create flight: ${errorMessage}`);
+    }
   };
 
   const handleSelectFlight = (flightId) => {
@@ -253,35 +545,37 @@ const Admin = () => {
                   />
                 </div>
 
-                {/* From */}
-                <div>
-                  <label className="block text-black text-base font-semibold mb-2">
-                    From
-                  </label>
-                  <input
-                    type="text"
-                    name="fromAirport"
-                    value={formData.fromAirport}
-                    onChange={handleInputChange}
-                    placeholder="Airport id"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
-                  />
-                </div>
+                {/* From - Using CountryAirportSelector */}
+                <CountryAirportSelector
+                  label="From"
+                  selectedCountry={departureCountry}
+                  onCountryChange={(country) => {
+                    setDepartureCountry(country);
+                    setFormData(prev => ({ ...prev, fromAirport: '' }));
+                  }}
+                  selectedAirport={formData.fromAirport}
+                  onAirportChange={(airportId) => {
+                    setFormData(prev => ({ ...prev, fromAirport: airportId }));
+                  }}
+                  countryPlaceholder="Select departure country"
+                  airportPlaceholder="Select departure airport"
+                />
 
-                {/* To */}
-                <div>
-                  <label className="block text-black text-base font-semibold mb-2">
-                    To
-                  </label>
-                  <input
-                    type="text"
-                    name="toAirport"
-                    value={formData.toAirport}
-                    onChange={handleInputChange}
-                    placeholder="Airport id"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
-                  />
-                </div>
+                {/* To - Using CountryAirportSelector */}
+                <CountryAirportSelector
+                  label="To"
+                  selectedCountry={arrivalCountry}
+                  onCountryChange={(country) => {
+                    setArrivalCountry(country);
+                    setFormData(prev => ({ ...prev, toAirport: '' }));
+                  }}
+                  selectedAirport={formData.toAirport}
+                  onAirportChange={(airportId) => {
+                    setFormData(prev => ({ ...prev, toAirport: airportId }));
+                  }}
+                  countryPlaceholder="Select arrival country"
+                  airportPlaceholder="Select arrival airport"
+                />
               </div>
 
               <div className="grid grid-cols-3 gap-6 mb-6">
@@ -290,14 +584,20 @@ const Admin = () => {
                   <label className="block text-black text-base font-semibold mb-2">
                     Airplane
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="airplane"
                     value={formData.airplane}
                     onChange={handleInputChange}
-                    placeholder="Airplane id"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
-                  />
+                    className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg focus:outline-none focus:border-primary-300"
+                    disabled={isLoadingAirplanes}
+                  >
+                    <option value="">Select airplane</option>
+                    {airplanes.map((airplane) => (
+                      <option key={airplane.airplane_id} value={airplane.airplane_id}>
+                        {airplane.airplane_id} - {airplane.type} ({airplane.registration})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Departure Time */}
@@ -364,7 +664,9 @@ const Admin = () => {
                     <option value="Scheduled">Scheduled</option>
                     <option value="Delayed">Delayed</option>
                     <option value="Cancelled">Cancelled</option>
-                    <option value="Completed">Completed</option>
+                    <option value="Boarding">Boarding</option>
+                    <option value="Departed">Departed</option>
+                    <option value="Arrived">Arrived</option>
                   </select>
                 </div>
 
@@ -384,25 +686,19 @@ const Admin = () => {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-black">Flights</h2>
-                <button 
-                  onClick={handleEditSelected}
-                  className="text-gray-500 text-base font-semibold underline hover:text-primary-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={selectedFlights.length === 0}
-                >
-                  Edit {selectedFlights.length > 0 && `(${selectedFlights.length})`}
-                </button>
               </div>
 
               <div className="bg-primary-500/50 rounded-3xl overflow-hidden shadow-xl">
                 {/* Table Header */}
                 <div className="bg-primary-500 px-8 py-4">
-                  <div className="grid grid-cols-6 gap-4 text-white font-semibold text-lg items-center">
-                    <div>Select</div>
+                  <div className="grid grid-cols-7 gap-4 text-white font-semibold text-lg items-center">
+                    <div>Actions</div>
                     <div>Flight no</div>
                     <div>Route</div>
                     <div>Departure time</div>
                     <div>Arrival time</div>
                     <div>Status</div>
+                    <div>Price</div>
                   </div>
                 </div>
 
@@ -411,28 +707,25 @@ const Admin = () => {
                   {flights.map((flight) => (
                     <div
                       key={flight.id}
-                      className={`grid grid-cols-6 gap-4 px-8 py-4 text-black font-medium text-lg transition-colors cursor-pointer ${
-                        selectedFlights.includes(flight.id)
-                          ? 'bg-primary-300/40'
-                          : 'hover:bg-primary-500/30'
-                      }`}
-                      onClick={() => handleSelectFlight(flight.id)}
+                      className="grid grid-cols-7 gap-4 px-8 py-4 text-black font-medium text-lg hover:bg-primary-500/30 transition-colors"
                     >
                       <div className="flex items-center">
-                        <input
-                          type="radio"
-                          name="selectedFlight"
-                          checked={selectedFlights.includes(flight.id)}
-                          onChange={() => handleSelectFlight(flight.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-5 h-5 cursor-pointer accent-primary-300"
-                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate('/admin/edit-flight', { state: { flight } });
+                          }}
+                          className="bg-primary-300 text-white px-4 py-1 rounded-lg text-sm font-semibold hover:bg-primary-500 transition-colors"
+                        >
+                          Edit
+                        </button>
                       </div>
                       <div>{flight.flightNo}</div>
                       <div>{flight.route}</div>
                       <div>{flight.departureTime}</div>
                       <div>{flight.arrivalTime}</div>
                       <div>{flight.status}</div>
+                      <div>${flight.basePrice || 'N/A'}</div>
                     </div>
                   ))}
                 </div>
@@ -443,21 +736,15 @@ const Admin = () => {
 
         {activeTab === 'bookings' && (
           <div>
-            <div className="flex items-center justify-end mb-6">
-              <button 
-                onClick={handleEditBooking}
-                className="text-gray-500 text-base font-semibold underline hover:text-primary-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={selectedBookings.length === 0}
-              >
-                Edit {selectedBookings.length > 0 && `(${selectedBookings.length})`}
-              </button>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-black">Bookings</h2>
             </div>
 
             <div className="bg-primary-500/50 rounded-3xl overflow-hidden shadow-xl">
               {/* Table Header */}
               <div className="bg-primary-500 px-8 py-4">
                 <div className="grid grid-cols-6 gap-4 text-white font-semibold text-lg items-center">
-                  <div>Select</div>
+                  <div>Actions</div>
                   <div>Booking no</div>
                   <div>Flight no</div>
                   <div>Fast track</div>
@@ -471,22 +758,18 @@ const Admin = () => {
                 {bookings.map((booking) => (
                   <div
                     key={booking.id}
-                    className={`grid grid-cols-6 gap-4 px-8 py-4 text-black font-medium text-lg transition-colors cursor-pointer ${
-                      selectedBookings.includes(booking.id)
-                        ? 'bg-primary-300/40'
-                        : 'hover:bg-primary-500/30'
-                    }`}
-                    onClick={() => handleSelectBooking(booking.id)}
+                    className="grid grid-cols-6 gap-4 px-8 py-4 text-black font-medium text-lg hover:bg-primary-500/30 transition-colors"
                   >
                     <div className="flex items-center">
-                      <input
-                        type="radio"
-                        name="selectedBooking"
-                        checked={selectedBookings.includes(booking.id)}
-                        onChange={() => handleSelectBooking(booking.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-5 h-5 cursor-pointer accent-primary-300"
-                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate('/admin/edit-booking', { state: { booking } });
+                        }}
+                        className="bg-primary-300 text-white px-4 py-1 rounded-lg text-sm font-semibold hover:bg-primary-500 transition-colors"
+                      >
+                        Edit
+                      </button>
                     </div>
                     <div>{booking.bookingNo}</div>
                     <div>{booking.flightNo}</div>
@@ -530,10 +813,16 @@ const Admin = () => {
               {/* Show Export CSV and Download PDF only in table view */}
               {reportView === 'table' && (
                 <div className="flex gap-4">
-                  <button className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors">
+                  <button 
+                    onClick={handleExportCSV}
+                    className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors"
+                  >
                     Export CSV
                   </button>
-                  <button className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors">
+                  <button 
+                    onClick={handleExportPDF}
+                    className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors"
+                  >
                     Download PDF
                   </button>
                 </div>
@@ -554,16 +843,23 @@ const Admin = () => {
 
                 {/* Table Body */}
                 <div className="divide-y divide-gray-300">
-                  {reportsMetrics.map((item, index) => (
-                    <div
-                      key={index}
-                      className="grid grid-cols-3 gap-4 px-8 py-4 text-black font-medium text-lg"
-                    >
-                      <div>{item.metric}</div>
-                      <div>{item.value}</div>
-                      <div>{item.note}</div>
+                  {isLoadingReports ? (
+                    <div className="px-8 py-12 text-center">
+                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+                      <p className="mt-4 text-gray-600 font-medium">Loading reports data...</p>
                     </div>
-                  ))}
+                  ) : (
+                    reportsMetrics.map((item, index) => (
+                      <div
+                        key={index}
+                        className="grid grid-cols-3 gap-4 px-8 py-4 text-black font-medium text-lg"
+                      >
+                        <div>{item.metric}</div>
+                        <div>{item.value}</div>
+                        <div>{item.note}</div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -573,43 +869,62 @@ const Admin = () => {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-2xl font-bold text-black">Bookings/day</h3>
-                  <button className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors">
+                  <button 
+                    onClick={handleExportPDF}
+                    className="text-gray-400 text-base font-semibold hover:text-gray-600 transition-colors"
+                  >
                     Download PDF
                   </button>
                 </div>
 
                 <div className="bg-white rounded-3xl shadow-xl p-8">
-                  <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={bookingsPerDayData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="#666"
-                        style={{ fontSize: '14px' }}
-                      />
-                      <YAxis 
-                        stroke="#666"
-                        style={{ fontSize: '14px' }}
-                        tickFormatter={(value) => `${value / 1000}k`}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#fff', 
-                          border: '1px solid #ccc',
-                          borderRadius: '8px'
-                        }}
-                        formatter={(value) => [`${value.toLocaleString()} bookings`, 'Bookings']}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="bookings" 
-                        stroke="#4A90A4" 
-                        strokeWidth={2}
-                        dot={{ fill: '#E74C3C', r: 6 }}
-                        activeDot={{ r: 8 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  {isLoadingReports ? (
+                    <div className="flex flex-col items-center justify-center h-[400px]">
+                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+                      <p className="mt-4 text-gray-600 font-medium">Loading bookings data...</p>
+                    </div>
+                  ) : bookingsPerDayData.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-[400px]">
+                      <p className="text-gray-600 font-medium text-lg">No booking data available for the selected period</p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={400}>
+                      <LineChart data={bookingsPerDayData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <XAxis 
+                          dataKey="date" 
+                          stroke="#666"
+                          style={{ fontSize: '14px' }}
+                        />
+                        <YAxis 
+                          stroke="#666"
+                          style={{ fontSize: '14px' }}
+                          tickFormatter={(value) => {
+                            if (value >= 1000) {
+                              return `${(value / 1000).toFixed(1)}k`;
+                            }
+                            return value.toString();
+                          }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#fff', 
+                            border: '1px solid #ccc',
+                            borderRadius: '8px'
+                          }}
+                          formatter={(value) => [`${value.toLocaleString()} bookings`, 'Bookings']}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="bookings" 
+                          stroke="#4A90A4" 
+                          strokeWidth={2}
+                          dot={{ fill: '#E74C3C', r: 6 }}
+                          activeDot={{ r: 8 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
             )}

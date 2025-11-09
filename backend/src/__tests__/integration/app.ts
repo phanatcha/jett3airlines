@@ -9,6 +9,7 @@ import adminRouter from '../../routes/admin';
 import authRouter from '../../routes/auth';
 import reportsRouter from '../../routes/reports';
 import baggageRouter from '../../routes/baggage';
+import airportsRouter from '../../routes/airports';
 import { securityHeaders, generalRateLimit, corsOptions, securityErrorHandler } from '../../middleware/security';
 import { errorHandler, notFoundHandler } from '../../middleware/errorHandler';
 import { sanitizeInput } from '../../middleware/validation';
@@ -35,6 +36,7 @@ export const createTestApp = () => {
   app.use('/api/v1/payments', paymentsRouter);
   app.use('/api/v1/baggage', baggageRouter);
   app.use('/api/v1/seats', seatsRouter);
+  app.use('/api/v1/airports', airportsRouter);
   app.use('/api/v1/admin', adminRouter);
   app.use('/api/v1/admin/reports', reportsRouter);
 
@@ -57,3 +59,7 @@ export const createTestApp = () => {
 
   return app;
 };
+
+// Create and export default app instance for tests
+const app = createTestApp();
+export default app;

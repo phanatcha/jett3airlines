@@ -861,8 +861,8 @@ export const validatePaymentProcessing = [
     
   body('payment_method')
     .optional()
-    .isIn(['VISA', 'MASTERCARD', 'AMEX', 'DISCOVER', 'JCB', 'MAESTRO'])
-    .withMessage('Payment method must be a valid card type'),
+    .isIn(['VISA', 'MASTERCARD', 'AMEX', 'DISCOVER', 'JCB', 'MAESTRO', 'PAYPAL', 'APPLE_PAY'])
+    .withMessage('Payment method must be a valid payment type'),
     
   handleValidationErrors
 ];

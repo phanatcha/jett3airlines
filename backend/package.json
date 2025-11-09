@@ -13,7 +13,8 @@
     "test:e2e": "jest --testPathPattern=e2e --runInBand",
     "audit:performance": "ts-node scripts/performance-audit.ts",
     "audit:security": "ts-node scripts/security-audit.ts",
-    "optimize:db": "mysql -u root -p jett3_airline < scripts/optimize-database.sql"
+    "optimize:db": "mysql -u root -p jett3_airline < scripts/optimize-database.sql",
+    "add-test-flights": "tsx scripts/addTestFlights.ts"
   },
   "keywords": [],
   "author": "",

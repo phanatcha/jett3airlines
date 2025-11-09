@@ -1,71 +1,187 @@
-import React, { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import MainHeaderVer2 from "../components/MainHeaderVer2";
-import Back from "../components/BackBlack";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Barcode from "react-barcode";
 import airplaneIcon from "/icons/airplane-v2-icon.svg";
+import { useBooking } from "../context/BookingContext";
 
 const Confirmation = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const ticketRef = useRef(null);
+  const { getBookingById } = useBooking();
 
-    const handleDownloadPDF = async () => {
-    const original = ticketRef.current;
-    if (!original) return;
+  const [bookingData, setBookingData] = useState(null);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    // Clone ticket for clean capture
-    const clone = original.cloneNode(true);
-    clone.style.backgroundColor = "#ffffff";
-    clone.style.color = "#000000";
-    clone.style.filter = "grayscale(100%) contrast(120%)";
-    clone.className = "p-6 bg-white text-black border border-gray-300 rounded-xl";
+  // Fetch booking details on component mount
+  useEffect(() => {
+    const fetchBookingDetails = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-    // ✅ center layout
-    clone.style.display = "flex";
-    clone.style.flexDirection = "column";
-    clone.style.alignItems = "center";
-    clone.style.justifyContent = "center";
-    clone.style.width = "40%";
-    clone.style.textAlign = "center";
-    clone.style.gap = "20px"; // space between tickets
+        // Get booking ID from location state or localStorage
+        const bookingId = location.state?.bookingId || 
+                         JSON.parse(localStorage.getItem('paymentConfirmation') || '{}').booking_id;
 
-    document.body.appendChild(clone);
-    await new Promise((r) => setTimeout(r, 200));
+        if (!bookingId) {
+          setError('No booking information found');
+          setIsLoading(false);
+          return;
+        }
 
-    // Render to canvas
-    const canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-    });
+        // Fetch booking details from backend
+        const result = await getBookingById(bookingId);
 
-    // Convert to image
-    const imgData = canvas.toDataURL("image/png");
-
-    // Create PDF
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-
-    const imgWidth = canvas.width * 0.264583;
-    const imgHeight = canvas.height * 0.264583;
-
-    const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
-    const newWidth = imgWidth * ratio;
-    const newHeight = imgHeight * ratio;
-
-    const x = (pageWidth - newWidth) / 2;
-    const y = (pageHeight - newHeight) / 2;
-
-    pdf.addImage(imgData, "PNG", x, y, newWidth, newHeight);
-    pdf.save("E-Ticket.pdf");
-
-    document.body.removeChild(clone);
+        if (result.success) {
+          setBookingData(result.data);
+        } else {
+          setError(result.error || 'Failed to load booking details');
+        }
+      } catch (err) {
+        console.error('Error fetching booking details:', err);
+        setError('Failed to load booking details');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
+    fetchBookingDetails();
+  }, [location.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
+
+  // Helper function to format time
+  const formatTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-GB', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+  // Helper function to calculate boarding time (30 minutes before departure)
+  const getBoardingTime = (departureTime) => {
+    if (!departureTime) return '';
+    const date = new Date(departureTime);
+    date.setMinutes(date.getMinutes() - 30);
+    return date.toLocaleTimeString('en-GB', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      const element = ticketRef.current;
+      if (!element) {
+        console.error('Ticket element not found');
+        return;
+      }
+
+      // Temporarily make the element visible for capture
+      element.style.display = 'block';
+      element.style.position = 'absolute';
+      element.style.left = '-9999px';
+      
+      // Wait for render
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Capture the element
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      // Hide it again
+      element.style.display = 'none';
+      element.style.position = '';
+      element.style.left = '';
+
+      // Convert to image
+      const imgData = canvas.toDataURL('image/png');
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // Calculate dimensions
+      const imgWidth = canvas.width * 0.264583; // px to mm
+      const imgHeight = canvas.height * 0.264583;
+
+      const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight) * 0.9; // 90% of page
+      const newWidth = imgWidth * ratio;
+      const newHeight = imgHeight * ratio;
+
+      const x = (pageWidth - newWidth) / 2;
+      const y = (pageHeight - newHeight) / 2;
+
+      pdf.addImage(imgData, 'PNG', x, y, newWidth, newHeight);
+      pdf.save(`E-Ticket-${bookingData?.booking?.booking_no || 'Booking'}.pdf`);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
+
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <MainHeaderVer2 />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading booking details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error || !bookingData) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <MainHeaderVer2 />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{error || 'Booking not found'}</p>
+            <button
+              onClick={() => navigate('/flights')}
+              className="bg-blue-900 text-white px-6 py-2 rounded-md hover:bg-blue-800"
+            >
+              Back to Flights
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { booking, passengers } = bookingData;
 
   return (
     <>
@@ -92,81 +208,109 @@ const Confirmation = () => {
                 *Your e-ticket has been sent to your email address.
             </p>
 
+            {/* Booking Information */}
+            <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Booking Information</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Booking Number</p>
+                  <p className="font-semibold">{booking.booking_no}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="font-semibold capitalize">{booking.status}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Booking Date</p>
+                  <p className="font-semibold">{formatDate(booking.created_date)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Total Passengers</p>
+                  <p className="font-semibold">{passengers?.length || 0}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Passenger Details */}
+            <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Passenger Details</h2>
+              {passengers && passengers.length > 0 ? (
+                <div className="space-y-3">
+                  {passengers.map((passenger, index) => (
+                    <div key={index} className="border-b pb-3 last:border-b-0">
+                      <p className="font-medium">
+                        {passenger.firstname} {passenger.lastname}
+                      </p>
+                      <div className="flex gap-4 text-sm text-gray-600 mt-1">
+                        <span>Gender: {passenger.gender}</span>
+                        {passenger.seat_no && <span>Seat: {passenger.seat_no}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">No passenger information available</p>
+              )}
+            </div>
+
             <div className="flex gap-10">
                 {/* Departure Flight */}
                 <div className="flex gap-6">
                 <div className="border rounded-2xl shadow-sm bg-white p-4 w-64">
-                    <p className="mb-3 font-medium text-base">Departure Flight</p>
+                    <p className="mb-3 font-medium text-base">Flight Details</p>
                     <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-lg">BKK</span>
+                    <span className="font-bold text-lg">{booking.departure_iata}</span>
                     <img
                         src={airplaneIcon}
                         alt="Airplane"
                         className="w-7 h-7 opacity-80"
                     />
-                    <span className="font-bold text-lg">BER</span>
+                    <span className="font-bold text-lg">{booking.arrival_iata}</span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-600 mb-3">
-                    <span>14:00</span>
-                    <span>22:15</span>
+                    <span>{formatTime(booking.depart_when)}</span>
+                    <span>{formatTime(booking.arrive_when)}</span>
                     </div>
-                    <p className="text-sm text-gray-500 mb-2">6 Dec 2025</p>
-                    <p className="text-sm font-light text-gray-500 mb-2">2 stops</p>
-                    <div className="border rounded-md px-3 py-2 flex justify-between items-center bg-blue-50">
-                    <span className="text-sm font-medium">Flight: JT234</span>
-                    <span className="bg-blue-900 text-white text-xs px-3 py-1 rounded-md">
-                        GATE: J1A
-                    </span>
-                    </div>
-                </div>
-                </div>
-
-                {/* Return Flight */}
-                <div className="flex gap-6">
-                <div className="border rounded-2xl shadow-sm bg-white p-4 w-64">
-                    <p className="mb-3 font-medium text-base">Return Flight</p>
-                    <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-lg">BER</span>
-                    <img
-                        src={airplaneIcon}
-                        alt="Airplane"
-                        className="w-7 h-7 opacity-80"
-                    />
-                    <span className="font-bold text-lg">BKK</span>
-                    </div>
-                    <div className="flex justify-between text-sm text-gray-600 mb-3">
-                    <span>22:15</span>
-                    <span>15:15</span>
-                    </div>
-                    <p className="text-sm text-gray-500 mb-2">
-                    13 Dec 2025 - 14 Dec 2025
-                    </p>
-                    <p className="text-sm font-light text-gray-500 mb-2">1 stop</p>
-                    <div className="border rounded-md px-3 py-2 flex justify-between items-center bg-blue-50">
-                    <span className="text-sm font-medium">Flight: JT251</span>
-                    <span className="bg-blue-900 text-white text-xs px-3 py-1 rounded-md">
-                        GATE: J3B
-                    </span>
+                    <p className="text-sm text-gray-500 mb-2">{formatDate(booking.depart_when)}</p>
+                    <div className="border rounded-md px-3 py-2 bg-blue-50">
+                    <p className="text-sm text-gray-600">Airplane: {booking.airplane_type || 'N/A'}</p>
                     </div>
                 </div>
                 </div>
             </div>
+
+            {/* Additional Services */}
+            {(booking.support === 'Yes' || booking.fasttrack === 'Yes') && (
+              <div className="bg-white rounded-2xl shadow-sm p-6 mt-6">
+                <h2 className="text-xl font-semibold mb-4">Additional Services</h2>
+                <div className="space-y-2">
+                  {booking.support === 'Yes' && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600">✓</span>
+                      <span>Customer Support Service</span>
+                    </div>
+                  )}
+                  {booking.fasttrack === 'Yes' && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600">✓</span>
+                      <span>Fast Track Service</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             </div>
      
             {/* RIGHT SIDE */}
             <div>
-                <div ref={ticketRef}>
-                    <div
-                    className="bg-white rounded-2xl shadow-md p-6 w-[350px] text-center mb-7"
-                    >
-
-
+                {/* Visible e-ticket display */}
+                <div className="bg-white rounded-2xl shadow-md p-6 w-[350px] text-center mb-4">
                     <h2 className="text-2xl font-semibold mb-4">Your E-Ticket</h2>
 
-                    {/* Barcode */}
+                    {/* Barcode - using booking number */}
                     <div className="flex justify-center mb-4">
                         <Barcode
-                        value="JT234"
+                        value={booking.booking_no || "BOOKING"}
                         displayValue={false}
                         height={60}
                         width={1.5}
@@ -175,28 +319,28 @@ const Confirmation = () => {
 
                     {/* Route */}
                     <div className="flex justify-between items-center text-xl font-semibold mb-4">
-                        <span>BKK</span>
+                        <span>{booking.departure_iata}</span>
                         <img
                         src={airplaneIcon}
                         alt="Airplane"
                         className="w-8 h-8 opacity-80"
                         />
-                        <span>BER</span>
+                        <span>{booking.arrival_iata}</span>
                     </div>
 
                     {/* City & Info Rows */}
                     <div className="flex justify-between text-sm text-gray-600 mb-2">
                         <div className="text-left">
-                        <p className="font-medium text-black">Bangkok</p>
-                        <p>14:00</p>
+                        <p className="font-medium text-black">{booking.departure_city}</p>
+                        <p>{formatTime(booking.depart_when)}</p>
                         </div>
                         <div className="text-center">
                         <p className="font-medium text-black">Booking No.</p>
-                        <p>JT234</p>
+                        <p>{booking.booking_no}</p>
                         </div>
                         <div className="text-right">
-                        <p className="font-medium text-black">Berlin</p>
-                        <p>22:15</p>
+                        <p className="font-medium text-black">{booking.arrival_city}</p>
+                        <p>{formatTime(booking.arrive_when)}</p>
                         </div>
                     </div>
 
@@ -204,26 +348,31 @@ const Confirmation = () => {
                     <div className="flex justify-between text-sm text-gray-600 mt-4">
                         <div className="text-left">
                         <p className="font-medium text-black">Date</p>
-                        <p>6 Dec 2025</p>
+                        <p>{formatDate(booking.depart_when)}</p>
                         </div>
                         <div className="text-right">
                         <p className="font-medium text-black">Boarding Time</p>
-                        <p>13:30</p>
+                        <p>{getBoardingTime(booking.depart_when)}</p>
                         </div>
                     </div>
 
+                    {/* Flight Number */}
+                    <div className="mt-4 pt-4 border-t">
+                        <p className="text-sm text-gray-500">Flight Number</p>
+                        <p className="font-semibold">{booking.flight_no || 'N/A'}</p>
                     </div>
-                    <div
-                    className="bg-white rounded-2xl shadow-md p-6 w-[350px] text-center mb-7"
-                    >
+                </div>
 
-
+                {/* Hidden e-ticket template for PDF generation */}
+                <div ref={ticketRef} className="hidden">
+                    {/* E-Ticket for Departure Flight */}
+                    <div className="bg-white rounded-2xl shadow-md p-6 w-[350px] text-center mb-7">
                     <h2 className="text-2xl font-semibold mb-4">Your E-Ticket</h2>
 
-                    {/* Barcode */}
+                    {/* Barcode - using booking number */}
                     <div className="flex justify-center mb-4">
                         <Barcode
-                        value="JT251"
+                        value={booking.booking_no || "BOOKING"}
                         displayValue={false}
                         height={60}
                         width={1.5}
@@ -232,28 +381,28 @@ const Confirmation = () => {
 
                     {/* Route */}
                     <div className="flex justify-between items-center text-xl font-semibold mb-4">
-                        <span>BER</span>
+                        <span>{booking.departure_iata}</span>
                         <img
                         src={airplaneIcon}
                         alt="Airplane"
                         className="w-8 h-8 opacity-80"
                         />
-                        <span>BKK</span>
+                        <span>{booking.arrival_iata}</span>
                     </div>
 
                     {/* City & Info Rows */}
                     <div className="flex justify-between text-sm text-gray-600 mb-2">
                         <div className="text-left">
-                        <p className="font-medium text-black">Bangkok</p>
-                        <p>22:15</p>
+                        <p className="font-medium text-black">{booking.departure_city}</p>
+                        <p>{formatTime(booking.depart_when)}</p>
                         </div>
                         <div className="text-center">
                         <p className="font-medium text-black">Booking No.</p>
-                        <p>JT251</p>
+                        <p>{booking.booking_no}</p>
                         </div>
                         <div className="text-right">
-                        <p className="font-medium text-black">Berlin</p>
-                        <p>15:15</p>
+                        <p className="font-medium text-black">{booking.arrival_city}</p>
+                        <p>{formatTime(booking.arrive_when)}</p>
                         </div>
                     </div>
 
@@ -261,22 +410,35 @@ const Confirmation = () => {
                     <div className="flex justify-between text-sm text-gray-600 mt-4">
                         <div className="text-left">
                         <p className="font-medium text-black">Date</p>
-                        <p>13 Dec 2025</p>
+                        <p>{formatDate(booking.depart_when)}</p>
                         </div>
                         <div className="text-right">
                         <p className="font-medium text-black">Boarding Time</p>
-                        <p>21:45</p>
+                        <p>{getBoardingTime(booking.depart_when)}</p>
                         </div>
                     </div>
 
+                    {/* Flight Number */}
+                    <div className="mt-4 pt-4 border-t">
+                        <p className="text-sm text-gray-500">Flight Number</p>
+                        <p className="font-semibold">{booking.flight_no || 'N/A'}</p>
+                    </div>
                     </div>
 
                 </div>
                     <button
                     onClick={handleDownloadPDF}
-                    className="w-full bg-blue-900 text-white py-2 rounded-md hover:bg-blue-800 transition"
+                    className="w-full bg-blue-900 text-white py-2 rounded-md hover:bg-blue-800 transition mb-4"
                     >
                     Download E-Ticket (PDF)
+                    </button>
+
+                    {/* View/Manage Booking Button */}
+                    <button
+                    onClick={() => navigate('/my-bookings')}
+                    className="w-full bg-white border-2 border-blue-900 text-blue-900 py-2 rounded-md hover:bg-blue-50 transition"
+                    >
+                    View My Bookings
                     </button>
             </div>
         </div>

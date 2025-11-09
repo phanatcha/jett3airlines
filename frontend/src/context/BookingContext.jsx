@@ -1,37 +1,81 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { bookingsAPI, paymentsAPI } from '../services/api';
 
 const BookingContext = createContext(null);
 
 export const BookingProvider = ({ children }) => {
+  // Initialize state from localStorage or defaults
+  const getInitialState = (key, defaultValue) => {
+    try {
+      const stored = localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  };
+
   // Booking flow state
-  const [searchCriteria, setSearchCriteria] = useState({
-    tripType: 'round-trip',
-    fromWhere: '',
-    toWhere: '',
-    departureDate: '',
-    returnDate: '',
-    passengers: 1,
-    cabinClass: 'Economy',
-    directFlightsOnly: false,
-  });
+  const [searchCriteria, setSearchCriteria] = useState(() => 
+    getInitialState('searchCriteria', {
+      tripType: 'round-trip',
+      fromWhere: '',
+      toWhere: '',
+      departureDate: '',
+      returnDate: '',
+      passengers: 1,
+      cabinClass: 'Economy',
+      directFlightsOnly: false,
+      searchResults: [],
+    })
+  );
 
-  const [selectedFlights, setSelectedFlights] = useState({
-    departure: null,
-    return: null,
-  });
+  const [selectedFlights, setSelectedFlights] = useState(() =>
+    getInitialState('selectedFlights', {
+      departure: null,
+      return: null,
+    })
+  );
 
-  const [passengers, setPassengers] = useState([]);
-  const [selectedSeats, setSelectedSeats] = useState([]);
-  const [fareOptions, setFareOptions] = useState({
-    support: 'no',
-    fasttrack: 'no',
-  });
+  const [passengers, setPassengers] = useState(() =>
+    getInitialState('passengers', [])
+  );
+
+  const [selectedSeats, setSelectedSeats] = useState(() =>
+    getInitialState('selectedSeats', [])
+  );
+
+  const [fareOptions, setFareOptions] = useState(() =>
+    getInitialState('fareOptions', {
+      support: 'no',
+      fasttrack: 'no',
+    })
+  );
 
   const [paymentInfo, setPaymentInfo] = useState(null);
   const [currentBooking, setCurrentBooking] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Persist state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('searchCriteria', JSON.stringify(searchCriteria));
+  }, [searchCriteria]);
+
+  useEffect(() => {
+    localStorage.setItem('selectedFlights', JSON.stringify(selectedFlights));
+  }, [selectedFlights]);
+
+  useEffect(() => {
+    localStorage.setItem('passengers', JSON.stringify(passengers));
+  }, [passengers]);
+
+  useEffect(() => {
+    localStorage.setItem('selectedSeats', JSON.stringify(selectedSeats));
+  }, [selectedSeats]);
+
+  useEffect(() => {
+    localStorage.setItem('fareOptions', JSON.stringify(fareOptions));
+  }, [fareOptions]);
 
   // Update search criteria
   const updateSearchCriteria = (criteria) => {
@@ -68,15 +112,15 @@ export const BookingProvider = ({ children }) => {
   };
 
   // Select seat for passenger
-  const selectSeat = (passengerId, seatId) => {
+  const selectSeat = (passengerId, seatId, price = 0) => {
     setSelectedSeats((prev) => {
       const existing = prev.find((s) => s.passengerId === passengerId);
       if (existing) {
         return prev.map((s) =>
-          s.passengerId === passengerId ? { ...s, seatId } : s
+          s.passengerId === passengerId ? { ...s, seatId, price } : s
         );
       }
-      return [...prev, { passengerId, seatId }];
+      return [...prev, { passengerId, seatId, price }];
     });
   };
 
@@ -109,21 +153,64 @@ export const BookingProvider = ({ children }) => {
         flight_id: selectedFlights.departure.flight_id,
         support: fareOptions.support,
         fasttrack: fareOptions.fasttrack,
-        passengers: passengers.map((passenger, index) => ({
-          ...passenger,
-          seat_id: selectedSeats.find((s) => s.passengerId === index)?.seatId || null,
-        })),
+        passengers: passengers.map((passenger, index) => {
+          // Transform passenger data to match backend expectations
+          const transformedPassenger = {
+            // Handle both old format (first_name) and new format (firstname)
+            firstname: passenger.firstname || passenger.first_name || '',
+            lastname: passenger.lastname || passenger.last_name || '',
+            // Capitalize gender (Male, Female, Other)
+            gender: passenger.gender 
+              ? passenger.gender.charAt(0).toUpperCase() + passenger.gender.slice(1).toLowerCase()
+              : 'Other',
+            passport_no: passenger.passport_no || `TEMP${Date.now().toString().slice(-8)}${index}`.toUpperCase().slice(0, 20),
+            nationality: passenger.nationality || passenger.country || 'Unknown',
+            dob: passenger.dob || '1990-01-01',
+            seat_id: selectedSeats.find((s) => s.passengerId === index)?.seatId || null,
+            // Optional fields
+            ...(passenger.email && { email: passenger.email }),
+            ...(passenger.phone && { phone_no: passenger.phone }), // Changed to phone_no
+            ...(passenger.country && { country: passenger.country }),
+            ...(passenger.weight_limit && { weight_limit: passenger.weight_limit }),
+          };
+          
+          return transformedPassenger;
+        }),
       };
+
+      console.log('=== BOOKING DATA BEING SENT ===');
+      console.log('Flight ID:', bookingData.flight_id);
+      console.log('Support:', bookingData.support);
+      console.log('Fasttrack:', bookingData.fasttrack);
+      console.log('Passengers:', JSON.stringify(bookingData.passengers, null, 2));
+      console.log('Selected Seats:', selectedSeats);
+      console.log('================================');
 
       const response = await bookingsAPI.create(bookingData);
 
+      console.log('=== BOOKING CREATION RESPONSE ===');
+      console.log('Success:', response.success);
+      console.log('Response data:', JSON.stringify(response.data, null, 2));
+      console.log('=================================');
+
       if (response.success) {
         setCurrentBooking(response.data);
+        console.log('Current booking set to:', response.data);
         return { success: true, data: response.data };
       }
 
+      // Log full error response for debugging
+      console.error('=== BOOKING CREATION FAILED ===');
+      console.error('Full Response:', JSON.stringify(response, null, 2));
+      console.error('================================');
+
       return response;
     } catch (err) {
+      console.error('=== BOOKING CREATION ERROR ===');
+      console.error('Error object:', err);
+      console.error('Error details:', JSON.stringify(err, null, 2));
+      console.error('================================');
+      
       const errorMessage = err.error?.message || err.message || 'Booking creation failed';
       setError(errorMessage);
       return { success: false, error: errorMessage };
@@ -133,17 +220,20 @@ export const BookingProvider = ({ children }) => {
   };
 
   // Process payment
-  const processPayment = async (paymentData) => {
+  const processPayment = async (paymentData, bookingIdOverride = null) => {
     try {
       setError(null);
       setLoading(true);
 
-      if (!currentBooking) {
+      // Use provided booking ID or fall back to currentBooking
+      const bookingId = bookingIdOverride || currentBooking?.booking?.booking_id || currentBooking?.booking_id;
+      
+      if (!bookingId) {
         throw new Error('No active booking found');
       }
 
       const response = await paymentsAPI.process({
-        booking_id: currentBooking.booking_id,
+        booking_id: bookingId,
         ...paymentData,
       });
 
@@ -238,6 +328,7 @@ export const BookingProvider = ({ children }) => {
       passengers: 1,
       cabinClass: 'Economy',
       directFlightsOnly: false,
+      searchResults: [],
     });
     setSelectedFlights({ departure: null, return: null });
     setPassengers([]);
@@ -246,6 +337,13 @@ export const BookingProvider = ({ children }) => {
     setPaymentInfo(null);
     setCurrentBooking(null);
     setError(null);
+    
+    // Clear localStorage
+    localStorage.removeItem('searchCriteria');
+    localStorage.removeItem('selectedFlights');
+    localStorage.removeItem('passengers');
+    localStorage.removeItem('selectedSeats');
+    localStorage.removeItem('fareOptions');
   };
 
   const value = {

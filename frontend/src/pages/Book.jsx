@@ -17,7 +17,7 @@ const Book = () => {
       arrTime: "22:15",
       stops: "2 stops",
       duration: "14h 15m",
-      price: "THB 15,482",
+      price: "$467.00",
       route: [
         "Suvarnabhumi Airport",
         "Vienna International Airport",

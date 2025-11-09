@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import GrayLogo from "../components/GrayLogo";
 
 const Login = () => {
+  console.log('Login component rendered');
   const navigate = useNavigate();
   const { login, loading } = useAuth();
   const [formData, setFormData] = useState({
@@ -14,34 +15,77 @@ const Login = () => {
 
   const handleChange = (e) => {
     const { id, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
+    console.log('Input changed:', id, '=', value);
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [id]: value,
+      };
+      console.log('New form data:', newData);
+      return newData;
+    });
     setError(""); // Clear error on input change
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    console.log('=== LOGIN SUBMIT STARTED ===');
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     setError("");
 
-    // Validation
-    if (!formData.username || !formData.password) {
-      setError("Please fill in all fields");
-      return;
-    }
+    try {
+      // Validation
+      if (!formData.username || !formData.password) {
+        console.log('Validation failed: missing fields');
+        setError("Please fill in all fields");
+        return;
+      }
 
-    // Call login API
-    const result = await login({
-      username: formData.username,
-      password: formData.password,
-    });
+      console.log('Calling login API...');
+      // Call login API
+      const result = await login({
+        username: formData.username,
+        password: formData.password,
+      });
 
-    if (result.success) {
-      // Redirect to flights page on successful login
-      navigate("/flights");
-    } else {
-      setError(result.error || "Login failed. Please check your credentials.");
+      console.log('Login result:', result);
+
+      if (result.success) {
+        console.log('Login successful, navigating...');
+        // Check if user is admin and redirect accordingly
+        if (result.data?.isAdmin === true) {
+          navigate("/admin");
+        } else {
+          navigate("/flights");
+        }
+      } else {
+        console.log('Login failed, showing error');
+        // Extract error message from different possible formats
+        let errorMessage = "Login failed. Please try again.";
+        
+        if (typeof result.error === 'string') {
+          errorMessage = result.error;
+        } else if (result.error?.message) {
+          errorMessage = result.error.message;
+        }
+        
+        // Make error message more user-friendly
+        if (errorMessage.toLowerCase().includes('invalid') || 
+            errorMessage.toLowerCase().includes('credentials')) {
+          errorMessage = "User not found or password incorrect. Please check your credentials.";
+        }
+        
+        console.log('Setting error:', errorMessage);
+        setError(errorMessage);
+        console.log('=== LOGIN SUBMIT COMPLETED (ERROR) ===');
+      }
+    } catch (err) {
+      console.error('Login form error:', err);
+      setError("An unexpected error occurred. Please try again.");
+      console.log('=== LOGIN SUBMIT COMPLETED (EXCEPTION) ===');
     }
   };
 
@@ -70,12 +114,17 @@ const Login = () => {
 
       {/* Right Side */}
       <div className="w-3/5 flex items-center justify-center px-16">
-        <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md space-y-6">
           <h2 className="mb-6">Sign In</h2>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
+            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded shadow-sm" role="alert">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">{error}</span>
+              </div>
             </div>
           )}
 
@@ -98,9 +147,17 @@ const Login = () => {
 
           <div className="w-full">
             <button
-                type="submit"
+                type="button"
+                onClick={(e) => {
+                  console.log('Button clicked!', e);
+                  console.log('Loading state:', loading);
+                  console.log('Form data:', formData);
+                  handleSubmit(e);
+                }}
                 disabled={loading}
-                className="block w-full text-center bg-primary-500 text-white py-3 rounded-md font-medium hover:bg-primary-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="block w-full text-center bg-primary-500 text-white py-3 rounded-md font-medium hover:bg-primary-300 transition disabled:opacity-50 disabled:cursor-not-allowed relative z-50"
+                onMouseEnter={() => console.log('Mouse entered button')}
+                onMouseDown={() => console.log('Mouse down on button')}
             >
                 {loading ? "Logging in..." : "Login"}
             </button>
@@ -115,7 +172,7 @@ const Login = () => {
               Sign up now
             </Link>
           </p>
-        </form>
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import Admin from './pages/Admin'
 import EditFlight from './pages/EditFlight'
 import EditBooking from './pages/EditBooking'
 import SignUp from './pages/SignUp'
+import SignUpSuccess from './pages/SignUpSuccess'
 import Login from './pages/Login'
 import Info from './pages/Info'
 import Book from './pages/Book'
@@ -20,6 +21,9 @@ import PassengerInfo from './pages/PassengerInfo'
 import Seat from './pages/Seat'
 import Payment from './pages/Payment'
 import Confirmation from './pages/Confirmation'
+import MyBookings from './pages/MyBookings'
+import BookingDetails from './pages/BookingDetails'
+import Profile from './pages/Profile'
 
 const App = () => {
   return (
@@ -30,6 +34,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/signup" element={<SignUp />} />
+              <Route path="/signup-success" element={<SignUpSuccess />} />
               <Route path="/login" element={<Login />} />
               <Route path="/info" element={<Info />} />
               <Route path="/admin" element={<Admin />} />
@@ -44,10 +49,14 @@ const App = () => {
               <Route path="/flights/return" element={<Return />} />
 
               <Route path="/fare" element={<Fare />} />
-              <Route path="/passengerinfo" element={<PassengerInfo />} />
+              <Route path="/passenger-info" element={<PassengerInfo />} />
               <Route path="/seat" element={<Seat />} />
               <Route path="/payment" element={<Payment />} />
               <Route path="/confirmation" element={<Confirmation />} />
+
+              <Route path="/my-bookings" element={<MyBookings />} />
+              <Route path="/booking-details/:bookingId" element={<BookingDetails />} />
+              <Route path="/profile" element={<Profile />} />
 
               <Route path="/experience/first-class" element={<h2 className="flex items-center justify-center pt-10">Coming Soon!</h2>} />
               <Route path="/experience/diner" element={<h2 className="flex items-center justify-center pt-10">Coming Soon!</h2>} />

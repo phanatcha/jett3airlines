@@ -26,7 +26,7 @@ export class AirportModel extends BaseModel {
   // Get all airports
   async getAllAirports(limit?: number, offset?: number) {
     try {
-      return await this.findAll<Airport>({}, limit, offset, 'city_name, airport_name');
+      return await this.findAll<Airport>({}, limit, offset, 'country_name, city_name, airport_name');
     } catch (error) {
       console.error('Error getting all airports:', error);
       throw error;
@@ -42,7 +42,7 @@ export class AirportModel extends BaseModel {
            OR airport_name LIKE ? 
            OR iata_code LIKE ?
            OR country_name LIKE ?
-        ORDER BY city_name, airport_name
+        ORDER BY country_name, city_name, airport_name
         LIMIT ?
       `;
 
@@ -66,7 +66,7 @@ export class AirportModel extends BaseModel {
       const query = `
         SELECT * FROM airport 
         WHERE country_name = ?
-        ORDER BY city_name, airport_name
+        ORDER BY country_name, city_name, airport_name
       `;
 
       return await this.executeQuery(query, [countryName]);

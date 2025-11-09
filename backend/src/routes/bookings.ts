@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import bookingsController from '../controllers/bookingsController';
 import { authenticateToken } from '../middleware/auth';
 import { validateBookingCreation, validateBookingUpdate, sanitizeInput } from '../middleware/validation';
@@ -20,7 +20,7 @@ router.use(sanitizeInput);
  * @body support - Support service flag (optional)
  * @body fasttrack - Fast track service flag (optional)
  */
-router.post('/', validateBookingCreation, bookingsController.createBooking);
+router.post('/', validateBookingCreation, (req: Request, res: Response) => bookingsController.createBooking(req, res));
 
 /**
  * @route GET /api/v1/bookings
@@ -30,7 +30,7 @@ router.post('/', validateBookingCreation, bookingsController.createBooking);
  * @query limit - Items per page (optional, default: 10)
  * @query status - Filter by booking status (optional)
  */
-router.get('/', bookingsController.getBookingHistory);
+router.get('/', (req: Request, res: Response) => bookingsController.getBookingHistory(req, res));
 
 /**
  * @route GET /api/v1/bookings/:bookingId
@@ -38,7 +38,7 @@ router.get('/', bookingsController.getBookingHistory);
  * @access Private
  * @param bookingId - Booking ID
  */
-router.get('/:bookingId', bookingsController.getBookingDetails);
+router.get('/:bookingId', (req: Request, res: Response) => bookingsController.getBookingDetails(req, res));
 
 /**
  * @route PUT /api/v1/bookings/:bookingId
@@ -48,7 +48,7 @@ router.get('/:bookingId', bookingsController.getBookingDetails);
  * @body support - Support service flag (optional)
  * @body fasttrack - Fast track service flag (optional)
  */
-router.put('/:bookingId', validateBookingUpdate, bookingsController.updateBooking);
+router.put('/:bookingId', validateBookingUpdate, (req: Request, res: Response) => bookingsController.updateBooking(req, res));
 
 /**
  * @route PATCH /api/v1/bookings/:id/status
@@ -57,7 +57,7 @@ router.put('/:bookingId', validateBookingUpdate, bookingsController.updateBookin
  * @param id - Booking ID
  * @body status - New booking status
  */
-router.patch('/:id/status', bookingsController.updateBookingStatus);
+router.patch('/:id/status', (req: Request, res: Response) => bookingsController.updateBookingStatus(req, res));
 
 /**
  * @route DELETE /api/v1/bookings/:bookingId
@@ -65,6 +65,6 @@ router.patch('/:id/status', bookingsController.updateBookingStatus);
  * @access Private
  * @param bookingId - Booking ID
  */
-router.delete('/:bookingId', bookingsController.cancelBooking);
+router.delete('/:bookingId', (req: Request, res: Response) => bookingsController.cancelBooking(req, res));
 
 export default router;

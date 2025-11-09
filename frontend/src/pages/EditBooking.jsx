@@ -37,11 +37,102 @@ const EditBooking = () => {
     }));
   };
 
-  const handleConfirm = () => {
-    console.log('Updating booking:', formData);
-    // Update booking logic here
-    alert('Booking updated successfully!');
-    navigate('/admin');
+  const handleConfirm = async () => {
+    try {
+      // Validate that we have a booking ID
+      if (!bookingData || !bookingData.id) {
+        alert('Error: No booking data available');
+        navigate('/admin');
+        return;
+      }
+
+      // Validate required fields
+      if (!formData.status) {
+        alert('Please select a status');
+        return;
+      }
+
+      if (!formData.support) {
+        alert('Please select a support option');
+        return;
+      }
+
+      if (!formData.fastTrack) {
+        alert('Please select a fast track option');
+        return;
+      }
+
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Authentication required. Please log in again.');
+        navigate('/login');
+        return;
+      }
+
+      const bookingId = bookingData.id;
+
+      // Prepare update data with status, support, and fasttrack
+      const updateData = {
+        status: formData.status,
+        support: formData.support,
+        fasttrack: formData.fastTrack
+      };
+
+      // Update booking via PATCH endpoint
+      const response = await fetch(`http://localhost:8080/api/v1/admin/bookings/${bookingId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          navigate('/login');
+          return;
+        } else if (response.status === 403) {
+          alert('Access denied. Admin privileges required.');
+          navigate('/admin');
+          return;
+        } else if (response.status === 404) {
+          alert('Booking not found.');
+          navigate('/admin');
+          return;
+        } else if (response.status === 400) {
+          // Validation error - show specific message
+          alert(`Validation error: ${result.message || 'Invalid data provided'}`);
+          return;
+        } else {
+          alert(`Failed to update booking: ${result.message || 'Unknown error'}`);
+          return;
+        }
+      }
+
+      // If update was successful, show success message
+      if (result.success) {
+        alert('Booking updated successfully!');
+        navigate('/admin');
+      } else {
+        alert(`Failed to update booking: ${result.message || 'Unknown error'}`);
+      }
+
+    } catch (error) {
+      console.error('Error updating booking:', error);
+      
+      // Check if it's a network error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        alert('Network error: Unable to connect to the server. Please check your connection and try again.');
+      } else {
+        alert('An unexpected error occurred while updating the booking. Please try again.');
+      }
+    }
   };
 
   const handleCancel = () => {
@@ -115,9 +206,9 @@ const EditBooking = () => {
                 type="text"
                 name="bookingNo"
                 value={formData.bookingNo}
-                onChange={handleInputChange}
+                readOnly
                 placeholder="Book value"
-                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 bg-gray-100 text-lg placeholder-gray-400 focus:outline-none cursor-not-allowed"
               />
             </div>
 
@@ -129,9 +220,9 @@ const EditBooking = () => {
                 type="text"
                 name="flightNo"
                 value={formData.flightNo}
-                onChange={handleInputChange}
+                readOnly
                 placeholder="Flight value"
-                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 bg-gray-100 text-lg placeholder-gray-400 focus:outline-none cursor-not-allowed"
               />
             </div>
           </div>
@@ -142,28 +233,32 @@ const EditBooking = () => {
               <label className="block text-black text-base font-semibold mb-2">
                 Support
               </label>
-              <input
-                type="text"
+              <select
                 name="support"
                 value={formData.support}
                 onChange={handleInputChange}
-                placeholder="Support value"
-                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
-              />
+                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg focus:outline-none focus:border-primary-300"
+              >
+                <option value="">Select support option</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
             </div>
 
             <div>
               <label className="block text-black text-base font-semibold mb-2">
                 Fast track
               </label>
-              <input
-                type="text"
+              <select
                 name="fastTrack"
                 value={formData.fastTrack}
                 onChange={handleInputChange}
-                placeholder="Fast track value"
-                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
-              />
+                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg focus:outline-none focus:border-primary-300"
+              >
+                <option value="">Select fast track option</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
             </div>
           </div>
 
@@ -173,14 +268,18 @@ const EditBooking = () => {
               <label className="block text-black text-base font-semibold mb-2">
                 Status
               </label>
-              <input
-                type="text"
+              <select
                 name="status"
                 value={formData.status}
                 onChange={handleInputChange}
-                placeholder="Status value"
-                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
-              />
+                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg focus:outline-none focus:border-primary-300"
+              >
+                <option value="">Select status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="completed">Completed</option>
+              </select>
             </div>
           </div>
 

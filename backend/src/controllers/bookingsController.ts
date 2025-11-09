@@ -146,12 +146,18 @@ export class BookingsController {
       });
 
     } catch (error) {
+      console.error('=== BOOKING CREATION ERROR (BACKEND) ===');
       console.error('Error creating booking:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('=========================================');
+      
       res.status(500).json({
         success: false,
         error: {
           code: 'INTERNAL_ERROR',
-          message: 'Failed to create booking'
+          message: 'Failed to create booking',
+          details: error instanceof Error ? error.message : String(error)
         }
       });
     }

@@ -37,20 +37,40 @@ export const AuthProvider = ({ children }) => {
         });
         
         if (loginResponse.success) {
-          const { token, client } = loginResponse.data;
+          // Handle both old and new token response formats
+          const token = loginResponse.data.tokens?.accessToken || loginResponse.data.token;
+          const { client } = loginResponse.data;
           setToken(token);
           setUser(client);
           localStorage.setItem('token', token);
           localStorage.setItem('user', JSON.stringify(client));
           return { success: true, data: client };
+        } else {
+          // Login failed after registration
+          const errorMessage = loginResponse.error?.message || 'Auto-login failed after registration';
+          setError(errorMessage);
+          return { success: false, error: errorMessage };
         }
       }
       
       return response;
     } catch (err) {
-      const errorMessage = err.error?.message || 'Registration failed';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
+      // Handle different error formats
+      let errorResponse;
+      
+      if (err.error) {
+        // API returned structured error
+        errorResponse = err.error;
+      } else if (err.message) {
+        // Simple error message
+        errorResponse = err.message;
+      } else {
+        // Unknown error format
+        errorResponse = 'Registration failed';
+      }
+      
+      setError(typeof errorResponse === 'string' ? errorResponse : errorResponse.message);
+      return { success: false, error: errorResponse };
     } finally {
       setLoading(false);
     }
@@ -65,17 +85,37 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.login(credentials);
       
       if (response.success) {
-        const { token, client } = response.data;
+        // Handle both old and new token response formats
+        const token = response.data.tokens?.accessToken || response.data.token;
+        const { client, isAdmin } = response.data;
         setToken(token);
         setUser(client);
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(client));
-        return { success: true, data: client };
+        return { success: true, data: { ...client, isAdmin } };
       }
       
       return response;
     } catch (err) {
-      const errorMessage = err.error?.message || 'Login failed';
+      console.error('Login error in AuthContext:', err);
+      let errorMessage = 'Login failed';
+      
+      // Handle different error formats
+      if (err.error?.message) {
+        errorMessage = err.error.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      // Check if it's a network/server error
+      if (errorMessage.toLowerCase().includes('network') || 
+          errorMessage.toLowerCase().includes('fetch') ||
+          errorMessage.toLowerCase().includes('server')) {
+        errorMessage = 'Unable to connect to server. Please check your connection and try again.';
+      }
+      
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {

@@ -1,365 +1,201 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainHeaderVer2 from "../components/MainHeaderVer2";
 import PreviewBar from "../components/PreviewBar";
 import Back from "../components/BackBlack";
+import { useBooking } from "../context/BookingContext";
+import { flightsAPI } from "../services/api";
 
 const Seat = () => {
   const navigate = useNavigate();
-  const [selectedSeat, setSelectedSeat] = useState(null);
+  const { selectedFlights, passengers, selectedSeats, selectSeat } = useBooking();
+  
+  const [seatMap, setSeatMap] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPassengerIndex, setCurrentPassengerIndex] = useState(0);
+  const [seatPricing, setSeatPricing] = useState({});
+  const [seatIdMapping, setSeatIdMapping] = useState({});
+  const [localSelectedSeats, setLocalSelectedSeats] = useState({});
 
+  // Fetch seat data from backend
+  useEffect(() => {
+    const fetchSeats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  const rows = [
-    [
-        { id: '1A', number: "A" },
-        null,
-        { id: '1C', number: "C" },
-        null,
-        { id: '1D', number: "D" },
-        null,
-        { id: '1F', number: "F" },
-    ],
-    [
-        { id: '2A', number: "A" },
-        null,
-        { id: '2C', number: "C" },
-        null,
-        { id: '2D', number: "D", isBooked: true },
-        null,
-        { id: '2F', number: "F" },
-    ],
-    [
-        { id: '3A', number: "A", isBooked: true },
-        null,
-        { id: '3C', number: "C" },
-        null,
-        { id: '3D', number: "D" },
-        null,
-        { id: '3F', number: "F", isBooked: true },
-    ],
-    [
-        { id: '4A', number: "A" },
-        { id: '4B', number: "B" },
-        { id: '4C', number: "C" },
-        null,
-        { id: '4D', number: "D" },
-        { id: '4E', number: "E" },
-        { id: '4F', number: "F" },
-    ],
-    [
-        { id: '5A', number: "A" },
-        { id: '5B', number: "B" },
-        { id: '5C', number: "C" },
-        null,
-        { id: '5D', number: "D" },
-        { id: '5E', number: "E" },
-        { id: '5F', number: "F" },
-    ],
-    [
-        { id: '6A', number: "A" },
-        { id: '6B', number: "B" },
-        { id: '6C', number: "C" },
-        null,
-        { id: '6D', number: "D" },
-        { id: '6E', number: "E" },
-        { id: '6F', number: "F" },
-    ],    
-    [
-        { id: '7A', number: "A" },
-        { id: '7B', number: "B" },
-        { id: '7C', number: "C" },
-        null,
-        { id: '7D', number: "D" },
-        { id: '7E', number: "E", isBooked: true },
-        { id: '7F', number: "F" },
-    ],
-    [
-        { id: '8A', number: "A", isBooked: true },
-        { id: '8B', number: "B", isBooked: true },
-        { id: '8C', number: "C" },
-        null,
-        { id: '8D', number: "D" },
-        { id: '8E', number: "E" },
-        { id: '8F', number: "F" },
-    ],
-    [
-        { id: '9A', number: "A" },
-        { id: '9B', number: "B" },
-        { id: '9C', number: "C" },
-        null,
-        { id: '9D', number: "D" },
-        { id: '9E', number: "E" },
-        { id: '9F', number: "F" },
-    ],
-    [
-        { id: '10A', number: "A" },
-        { id: '10B', number: "B", isBooked: true },
-        { id: '10C', number: "C", isBooked: true },
-        null,
-        { id: '10D', number: "D" },
-        { id: '10E', number: "E" },
-        { id: '10F', number: "F" },
-    ],
-    [
-        { id: '11A', number: "A", isBooked: true },
-        { id: '11B', number: "B", isBooked: true },
-        { id: '11C', number: "C", isBooked: true },
-        null,
-        { id: '11D', number: "D", isBooked: true },
-        { id: '11E', number: "E", isBooked: true },
-        { id: '11F', number: "F", isBooked: true },
-    ],
-    [
-        { id: '12A', number: "A", isBooked: true },
-        { id: '12B', number: "B" },
-        { id: '12C', number: "C", isBooked: true },
-        null,
-        { id: '12D', number: "D" },
-        { id: '12E', number: "E", isBooked: true },
-        { id: '12F', number: "F", isBooked: true },
-    ],
-    [
-        { id: '13A', number: "A" },
-        { id: '13B', number: "B", isBooked: true },
-        { id: '13C', number: "C" },
-        null,
-        { id: '13D', number: "D" },
-        { id: '13E', number: "E", isBooked: true },
-        { id: '13F', number: "F" },
-    ],
-    [
-        { id: '14A', number: "A", isBooked: true },
-        { id: '14B', number: "B", isBooked: true },
-        { id: '14C', number: "C" },
-        null,
-        { id: '14D', number: "D" },
-        { id: '14E', number: "E" },
-        { id: '14F', number: "F" },
-    ],
-    [
-        { id: '15A', number: "A", isBooked: true },
-        { id: '15B', number: "B" },
-        { id: '15C', number: "C" },
-        null,
-        { id: '15D', number: "D", isBooked: true },
-        { id: '15E', number: "E" },
-        { id: '15F', number: "F" },
-    ],
-    [
-        { id: '16A', number: "A", isBooked: true },
-        { id: '16B', number: "B", isBooked: true },
-        { id: '16C', number: "C", isBooked: true },
-        null,
-        { id: '16D', number: "D" },
-        { id: '16E', number: "E" },
-        { id: '16F', number: "F" },
-    ],
-    [
-        { id: '17A', number: "A" },
-        { id: '17B', number: "B" },
-        { id: '17C', number: "C" },
-        null,
-        { id: '17D', number: "D" },
-        { id: '17E', number: "E" },
-        { id: '17F', number: "F" },
-    ],
-    [
-        { id: '18A', number: "A" },
-        { id: '18B', number: "B", isBooked: true },
-        { id: '18C', number: "C", isBooked: true },
-        null,
-        { id: '18D', number: "D", isBooked: true },
-        { id: '18E', number: "E", isBooked: true },
-        { id: '18F', number: "F" },
-    ],
-    [
-        { id: '19A', number: "A", isBooked: true },
-        { id: '19B', number: "B" },
-        { id: '19C', number: "C", isBooked: true },
-        null,
-        { id: '19D', number: "D" },
-        { id: '19E', number: "E" },
-        { id: '19F', number: "F" },
-    ],
-    [
-        { id: '20A', number: "A" },
-        { id: '20B', number: "B" },
-        { id: '20C', number: "C" },
-        null,
-        { id: '20D', number: "D", isBooked: true },
-        { id: '20E', number: "E" },
-        { id: '20F', number: "F", isBooked: true },
-    ],
-    [
-        { id: '21A', number: "A", isBooked: true },
-        { id: '21B', number: "B", isBooked: true },
-        { id: '21C', number: "C" },
-        null,
-        { id: '21D', number: "D" },
-        { id: '21E', number: "E" },
-        { id: '21F', number: "F" },
-    ],
-    [
-        { id: '22A', number: "A" },
-        { id: '22B', number: "B" },
-        { id: '22C', number: "C" },
-        null,
-        { id: '22D', number: "D" },
-        { id: '22E', number: "E", isBooked: true },
-        { id: '22F', number: "F", isBooked: true },
-    ],
-    [
-        { id: '23A', number: "A" },
-        { id: '23B', number: "B", isBooked: true },
-        { id: '23C', number: "C" },
-        null,
-        { id: '23D', number: "D" },
-        { id: '23E', number: "E" },
-        { id: '23F', number: "F" },
-    ],
-    [
-        { id: '24A', number: "A" },
-        { id: '24B', number: "B" },
-        { id: '24C', number: "C" },
-        null,
-        { id: '24D', number: "D", isBooked: true },
-        { id: '24E', number: "E" },
-        { id: '24F', number: "F" },
-    ],
-    [
-        { id: '25A', number: "A" },
-        { id: '25B', number: "B", isBooked: true },
-        { id: '25C', number: "C" },
-        null,
-        { id: '25D', number: "D" },
-        { id: '25E', number: "E" },
-        { id: '25F', number: "F" },
-    ],
-    [
-        { id: '26A', number: "A", isBooked: true },
-        { id: '26B', number: "B" },
-        { id: '26C', number: "C" },
-        null,
-        { id: '26D', number: "D" },
-        { id: '26E', number: "E" },
-        { id: '26F', number: "F" },
-    ],
-    [
-        { id: '27A', number: "A", isBooked: true },
-        { id: '27B', number: "B" },
-        { id: '27C', number: "C" },
-        null,
-        { id: '27D', number: "D" },
-        { id: '27E', number: "E" },
-        { id: '27F', number: "F" },
-    ],
-    [
-        { id: '28A', number: "A" },
-        { id: '28B', number: "B", isBooked: true },
-        { id: '28C', number: "C", isBooked: true },
-        null,
-        { id: '28D', number: "D" },
-        { id: '28E', number: "E" },
-        { id: '28F', number: "F" },
-    ],
-    [
-        { id: '29A', number: "A" },
-        { id: '29B', number: "B" },
-        { id: '29C', number: "C" },
-        null,
-        { id: '29D', number: "D", isBooked: true },
-        { id: '29E', number: "E", isBooked: true },
-        { id: '29F', number: "F", isBooked: true },
-    ],
-    [
-        { id: '30A', number: "A", isBooked: true },
-        { id: '30B', number: "B", isBooked: true },
-        { id: '30C', number: "C" },
-        null,
-        { id: '30D', number: "D" },
-        { id: '30E', number: "E" },
-        { id: '30F', number: "F" },
-    ],
-    [
-        { id: '31A', number: "A" },
-        { id: '31B', number: "B", isBooked: true },
-        { id: '31C', number: "C" },
-        null,
-        { id: '31D', number: "D", isBooked: true },
-        { id: '31E', number: "E" },
-        { id: '31F', number: "F" },
-    ],
-    [
-        { id: '32A', number: "A" },
-        { id: '32B', number: "B" },
-        { id: '32C', number: "C", isBooked: true },
-        null,
-        { id: '32D', number: "D" },
-        { id: '32E', number: "E" },
-        { id: '32F', number: "F" },
-    ],
-    [
-        { id: '33A', number: "A", isBooked: true },
-        { id: '33B', number: "B" },
-        { id: '33C', number: "C" },
-        null,
-        { id: '33D', number: "D" },
-        { id: '33E', number: "E" },
-        { id: '33F', number: "F" },
-    ],
-    [
-        { id: '34A', number: "A" },
-        { id: '34B', number: "B" },
-        { id: '34C', number: "C" },
-        null,
-        { id: '34D', number: "D", isBooked: true },
-        { id: '34E', number: "E" },
-        { id: '34F', number: "F" },
-    ],
-    [
-        { id: '35A', number: "A" },
-        { id: '35B', number: "B" },
-        { id: '35C', number: "C" },
-        null,
-        { id: '35D', number: "D" },
-        { id: '35E', number: "E" },
-        { id: '35F', number: "F" },
-    ],
-    [
-        { id: '36A', number: "A" },
-        { id: '36B', number: "B" },
-        { id: '36C', number: "C" },
-        null,
-        { id: '36D', number: "D" },
-        { id: '36E', number: "E" },
-        { id: '36F', number: "F" },
-    ],
-    [
-        { id: '37A', number: "A" },
-        { id: '37B', number: "B" },
-        { id: '37C', number: "C" },
-        null,
-        { id: '37D', number: "D" },
-        { id: '37E', number: "E" },
-        { id: '37F', number: "F" },
-    ],
+        // Check if we have a selected departure flight
+        if (!selectedFlights.departure) {
+          setError("No flight selected. Please select a flight first.");
+          setLoading(false);
+          return;
+        }
 
-       
-  ];
+        const flightId = selectedFlights.departure.flight_id;
+        const response = await flightsAPI.getSeats(flightId);
 
+        if (response.success) {
+          // Transform backend data to seat map format
+          const seats = response.data.seat_map;
+          const transformedSeats = transformSeatsToMap(seats);
+          setSeatMap(transformedSeats);
+          
+          // Store pricing and ID information
+          const pricing = {};
+          const seatIdMap = {};
+          Object.keys(seats).forEach(seatClass => {
+            seats[seatClass].available.forEach(seat => {
+              pricing[seat.seat_no] = seat.price;
+              seatIdMap[seat.seat_no] = seat.seat_id;
+            });
+            seats[seatClass].booked.forEach(seat => {
+              pricing[seat.seat_no] = seat.price;
+              seatIdMap[seat.seat_no] = seat.seat_id;
+            });
+          });
+          setSeatPricing(pricing);
+          setSeatIdMapping(seatIdMap);
+        } else {
+          setError(response.message || "Failed to load seats");
+        }
+      } catch (err) {
+        console.error("Error fetching seats:", err);
+        setError("Failed to load seat information. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const seatMap = rows.map((row, rowIndex) => 
-    row.map(seat => 
-      seat ? { ...seat, id: `${rowIndex + 1}${seat.number}` } : null
-    )
-  );
+    fetchSeats();
+  }, [selectedFlights.departure]);
+
+  // Initialize local selected seats from context (only once on mount)
+  useEffect(() => {
+    const seatsObj = {};
+    selectedSeats.forEach(seat => {
+      seatsObj[seat.passengerId] = seat.seatId;
+    });
+    setLocalSelectedSeats(seatsObj);
+  }, []); // Empty dependency array - only run once on mount
+
+  // Transform backend seat data to display format
+  const transformSeatsToMap = (seats) => {
+    const allSeats = [];
+    
+    // Combine all seats from all classes
+    Object.keys(seats).forEach(seatClass => {
+      seats[seatClass].available.forEach(seat => {
+        allSeats.push({
+          id: seat.seat_no,
+          number: seat.seat_no,
+          isBooked: false,
+          class: seatClass,
+          price: seat.price
+        });
+      });
+      seats[seatClass].booked.forEach(seat => {
+        allSeats.push({
+          id: seat.seat_no,
+          number: seat.seat_no,
+          isBooked: true,
+          class: seatClass,
+          price: seat.price
+        });
+      });
+    });
+
+    // Sort seats by row and column
+    allSeats.sort((a, b) => {
+      const rowA = parseInt(a.number.match(/\d+/)?.[0] || 0);
+      const rowB = parseInt(b.number.match(/\d+/)?.[0] || 0);
+      if (rowA !== rowB) return rowA - rowB;
+      return a.number.localeCompare(b.number);
+    });
+
+    // Group seats into rows (assuming 3-3 configuration with aisle)
+    const rows = [];
+    const seatsByRow = {};
+    
+    allSeats.forEach(seat => {
+      const rowNum = parseInt(seat.number.match(/\d+/)?.[0] || 0);
+      if (!seatsByRow[rowNum]) {
+        seatsByRow[rowNum] = [];
+      }
+      seatsByRow[rowNum].push(seat);
+    });
+
+    // Convert to array format with aisle spacing
+    Object.keys(seatsByRow).sort((a, b) => parseInt(a) - parseInt(b)).forEach(rowNum => {
+      const rowSeats = seatsByRow[rowNum];
+      const formattedRow = [];
+      
+      // Determine which columns exist in this row
+      const availableColumns = rowSeats.map(s => s.number.slice(-1)).sort();
+      
+      // Check if this is a 2-2 configuration (Business class rows 1-3)
+      // These rows only have A, C, D, F (no B or E)
+      const is2x2Config = availableColumns.length === 4 && 
+                          availableColumns.includes('A') && 
+                          availableColumns.includes('C') && 
+                          availableColumns.includes('D') && 
+                          availableColumns.includes('F') &&
+                          !availableColumns.includes('B') &&
+                          !availableColumns.includes('E');
+      
+      if (is2x2Config) {
+        // Business class 2-2 layout: [empty] A C [aisle] D F [empty]
+        // Add empty space to center the 2-2 configuration
+        const seatA = rowSeats.find(s => s.number.endsWith('A'));
+        const seatC = rowSeats.find(s => s.number.endsWith('C'));
+        const seatD = rowSeats.find(s => s.number.endsWith('D'));
+        const seatF = rowSeats.find(s => s.number.endsWith('F'));
+        
+        formattedRow.push(undefined, seatA, seatC, null, seatD, seatF, undefined);
+      } else {
+        // Standard 3-3 layout: A B C [aisle] D E F
+        const seatA = rowSeats.find(s => s.number.endsWith('A'));
+        const seatB = rowSeats.find(s => s.number.endsWith('B'));
+        const seatC = rowSeats.find(s => s.number.endsWith('C'));
+        const seatD = rowSeats.find(s => s.number.endsWith('D'));
+        const seatE = rowSeats.find(s => s.number.endsWith('E'));
+        const seatF = rowSeats.find(s => s.number.endsWith('F'));
+        
+        formattedRow.push(seatA, seatB, seatC, null, seatD, seatE, seatF);
+      }
+      
+      rows.push(formattedRow);
+    });
+
+    return rows;
+  };
 
   const handleSeatClick = (seatId, isBooked) => {
-    if (isBooked) return; //
+    if (isBooked) return;
 
-    setSelectedSeat(prevSeat => (prevSeat === seatId ? null : seatId));
+    // Check if seat is already selected by another passenger
+    const isSelectedByOther = Object.entries(localSelectedSeats).some(
+      ([passengerId, selectedSeatId]) => 
+        parseInt(passengerId) !== currentPassengerIndex && selectedSeatId === seatId
+    );
+
+    if (isSelectedByOther) {
+      alert("This seat is already selected by another passenger.");
+      return;
+    }
+
+    // Toggle seat selection for current passenger
+    setLocalSelectedSeats(prev => {
+      const newSeats = { ...prev };
+      if (newSeats[currentPassengerIndex] === seatId) {
+        delete newSeats[currentPassengerIndex];
+      } else {
+        newSeats[currentPassengerIndex] = seatId;
+      }
+      return newSeats;
+    });
   };
-  
+
   const getSeatClass = (seat) => {
     if (!seat) return "w-8 h-8 mx-1";
 
@@ -368,21 +204,127 @@ const Seat = () => {
     if (seat.isBooked) {
       return `${baseClass} bg-gray-400 text-gray-700 cursor-not-allowed`;
     }
-    if (selectedSeat === seat.id) {
+    
+    // Check if selected by current passenger
+    if (localSelectedSeats[currentPassengerIndex] === seat.id) {
       return `${baseClass} bg-blue-900 text-white border-2 border-blue-900`;
     }
+    
+    // Check if selected by another passenger
+    const isSelectedByOther = Object.entries(localSelectedSeats).some(
+      ([passengerId, seatId]) => 
+        parseInt(passengerId) !== currentPassengerIndex && seatId === seat.id
+    );
+    
+    if (isSelectedByOther) {
+      return `${baseClass} bg-green-500 text-white border-2 border-green-600`;
+    }
+    
     return `${baseClass} bg-blue-300 text-gray-800 hover:bg-blue-400`;
   };
 
   const getRowNumber = (rowIndex) => rowIndex + 1;
 
   const handleContinue = () => {
-    if (selectedSeat) {
-      navigate("/payment", { state: { seat: selectedSeat } });
-    } else {
-      alert("Please select a seat first.");
+    // Check if all passengers have selected seats
+    const allSeatsSelected = passengers.every((_, index) => localSelectedSeats[index]);
+    
+    if (!allSeatsSelected) {
+      alert(`Please select seats for all ${passengers.length} passenger(s).`);
+      return;
+    }
+
+    // Store selected seats in context with pricing and seat IDs
+    passengers.forEach((passenger, index) => {
+      if (localSelectedSeats[index]) {
+        const seatNo = localSelectedSeats[index];
+        const price = seatPricing[seatNo] || 200; // Default to $200 if price not found
+        const seatId = seatIdMapping[seatNo];
+        
+        if (!seatId) {
+          console.error(`No seat_id found for seat ${seatNo}`);
+          alert(`Error: Could not find seat ID for seat ${seatNo}. Please try again.`);
+          return;
+        }
+        
+        selectSeat(index, seatId, price);
+      }
+    });
+
+    // Navigate to payment page
+    navigate("/payment");
+  };
+
+  const handleNextPassenger = () => {
+    if (!localSelectedSeats[currentPassengerIndex]) {
+      alert(`Please select a seat for ${passengers[currentPassengerIndex]?.first_name || `Passenger ${currentPassengerIndex + 1}`}`);
+      return;
+    }
+    
+    if (currentPassengerIndex < passengers.length - 1) {
+      setCurrentPassengerIndex(currentPassengerIndex + 1);
     }
   };
+
+  const handlePreviousPassenger = () => {
+    if (currentPassengerIndex > 0) {
+      setCurrentPassengerIndex(currentPassengerIndex - 1);
+    }
+  };
+
+  // Calculate total seat price
+  const calculateTotalSeatPrice = () => {
+    let total = 0;
+    Object.values(localSelectedSeats).forEach(seatId => {
+      total += seatPricing[seatId] || 0;
+    });
+    return total;
+  };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col">
+        <MainHeaderVer2 />
+        <div className="mt-8">
+          <PreviewBar currentStep={2} />
+        </div>
+        <div className="flex justify-center items-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading seat information...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col">
+        <MainHeaderVer2 />
+        <div className="mt-8">
+          <PreviewBar currentStep={2} />
+        </div>
+        <div className="flex justify-center items-center h-96">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => navigate("/flights/departure")}
+              className="bg-blue-900 text-white px-6 py-2 rounded-lg hover:bg-blue-800"
+            >
+              Back to Flight Selection
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentPassenger = passengers[currentPassengerIndex];
+  const currentSeat = localSelectedSeats[currentPassengerIndex];
+  const seatPrice = currentSeat ? seatPricing[currentSeat] : 0;
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -397,17 +339,49 @@ const Seat = () => {
           <Back />
 
           <div>
-            <p className="text-gray-500 text-sm">Passenger</p>
-            <h2 className="text-2xl font-bold">Passenger’s name</h2>
-            <p className="text-gray-600 mt-1">JT123, Economy</p>
+            <p className="text-gray-500 text-sm">Passenger {currentPassengerIndex + 1} of {passengers.length}</p>
+            <h2 className="text-2xl font-bold">
+              {currentPassenger?.first_name} {currentPassenger?.last_name}
+            </h2>
+            <p className="text-gray-600 mt-1">
+              {selectedFlights.departure?.flight_no || 'Flight'}, {selectedFlights.departure?.class || 'Economy'}
+            </p>
           </div>
 
           <div className="mt-6">
             <p className="text-3xl font-bold">
-              {selectedSeat || "--"}
+              {currentSeat || "--"}
             </p>
             <p className="text-gray-600">Selected Seat</p>
+            {currentSeat && (
+              <p className="text-lg font-semibold text-blue-900 mt-2">
+                ${seatPrice.toFixed(2)}
+              </p>
+            )}
           </div>
+
+          {/* All passengers' seats */}
+          {passengers.length > 1 && (
+            <div className="border-t pt-4">
+              <p className="text-sm font-semibold mb-2">All Passengers:</p>
+              {passengers.map((passenger, index) => (
+                <div key={index} className="flex justify-between items-center py-1">
+                  <span className="text-sm">
+                    {passenger.first_name} {passenger.last_name}
+                  </span>
+                  <span className={`text-sm font-semibold ${localSelectedSeats[index] ? 'text-green-600' : 'text-gray-400'}`}>
+                    {localSelectedSeats[index] || 'Not selected'}
+                  </span>
+                </div>
+              ))}
+              <div className="border-t mt-2 pt-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Total Seat Price:</span>
+                  <span className="font-bold text-blue-900">${calculateTotalSeatPrice().toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Legend */}
           <div className="space-y-2">
@@ -421,15 +395,49 @@ const Seat = () => {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-blue-900 rounded"></div>
-              <span className="text-sm">Selected</span>
+              <span className="text-sm">Your Selection</span>
             </div>
+            {passengers.length > 1 && (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-500 rounded"></div>
+                <span className="text-sm">Other Passenger</span>
+              </div>
+            )}
           </div>
+
+          {/* Navigation buttons */}
+          {passengers.length > 1 && (
+            <div className="flex gap-2">
+              <button
+                onClick={handlePreviousPassenger}
+                disabled={currentPassengerIndex === 0}
+                className={`flex-1 py-2 rounded-lg font-semibold transition ${
+                  currentPassengerIndex === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
+              >
+                Previous
+              </button>
+              <button
+                onClick={handleNextPassenger}
+                disabled={currentPassengerIndex === passengers.length - 1}
+                className={`flex-1 py-2 rounded-lg font-semibold transition ${
+                  currentPassengerIndex === passengers.length - 1
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-200 text-blue-900 hover:bg-blue-300'
+                }`}
+              >
+                Next Passenger
+              </button>
+            </div>
+          )}
 
           <button
             onClick={handleContinue}
             className="mt-6 w-full bg-blue-900 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition"
           >
-            Continue
+            Continue to Fare Options
           </button>
         </div>
 
@@ -449,20 +457,26 @@ const Seat = () => {
                     </div>
                     
 
-                    {row.map((seat, seatIndex) =>
-                      seat ? (
+                    {row.map((seat, seatIndex) => {
+                      // null = aisle space
+                      if (seat === null) {
+                        return <div key={`aisle-${rowIndex}-${seatIndex}`} className="w-7 mx-1"></div>;
+                      }
+                      // undefined = seat doesn't exist (business class B/E positions)
+                      if (seat === undefined) {
+                        return <div key={`empty-${rowIndex}-${seatIndex}`} className="w-8 h-8 mx-1"></div>;
+                      }
+                      // Actual seat
+                      return (
                         <div
                           key={seat.id}
                           className={getSeatClass(seat)}
                           onClick={() => handleSeatClick(seat.id, seat.isBooked)}
                         >
-                          {seat.number}
+                          {seat.number.slice(-1)}
                         </div>
-                      ) : (
-
-                        <div key={`aisle-${rowIndex}-${seatIndex}`} className="w-7 mx-1"></div> 
-                      )
-                    )}
+                      );
+                    })}
                   </div>
                 ))}
               </div>

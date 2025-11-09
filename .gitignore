@@ -26,37 +26,61 @@ tmp/
 *.pid
 *.sock
 # Kiro specs
-.kiro/specs/
+.kiro/
 
-# Documentation and guides (non-functional files)
-README.md
-ARCHITECTURE.md
+# Documentation files (guides, summaries, changelogs)
+*_SUMMARY.md
+*_IMPLEMENTATION.md
+*_CHECKLIST.md
+*_FIX.md
+*_GUIDE.md
+*_COMPLETE.md
+*_SUCCESS.md
+*_STEPS.md
+*_REFERENCE.md
+TASK_*.md
+QUICK_*.md
+STATE_PERSISTENCE_FIX.md
 INTEGRATION_SUMMARY.md
 INTEGRATION_QUICKSTART.md
-backend/README.md
-backend/API_DOCUMENTATION.md
-backend/TESTING_AND_OPTIMIZATION.md
-backend/DEPLOYMENT_GUIDE.md
-backend/ERROR_HANDLING_IMPLEMENTATION.md
-backend/ADMIN_AUTHENTICATION.md
-backend/FRONTEND_BACKEND_MAPPING.md
-backend/DATABASE_UPDATES.md
-backend/FINAL_TESTING_OPTIMIZATION.md
-backend/QUICK_START_TESTING.md
-backend/TASK_12.2_COMPLETION_SUMMARY.md
-backend/src/middleware/README.md
-backend/src/__tests__/integration/README.md
-frontend/API_INTEGRATION.md
+ARCHITECTURE.md
+PROJECT_GAP_ANALYSIS.md
+DEPLOYMENT_*.md
+LOCAL_DEPLOYMENT_GUIDE.md
+FLIGHT_*.md
+RETURN_FLIGHT_BUG_FIX.md
+ROUND_TRIP_EXAMPLE.md
+ADMIN_*.md
+test-registration-flow.md
 
-# Helper scripts and test files
-check-integration.ps1
-pull-frontend-changes.ps1
-backend/test-endpoints.ps1
-backend/create_admin_user.sql
+# Test and helper scripts
+*.ps1
+check-*.ps1
+test-*.ps1
+verify-*.ps1
+fix-*.ps1
+generate-*.ps1
+import-*.ps1
+add-*.ps1
+restart-*.ps1
+start-*.ps1
+pull-*.ps1
 
-# Database and reference files
-backend/jett3_airline (1).sql
-backend/jett3_airline(1) fixed now.sql
+# Database reference files (not needed for deployment)
+backend/jett3_airline*.sql
 backend/user of jett3_airline.txt
+backend/create_admin_user.sql
+backend/scripts/fix-*.sql
+backend/scripts/generate-*.sql
+backend/scripts/add-*.sql
+backend/scripts/optimize-database.sql
+
+# Reference and design files
 brief component code from figma.txt
-backend/Jett3 Airline — Backend Decision Tree.png
+*.png
+*.jpg
+*.jpeg
+
+# Example files
+frontend/src/components/*Example*.jsx
+frontend/src/components/*.example.jsx

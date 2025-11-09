@@ -203,41 +203,70 @@ export const getBookingById = async (req: Request, res: Response) => {
 };
 
 /**
- * Update booking status
+ * Update booking status and other fields (support, fasttrack)
  */
 export const updateBookingStatus = async (req: Request, res: Response) => {
   try {
     const bookingId = parseInt(req.params.id);
-    const { status } = req.body;
+    const { status, support, fasttrack } = req.body;
 
     if (isNaN(bookingId)) {
       throw new ValidationError('Invalid booking ID');
     }
 
-    if (!status) {
-      throw new ValidationError('Status is required');
-    }
-
-    const validStatuses = Object.values(BookingStatus);
-    if (!validStatuses.includes(status)) {
-      throw new ValidationError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
-    }
-
+    // Check if booking exists
     const booking = await bookingModel.findBookingById(bookingId);
     if (!booking) {
       throw new NotFoundError('Booking not found');
     }
 
-    const updated = await bookingModel.updateBookingStatus(bookingId, status);
+    // Build update data object
+    const updateData: any = {};
+
+    // Validate and add status if provided
+    if (status !== undefined) {
+      const validStatuses = Object.values(BookingStatus);
+      if (!validStatuses.includes(status)) {
+        throw new ValidationError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      }
+      updateData.status = status;
+    }
+
+    // Validate and add support if provided
+    if (support !== undefined) {
+      if (support !== 'Yes' && support !== 'No') {
+        throw new ValidationError('Support must be either "Yes" or "No"');
+      }
+      updateData.support = support;
+    }
+
+    // Validate and add fasttrack if provided
+    if (fasttrack !== undefined) {
+      if (fasttrack !== 'Yes' && fasttrack !== 'No') {
+        throw new ValidationError('Fasttrack must be either "Yes" or "No"');
+      }
+      updateData.fasttrack = fasttrack;
+    }
+
+    // Check if there's anything to update
+    if (Object.keys(updateData).length === 0) {
+      throw new ValidationError('No valid fields provided for update');
+    }
+
+    // Update the booking
+    const updated = await bookingModel.update(bookingId, updateData, 'booking_id');
 
     if (!updated) {
-      throw new DatabaseError('Failed to update booking status');
+      throw new DatabaseError('Failed to update booking');
     }
+
+    // Get updated booking details
+    const updatedBooking = await bookingModel.getBookingDetails(bookingId);
 
     res.json({
       success: true,
-      message: 'Booking status updated successfully',
-      data: { booking_id: bookingId, status }
+      message: 'Booking updated successfully',
+      data: { booking: updatedBooking }
     });
   } catch (error) {
     if (error instanceof ValidationError || error instanceof NotFoundError) {
@@ -246,10 +275,10 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
         message: error.message
       });
     } else {
-      console.error('Error updating booking status:', error);
+      console.error('Error updating booking:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to update booking status',
+        message: 'Failed to update booking',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }

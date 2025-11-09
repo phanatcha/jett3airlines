@@ -1,0 +1,70 @@
+========================================
+   JETT3 AIRLINES - LOCAL DEPLOYMENT
+========================================
+
+YOUR SERVERS ARE STARTING!
+
+Check the 2 new PowerShell windows that just opened:
+  - One for BACKEND (Port 8080)
+  - One for FRONTEND (Port 5173)
+
+========================================
+IMPORTANT: START MYSQL FIRST!
+========================================
+
+Choose ONE method:
+
+1. EASIEST: Open MySQL Workbench
+   - Find it in Start Menu
+   - Click your local connection
+   - Done!
+
+2. OR use Windows Services:
+   - Press Win+R
+   - Type: services.msc
+   - Find "MySQL" and click Start
+
+3. OR use Command Line:
+   - Open PowerShell as Admin
+   - Run: net start MySQL80
+
+========================================
+THEN OPEN YOUR BROWSER
+========================================
+
+Go to: http://localhost:5173
+
+You should see the Jett3 Airlines website!
+
+========================================
+TESTING
+========================================
+
+1. Click "Sign Up" to create an account
+2. Login with your credentials
+3. Search for flights
+4. Make a test booking
+
+========================================
+NEED HELP?
+========================================
+
+Read: DEPLOYMENT_COMPLETE.md
+
+========================================
+TO STOP SERVERS
+========================================
+
+Go to each PowerShell window and press Ctrl+C
+
+========================================
+TO RESTART
+========================================
+
+Run: .\start-servers.ps1
+
+========================================
+
+Enjoy your airline booking system!
+
+========================================
