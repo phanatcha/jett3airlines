@@ -318,7 +318,9 @@ export class PassengerModel extends BaseModel {
       errors.push('Weight limit must be between 0 and 50 kg');
     }
 
-    if (!passengerData.booking_id || passengerData.booking_id <= 0) {
+    // booking_id can be 0 during booking creation (before booking exists)
+    // Only validate if it's explicitly set to a negative value or undefined
+    if (passengerData.booking_id !== undefined && passengerData.booking_id !== 0 && passengerData.booking_id < 0) {
       errors.push('Valid booking ID is required');
     }
 

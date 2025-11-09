@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import CountryAirportSelector from "../components/CountryAirportSelector";
+import { useBooking } from "../context/BookingContext";
+import { flightsAPI } from "../services/api";
 
 const Flights = () => {
     const navigate = useNavigate();
+    const { updateSearchCriteria } = useBooking();
     const [formData, setFormData] = useState({
         tripType: "round-trip",
-        fromWhere: "Bangkok",
+        fromWhere: "",
         toWhere: "",
         departureDate: "",
         returnDate: "",
@@ -15,6 +19,13 @@ const Flights = () => {
         directFlightsOnly: false,
     });
 
+    // State for country selection
+    const [departureCountry, setDepartureCountry] = useState("");
+    const [arrivalCountry, setArrivalCountry] = useState("");
+    
+    // Loading and error states
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { id, value, type, checked, name } = e.target;
@@ -22,11 +33,124 @@ const Flights = () => {
       ...prev,
       [id || name]: type === "checkbox" ? checked : value,
     }));
+    // Clear error when user makes changes
+    if (error) setError("");
   };
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    // Validate required fields
+    if (!formData.fromWhere) {
+      setError("Please select a departure airport");
+      return false;
+    }
+    
+    if (!formData.toWhere) {
+      setError("Please select an arrival airport");
+      return false;
+    }
+    
+    if (formData.fromWhere === formData.toWhere) {
+      setError("Departure and arrival airports must be different");
+      return false;
+    }
+    
+    if (!formData.departureDate) {
+      setError("Please select a departure date");
+      return false;
+    }
+    
+    // Validate departure date is not in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const departDate = new Date(formData.departureDate);
+    
+    if (departDate < today) {
+      setError("Departure date cannot be in the past");
+      return false;
+    }
+    
+    // Validate return date for round-trip
+    if (formData.tripType === "round-trip") {
+      if (!formData.returnDate) {
+        setError("Please select a return date for round-trip");
+        return false;
+      }
+      
+      const returnDate = new Date(formData.returnDate);
+      if (returnDate < departDate) {
+        setError("Return date must be after departure date");
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate("/flights/departure");
+    
+    // Clear previous error
+    setError("");
+    
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // Prepare search parameters for API
+      const searchParams = {
+        depart_airport_id: parseInt(formData.fromWhere),
+        arrive_airport_id: parseInt(formData.toWhere),
+        depart_date: formData.departureDate,
+        passengers: parseInt(formData.passengers),
+        class: formData.cabinClass
+      };
+      
+      // Call flight search API
+      const response = await flightsAPI.search(searchParams);
+      
+      if (response.success) {
+        // Store search criteria in BookingContext
+        updateSearchCriteria({
+          tripType: formData.tripType,
+          fromWhere: formData.fromWhere,
+          toWhere: formData.toWhere,
+          departureDate: formData.departureDate,
+          returnDate: formData.returnDate,
+          passengers: formData.passengers,
+          cabinClass: formData.cabinClass,
+          directFlightsOnly: formData.directFlightsOnly,
+          // Store search results
+          searchResults: response.data
+        });
+        
+        // Navigate to departure flight selection page
+        navigate("/flights/departure", { 
+          state: { 
+            flights: response.data,
+            searchCriteria: formData
+          } 
+        });
+      } else {
+        setError(response.message || "Failed to search flights. Please try again.");
+      }
+    } catch (err) {
+      console.error("Flight search error:", err);
+      
+      // Handle specific error messages
+      if (err.error) {
+        setError(err.error.message || err.message || "Failed to search flights");
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError("An error occurred while searching for flights. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };   
 
   return (
@@ -83,33 +207,44 @@ const Flights = () => {
           </div>
 
           <div className="bg-white text-black rounded-xl mb-6 p-3">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center space-x-2 border-b border-gray-300 pb-2">
-                <img
-                  src="/icons/departure-icon.svg"
-                  alt="Departure Icon"
-                  className="w-5 h-5 text-gray-500"
-                />
-                <input
-                  id="fromWhere"
-                  value={formData.fromWhere}
-                  onChange={handleChange}
-                  className="w-full bg-transparent outline-none"
-                  placeholder="From where?"
+            <div className="flex flex-col space-y-3">
+              {/* Departure Country and Airport */}
+              <div className="border-b border-gray-300 pb-3">
+                <CountryAirportSelector
+                  selectedCountry={departureCountry}
+                  onCountryChange={(country) => {
+                    setDepartureCountry(country);
+                    setFormData(prev => ({ ...prev, fromWhere: "" }));
+                  }}
+                  selectedAirport={formData.fromWhere}
+                  onAirportChange={(airportId) => {
+                    setFormData(prev => ({ ...prev, fromWhere: airportId }));
+                  }}
+                  countryPlaceholder="Select departure country"
+                  airportPlaceholder="Select departure airport"
+                  showIcons={true}
+                  iconSrc="/icons/departure-icon.svg"
+                  className="country-airport-selector-flights"
                 />
               </div>
-              <div className="flex items-center space-x-2 pt-2">
-                <img
-                  src="/icons/arrival-icon.svg"
-                  alt="Arrival Icon"
-                  className="w-5 h-5 text-gray-500"
-                />
-                <input
-                  id="toWhere"
-                  value={formData.toWhere}
-                  onChange={handleChange}
-                  className="w-full bg-transparent outline-none"
-                  placeholder="Where to?"
+
+              {/* Arrival Country and Airport */}
+              <div className="pt-2">
+                <CountryAirportSelector
+                  selectedCountry={arrivalCountry}
+                  onCountryChange={(country) => {
+                    setArrivalCountry(country);
+                    setFormData(prev => ({ ...prev, toWhere: "" }));
+                  }}
+                  selectedAirport={formData.toWhere}
+                  onAirportChange={(airportId) => {
+                    setFormData(prev => ({ ...prev, toWhere: airportId }));
+                  }}
+                  countryPlaceholder="Select arrival country"
+                  airportPlaceholder="Select arrival airport"
+                  showIcons={true}
+                  iconSrc="/icons/arrival-icon.svg"
+                  className="country-airport-selector-flights"
                 />
               </div>
             </div>
@@ -184,11 +319,47 @@ const Flights = () => {
             </label>
           </div>
 
+          {/* Error message */}
+          {error && (
+            <div className="bg-red-500/20 border border-red-500 text-white rounded-lg p-3 mb-4 text-sm">
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-primary-300 hover:bg-primary-500 text-white rounded-lg py-3 font-medium transition mt-4"
+            disabled={loading}
+            className={`w-full bg-primary-300 hover:bg-primary-500 text-white rounded-lg py-3 font-medium transition mt-4 ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            Search
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Searching...
+              </span>
+            ) : (
+              "Search"
+            )}
           </button>
         </form>
       </div>

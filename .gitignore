@@ -26,10 +26,61 @@ tmp/
 *.pid
 *.sock
 # Kiro specs
-.kiro/specs/
+.kiro/
 
-# Project-specific files
-pull-frontend-changes.ps1
-backend/Jett3 Airline — Backend Decision Tree.png
-backend/jett3_airline (1).sql
+# Documentation files (guides, summaries, changelogs)
+*_SUMMARY.md
+*_IMPLEMENTATION.md
+*_CHECKLIST.md
+*_FIX.md
+*_GUIDE.md
+*_COMPLETE.md
+*_SUCCESS.md
+*_STEPS.md
+*_REFERENCE.md
+TASK_*.md
+QUICK_*.md
+STATE_PERSISTENCE_FIX.md
+INTEGRATION_SUMMARY.md
+INTEGRATION_QUICKSTART.md
+ARCHITECTURE.md
+PROJECT_GAP_ANALYSIS.md
+DEPLOYMENT_*.md
+LOCAL_DEPLOYMENT_GUIDE.md
+FLIGHT_*.md
+RETURN_FLIGHT_BUG_FIX.md
+ROUND_TRIP_EXAMPLE.md
+ADMIN_*.md
+test-registration-flow.md
+
+# Test and helper scripts
+*.ps1
+check-*.ps1
+test-*.ps1
+verify-*.ps1
+fix-*.ps1
+generate-*.ps1
+import-*.ps1
+add-*.ps1
+restart-*.ps1
+start-*.ps1
+pull-*.ps1
+
+# Database reference files (not needed for deployment)
+backend/jett3_airline*.sql
+backend/user of jett3_airline.txt
+backend/create_admin_user.sql
+backend/scripts/fix-*.sql
+backend/scripts/generate-*.sql
+backend/scripts/add-*.sql
+backend/scripts/optimize-database.sql
+
+# Reference and design files
 brief component code from figma.txt
+*.png
+*.jpg
+*.jpeg
+
+# Example files
+frontend/src/components/*Example*.jsx
+frontend/src/components/*.example.jsx

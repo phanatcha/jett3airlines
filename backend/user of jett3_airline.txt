@@ -1,0 +1,10 @@
+create user 'passenger' identified by 'passenger1234';
+create user 'admin_jett3' identified by 'admin_jett31234';
+
+grant insert, update on jett3_airline.client to 'passenger';
+grant insert, update on jett3_airline.booking to 'passenger';
+grant insert, update on jett3_airline.passenger to 'passenger';
+grant insert, update on jett3_airline.baggage to 'passenger';
+grant select on jett3_airline.* to 'passenger';
+
+grant all privileges on jett3_airline.* to 'admin_jett3';

@@ -29,8 +29,13 @@ export const generalRateLimit = createRateLimiter();
 
 /**
  * Stricter rate limiter for authentication endpoints
+ * More lenient in development for testing
  */
-export const authRateLimit = createRateLimiter(15 * 60 * 1000, 5); // 5 requests per 15 minutes
+const isDevelopment = process.env.NODE_ENV === 'development';
+export const authRateLimit = createRateLimiter(
+  15 * 60 * 1000, // 15 minutes
+  isDevelopment ? 50 : 5 // 50 requests in dev, 5 in production
+);
 
 /**
  * Security headers middleware
@@ -55,7 +60,7 @@ export const securityHeaders = helmet({
  * CORS configuration middleware
  */
 export const corsOptions = {
-  origin: config.cors.origin,
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

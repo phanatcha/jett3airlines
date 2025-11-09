@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, extractTokenFromHeader, JWTPayload } from '../utils/auth';
+import { AuthenticationError, AuthorizationError } from '../utils/errors';
 
 // Extend Express Request interface to include user
 declare global {
@@ -23,38 +24,27 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     const token = extractTokenFromHeader(req.headers.authorization);
     
     if (!token) {
-      res.status(401).json({
-        success: false,
-        error: {
-          code: 'MISSING_TOKEN',
-          message: 'Access token is required'
-        }
-      });
-      return;
+      throw new AuthenticationError('Access token is required');
     }
 
     const decoded = verifyToken(token);
     req.user = decoded;
     next();
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-    
-    let errorCode = 'AUTH_FAILED';
-    let statusCode = 401;
-    
-    if (errorMessage === 'Token expired') {
-      errorCode = 'TOKEN_EXPIRED';
-    } else if (errorMessage === 'Invalid token') {
-      errorCode = 'INVALID_TOKEN';
+    if (error instanceof AuthenticationError) {
+      next(error);
+      return;
     }
 
-    res.status(statusCode).json({
-      success: false,
-      error: {
-        code: errorCode,
-        message: errorMessage
-      }
-    });
+    const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+    
+    if (errorMessage === 'Token expired') {
+      next(new AuthenticationError('Token expired'));
+    } else if (errorMessage === 'Invalid token') {
+      next(new AuthenticationError('Invalid token'));
+    } else {
+      next(new AuthenticationError(errorMessage));
+    }
   }
 };
 
@@ -82,13 +72,7 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
  */
 export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    res.status(401).json({
-      success: false,
-      error: {
-        code: 'AUTHENTICATION_REQUIRED',
-        message: 'Authentication is required to access this resource'
-      }
-    });
+    next(new AuthenticationError('Authentication is required to access this resource'));
     return;
   }
   
@@ -100,26 +84,14 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
  */
 export const requireOwnership = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    res.status(401).json({
-      success: false,
-      error: {
-        code: 'AUTHENTICATION_REQUIRED',
-        message: 'Authentication is required'
-      }
-    });
+    next(new AuthenticationError('Authentication is required'));
     return;
   }
 
   const requestedClientId = parseInt(req.params.clientId || req.body.client_id);
   
   if (isNaN(requestedClientId) || req.user.client_id !== requestedClientId) {
-    res.status(403).json({
-      success: false,
-      error: {
-        code: 'ACCESS_DENIED',
-        message: 'You can only access your own resources'
-      }
-    });
+    next(new AuthorizationError('You can only access your own resources'));
     return;
   }
   

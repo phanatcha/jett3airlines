@@ -26,6 +26,7 @@ export class BookingModel extends BaseModel {
           c.lastname as client_lastname,
           c.email as client_email,
           c.phone_no as client_phone,
+          f.flight_no,
           f.depart_when,
           f.arrive_when,
           f.status as flight_status,

@@ -1,6 +1,6 @@
 import { BaseModel } from './BaseModel';
 import { Client, CreateClient, UpdateClient, ClientRegistrationRequest, ClientLoginRequest } from '../types/database';
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 import crypto from 'crypto';
 
 // Type declarations for Node.js globals (fallback if @types/node is not available)
@@ -48,15 +48,15 @@ export class ClientModel extends BaseModel {
   // Create new client with encrypted password and card number
   async createClient(clientData: ClientRegistrationRequest): Promise<number> {
     try {
-      // Hash password
-      const hashedPassword = await bcrypt.hash(clientData.password, 12);
+      // Hash password using argon2
+      const hashedPassword = await argon2.hash(clientData.password);
       
       // Encrypt card number
       const encryptedCardNo = this.encryptCardNumber(clientData.card_no);
 
       const createData: CreateClient = {
         username: clientData.username,
-        password: Buffer.from(hashedPassword, 'utf8'),
+        password: hashedPassword,
         email: clientData.email,
         phone_no: clientData.phone_no,
         firstname: clientData.firstname,
@@ -87,9 +87,11 @@ export class ClientModel extends BaseModel {
         return null;
       }
 
-      // Convert Buffer to string for password comparison
-      const storedPassword = client.password.toString('utf8');
-      const isValidPassword = await bcrypt.compare(loginData.password, storedPassword);
+      // Verify password using argon2
+      const storedPassword = typeof client.password === 'string' 
+        ? client.password 
+        : client.password.toString('utf8');
+      const isValidPassword = await argon2.verify(storedPassword, loginData.password);
       
       if (!isValidPassword) {
         return null;
@@ -105,10 +107,12 @@ export class ClientModel extends BaseModel {
   // Update client information
   async updateClient(clientId: number, updateData: UpdateClient): Promise<boolean> {
     try {
-      // If password is being updated, hash it
+      // If password is being updated, hash it using argon2
       if (updateData.password) {
-        const hashedPassword = await bcrypt.hash(updateData.password.toString(), 12);
-        updateData.password = Buffer.from(hashedPassword, 'utf8');
+        const passwordStr = typeof updateData.password === 'string' 
+          ? updateData.password 
+          : updateData.password.toString();
+        updateData.password = await argon2.hash(passwordStr);
       }
 
       // If card number is being updated, encrypt it

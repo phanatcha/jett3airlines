@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, param, query, validationResult, ValidationChain } from 'express-validator';
+import { ValidationError } from '../utils/errors';
+import { formatValidationErrors } from './errorHandler';
 
 /**
  * Middleware to handle validation errors
@@ -8,20 +10,9 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
-    const formattedErrors = errors.array().map(error => ({
-      field: error.type === 'field' ? error.path : 'unknown',
-      message: error.msg,
-      value: error.type === 'field' ? error.value : undefined
-    }));
-
-    res.status(422).json({
-      success: false,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Validation failed',
-        details: formattedErrors
-      }
-    });
+    const formattedErrors = formatValidationErrors(errors.array());
+    const error = new ValidationError('Validation failed', formattedErrors);
+    next(error);
     return;
   }
   
@@ -227,9 +218,24 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction): 
     return value;
   };
 
-  req.body = sanitizeValue(req.body);
-  req.query = sanitizeValue(req.query);
-  req.params = sanitizeValue(req.params);
+  // Sanitize body (mutable)
+  if (req.body) {
+    req.body = sanitizeValue(req.body);
+  }
+  
+  // Sanitize query parameters (need to modify in place)
+  if (req.query) {
+    for (const key in req.query) {
+      (req.query as any)[key] = sanitizeValue(req.query[key]);
+    }
+  }
+  
+  // Sanitize params (need to modify in place)
+  if (req.params) {
+    for (const key in req.params) {
+      (req.params as any)[key] = sanitizeValue(req.params[key]);
+    }
+  }
   
   next();
 };/*
@@ -832,6 +838,268 @@ export const validatePassengerUpdate = [
     .optional()
     .isInt({ min: 1 })
     .withMessage('Seat ID must be a positive integer'),
+    
+  handleValidationErrors
+];
+/**
+
+ * Validation for payment processing
+ */
+export const validatePaymentProcessing = [
+  body('booking_id')
+    .isInt({ min: 1 })
+    .withMessage('Booking ID must be a positive integer'),
+    
+  body('amount')
+    .isFloat({ min: 0.01 })
+    .withMessage('Payment amount must be greater than 0'),
+    
+  body('currency')
+    .optional()
+    .isIn(['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CNY'])
+    .withMessage('Currency must be a valid currency code'),
+    
+  body('payment_method')
+    .optional()
+    .isIn(['VISA', 'MASTERCARD', 'AMEX', 'DISCOVER', 'JCB', 'MAESTRO', 'PAYPAL', 'APPLE_PAY'])
+    .withMessage('Payment method must be a valid payment type'),
+    
+  handleValidationErrors
+];
+
+/**
+ * Validation for refund processing
+ */
+export const validateRefundProcessing = [
+  param('bookingId')
+    .isInt({ min: 1 })
+    .withMessage('Booking ID must be a positive integer'),
+    
+  body('reason')
+    .optional()
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Refund reason must be between 1 and 500 characters'),
+    
+  handleValidationErrors
+];
+
+/**
+ * Validation for baggage creation
+ */
+export const validateBaggageCreation = [
+  body('passenger_id')
+    .isInt({ min: 1 })
+    .withMessage('Passenger ID must be a positive integer'),
+    
+  body('tracking_no')
+    .optional()
+    .matches(/^[A-Z0-9]{10,20}$/)
+    .withMessage('Tracking number must be 10-20 uppercase alphanumeric characters'),
+    
+  body('status')
+    .optional()
+    .isIn(['checked_in', 'in_transit', 'arrived', 'delivered', 'lost'])
+    .withMessage('Status must be one of: checked_in, in_transit, arrived, delivered, lost'),
+    
+  handleValidationErrors
+];
+
+/**
+ * Validation for baggage status update
+ */
+export const validateBaggageStatusUpdate = [
+  param('baggageId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Baggage ID must be a positive integer'),
+    
+  param('trackingNo')
+    .optional()
+    .matches(/^[A-Z0-9]{10,20}$/)
+    .withMessage('Tracking number must be 10-20 uppercase alphanumeric characters'),
+    
+  body('status')
+    .isIn(['checked_in', 'in_transit', 'arrived', 'delivered', 'lost'])
+    .withMessage('Status must be one of: checked_in, in_transit, arrived, delivered, lost'),
+    
+  handleValidationErrors
+];
+
+/**
+ * Validation for baggage tracking
+ */
+export const validateBaggageTracking = [
+  param('trackingNo')
+    .matches(/^[A-Z0-9]{10,20}$/)
+    .withMessage('Tracking number must be 10-20 uppercase alphanumeric characters'),
+    
+  handleValidationErrors
+];
+
+/**
+ * Validation for baggage search
+ */
+export const validateBaggageSearch = [
+  query('tracking_no')
+    .optional()
+    .matches(/^[A-Z0-9]{10,20}$/)
+    .withMessage('Tracking number must be 10-20 uppercase alphanumeric characters'),
+    
+  query('passenger_id')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Passenger ID must be a positive integer'),
+    
+  query('flight_id')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Flight ID must be a positive integer'),
+    
+  query('status')
+    .optional()
+    .isIn(['checked_in', 'in_transit', 'arrived', 'delivered', 'lost'])
+    .withMessage('Status must be one of: checked_in, in_transit, arrived, delivered, lost'),
+    
+  handleValidationErrors
+];
+
+/**
+ * Validation for report date range queries
+ */
+export const validateReportDateRange = [
+  query('startDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Start date must be a valid date (YYYY-MM-DD)'),
+    
+  query('endDate')
+    .optional()
+    .isISO8601()
+    .withMessage('End date must be a valid date (YYYY-MM-DD)')
+    .custom((value, { req }) => {
+      if (req.query && req.query.startDate && value) {
+        const startDate = new Date(req.query.startDate as string);
+        const endDate = new Date(value);
+        
+        if (endDate < startDate) {
+          throw new Error('End date must be after start date');
+        }
+      }
+      return true;
+    }),
+    
+  query('days')
+    .optional()
+    .isInt({ min: 1, max: 365 })
+    .withMessage('Days must be between 1 and 365'),
+    
+  handleValidationErrors
+];
+
+/**
+ * Validation for report export
+ */
+export const validateReportExport = [
+  query('type')
+    .isIn(['metrics', 'bookings', 'flights', 'revenue', 'passengers'])
+    .withMessage('Report type must be one of: metrics, bookings, flights, revenue, passengers'),
+    
+  query('startDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Start date must be a valid date (YYYY-MM-DD)'),
+    
+  query('endDate')
+    .optional()
+    .isISO8601()
+    .withMessage('End date must be a valid date (YYYY-MM-DD)'),
+    
+  handleValidationErrors
+];
+
+/**
+ * Validation for airport operations
+ */
+export const validateAirportCreation = [
+  body('city_name')
+    .notEmpty()
+    .withMessage('City name is required')
+    .isLength({ max: 100 })
+    .withMessage('City name must be less than 100 characters'),
+    
+  body('airport_name')
+    .notEmpty()
+    .withMessage('Airport name is required')
+    .isLength({ max: 200 })
+    .withMessage('Airport name must be less than 200 characters'),
+    
+  body('iata_code')
+    .notEmpty()
+    .withMessage('IATA code is required')
+    .matches(/^[A-Z]{3}$/)
+    .withMessage('IATA code must be exactly 3 uppercase letters'),
+    
+  body('country_name')
+    .notEmpty()
+    .withMessage('Country name is required')
+    .isLength({ max: 100 })
+    .withMessage('Country name must be less than 100 characters'),
+    
+  handleValidationErrors
+];
+
+/**
+ * Validation for airport update
+ */
+export const validateAirportUpdate = [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('Airport ID must be a positive integer'),
+    
+  body('city_name')
+    .optional()
+    .notEmpty()
+    .withMessage('City name cannot be empty')
+    .isLength({ max: 100 })
+    .withMessage('City name must be less than 100 characters'),
+    
+  body('airport_name')
+    .optional()
+    .notEmpty()
+    .withMessage('Airport name cannot be empty')
+    .isLength({ max: 200 })
+    .withMessage('Airport name must be less than 200 characters'),
+    
+  body('iata_code')
+    .optional()
+    .notEmpty()
+    .withMessage('IATA code cannot be empty')
+    .matches(/^[A-Z]{3}$/)
+    .withMessage('IATA code must be exactly 3 uppercase letters'),
+    
+  body('country_name')
+    .optional()
+    .notEmpty()
+    .withMessage('Country name cannot be empty')
+    .isLength({ max: 100 })
+    .withMessage('Country name must be less than 100 characters'),
+    
+  handleValidationErrors
+];
+
+/**
+ * Validation for pagination parameters
+ */
+export const validatePagination = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+    
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
     
   handleValidationErrors
 ];

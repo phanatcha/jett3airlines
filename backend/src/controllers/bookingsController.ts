@@ -1,15 +1,17 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { BookingModel } from '../models/Booking';
 import { SeatModel } from '../models/Seat';
 import { FlightModel } from '../models/Flight';
 import { PassengerModel } from '../models/Passenger';
-import { BookingRequest, BookingStatus, CreatePassenger, Booking } from '../types/database';
+import { PaymentModel } from '../models/Payment';
+import { BookingRequest, Booking, PaymentStatus } from '../types/database';
 import { AuthenticatedRequest } from '../middleware/auth';
 
 const bookingModel = new BookingModel();
 const seatModel = new SeatModel();
 const flightModel = new FlightModel();
 const passengerModel = new PassengerModel();
+const paymentModel = new PaymentModel();
 
 export class BookingsController {
   // Create new booking with passenger validation and seat conflict prevention
@@ -144,12 +146,18 @@ export class BookingsController {
       });
 
     } catch (error) {
+      console.error('=== BOOKING CREATION ERROR (BACKEND) ===');
       console.error('Error creating booking:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('=========================================');
+      
       res.status(500).json({
         success: false,
         error: {
           code: 'INTERNAL_ERROR',
-          message: 'Failed to create booking'
+          message: 'Failed to create booking',
+          details: error instanceof Error ? error.message : String(error)
         }
       });
     }
@@ -387,7 +395,7 @@ export class BookingsController {
     }
   }
 
-  // Cancel booking
+  // Cancel booking with automatic refund processing
   async cancelBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -415,6 +423,43 @@ export class BookingsController {
         return;
       }
 
+      // Get booking details
+      const booking = await bookingModel.findBookingById(bookingId);
+      if (!booking) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: 'BOOKING_NOT_FOUND',
+            message: 'Booking not found'
+          }
+        });
+        return;
+      }
+
+      // Check if booking belongs to client
+      if (booking.client_id !== clientId) {
+        res.status(403).json({
+          success: false,
+          error: {
+            code: 'ACCESS_DENIED',
+            message: 'Access denied to this booking'
+          }
+        });
+        return;
+      }
+
+      // Check if booking is already cancelled
+      if (booking.status === 'cancelled') {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'ALREADY_CANCELLED',
+            message: 'Booking is already cancelled'
+          }
+        });
+        return;
+      }
+
       // Check if client can modify this booking
       const canModify = await bookingModel.canModifyBooking(bookingId, clientId);
       if (!canModify) {
@@ -422,18 +467,47 @@ export class BookingsController {
           success: false,
           error: {
             code: 'CANCELLATION_NOT_ALLOWED',
-            message: 'Booking cannot be cancelled at this time'
+            message: 'Booking cannot be cancelled at this time (must be at least 24 hours before departure)'
           }
         });
         return;
       }
 
-      // Cancel the booking
-      await bookingModel.cancelBooking(bookingId);
+      // Check if payment exists and needs refund
+      const payment = await paymentModel.findPaymentByBookingId(bookingId);
+      let refundInfo = null;
+
+      if (payment && payment.status === PaymentStatus.COMPLETED) {
+        // Process refund automatically
+        try {
+          const refundId = await paymentModel.processRefund(bookingId);
+          const refundReceipt = await paymentModel.getPaymentReceipt(refundId);
+          refundInfo = {
+            refund_id: refundId,
+            refund_amount: Math.abs((refundReceipt as any).amount),
+            refund_status: 'refunded',
+            refund_receipt: refundReceipt
+          };
+        } catch (refundError) {
+          console.error('Error processing refund:', refundError);
+          // Continue with cancellation even if refund fails
+          // The refund can be processed manually later
+        }
+      } else {
+        // No payment or payment not completed, just cancel the booking
+        await bookingModel.cancelBooking(bookingId);
+      }
 
       res.json({
         success: true,
-        message: 'Booking cancelled successfully'
+        data: {
+          booking_id: bookingId,
+          status: 'cancelled',
+          refund: refundInfo
+        },
+        message: refundInfo 
+          ? 'Booking cancelled and refund processed successfully' 
+          : 'Booking cancelled successfully'
       });
 
     } catch (error) {
@@ -443,6 +517,85 @@ export class BookingsController {
         error: {
           code: 'INTERNAL_ERROR',
           message: 'Failed to cancel booking'
+        }
+      });
+    }
+  }
+
+  // Update booking status (admin only)
+  async updateBookingStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const bookingId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (!status) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Status is required'
+          }
+        });
+        return;
+      }
+
+      // Validate status value
+      const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+      if (!validStatuses.includes(status)) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_STATUS',
+            message: `Status must be one of: ${validStatuses.join(', ')}`
+          }
+        });
+        return;
+      }
+
+      // Check if booking exists
+      const booking = await bookingModel.findBookingById(bookingId);
+      if (!booking) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: 'BOOKING_NOT_FOUND',
+            message: 'Booking not found'
+          }
+        });
+        return;
+      }
+
+      // Update booking status
+      const updateSuccess = await bookingModel.updateBookingStatus(bookingId, status);
+
+      if (!updateSuccess) {
+        res.status(500).json({
+          success: false,
+          error: {
+            code: 'UPDATE_FAILED',
+            message: 'Failed to update booking status'
+          }
+        });
+        return;
+      }
+
+      // Get updated booking
+      const updatedBooking = await bookingModel.getBookingDetails(bookingId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Booking status updated successfully',
+        data: {
+          booking: updatedBooking
+        }
+      });
+    } catch (error) {
+      console.error('Update booking status error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Internal server error while updating booking status'
         }
       });
     }

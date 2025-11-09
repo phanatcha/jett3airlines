@@ -1,10 +1,14 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import { BookingProvider } from './context/BookingContext'
 import Home from './pages/Home'
 import Flights from './pages/Flights'
 import Admin from './pages/Admin'
 import EditFlight from './pages/EditFlight'
+import EditBooking from './pages/EditBooking'
 import SignUp from './pages/SignUp'
+import SignUpSuccess from './pages/SignUpSuccess'
 import Login from './pages/Login'
 import Info from './pages/Info'
 import Book from './pages/Book'
@@ -17,39 +21,52 @@ import PassengerInfo from './pages/PassengerInfo'
 import Seat from './pages/Seat'
 import Payment from './pages/Payment'
 import Confirmation from './pages/Confirmation'
+import MyBookings from './pages/MyBookings'
+import BookingDetails from './pages/BookingDetails'
+import Profile from './pages/Profile'
 
 const App = () => {
   return (
     <Router>
-      <div>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/info" element={<Info />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/edit-flight" element={<EditFlight />} />
-          <Route path="/book" element={<Book />} />
-          <Route path="/experience" element={<Experience />} />
-          <Route path="/contact" element={<Contact />} />
+      <AuthProvider>
+        <BookingProvider>
+          <div>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/signup-success" element={<SignUpSuccess />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/info" element={<Info />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/edit-flight" element={<EditFlight />} />
+              <Route path="/admin/edit-booking" element={<EditBooking />} />
+              <Route path="/book" element={<Book />} />
+              <Route path="/experience" element={<Experience />} />
+              <Route path="/contact" element={<Contact />} />
 
-          <Route path="/flights" element={<Flights />} />
-          <Route path="/flights/departure" element={<Departure />} />
-          <Route path="/flights/return" element={<Return />} />
+              <Route path="/flights" element={<Flights />} />
+              <Route path="/flights/departure" element={<Departure />} />
+              <Route path="/flights/return" element={<Return />} />
 
-          <Route path="/fare" element={<Fare />} />
-          <Route path="/passengerinfo" element={<PassengerInfo />} />
-          <Route path="/seat" element={<Seat />} />
-          <Route path="/payment" element={<Payment />} />
-          <Route path="/confirmation" element={<Confirmation />} />
+              <Route path="/fare" element={<Fare />} />
+              <Route path="/passenger-info" element={<PassengerInfo />} />
+              <Route path="/seat" element={<Seat />} />
+              <Route path="/payment" element={<Payment />} />
+              <Route path="/confirmation" element={<Confirmation />} />
 
-          <Route path="/experience/first-class" element={<h2 className="flex items-center justify-center pt-10">Coming Soon!</h2>} />
-          <Route path="/experience/diner" element={<h2 className="flex items-center justify-center pt-10">Coming Soon!</h2>} />
-          <Route path="/experience/services" element={<h2 className="flex items-center justify-center pt-10">Coming Soon!</h2>} />
+              <Route path="/my-bookings" element={<MyBookings />} />
+              <Route path="/booking-details/:bookingId" element={<BookingDetails />} />
+              <Route path="/profile" element={<Profile />} />
 
-          <Route path="*" element={<h2>404 Page Not Found</h2>} />
-        </Routes>
-      </div>
+              <Route path="/experience/first-class" element={<h2 className="flex items-center justify-center pt-10">Coming Soon!</h2>} />
+              <Route path="/experience/diner" element={<h2 className="flex items-center justify-center pt-10">Coming Soon!</h2>} />
+              <Route path="/experience/services" element={<h2 className="flex items-center justify-center pt-10">Coming Soon!</h2>} />
+
+              <Route path="*" element={<h2>404 Page Not Found</h2>} />
+            </Routes>
+          </div>
+        </BookingProvider>
+      </AuthProvider>
     </Router>
   )
 }

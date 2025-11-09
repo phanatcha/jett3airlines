@@ -8,10 +8,13 @@ const SignUp = () => {
     firstName: "",
     lastName: "",
     email: "",
+    username: "",
     password: "",
     confirmPassword: "",
+    phoneNumber: "",
     agreeTerms: false,
   });
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { id, value, type, checked } = e.target;
@@ -19,10 +22,12 @@ const SignUp = () => {
       ...prev,
       [id]: type === "checkbox" ? checked : value,
     }));
+    setError(""); // Clear error on input change
   };
 
 const handleSubmit = (e) => {
   e.preventDefault();
+  setError("");
 
   const normalizedData = Object.fromEntries(
     Object.entries(formData).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v])
@@ -34,30 +39,50 @@ const handleSubmit = (e) => {
   });
 
   if (emptyFields.length > 0) {
-    alert("Please fill out all fields before continuing.");
+    setError("Please fill out all fields before continuing.");
     return;
   }
 
   if (!normalizedData.agreeTerms) {
-    alert("Please agree to the Terms and Conditions before continuing.");
+    setError("Please agree to the Terms and Conditions before continuing.");
     return;
   }
 
   const isInvalidName = (name) => name.length < 2 || /\d/.test(name);
 
   if (isInvalidName(normalizedData.firstName)) {
-    alert("Please enter a valid first name.");
+    setError("Please enter a valid first name.");
     return;
   }
   if (isInvalidName(normalizedData.lastName)) {
-    alert("Please enter a valid last name.");
+    setError("Please enter a valid last name.");
+    return;
+  }
+
+  if (normalizedData.username.length < 3) {
+    setError("Username must be at least 3 characters long.");
+    return;
+  }
+
+  if (normalizedData.password.length < 6) {
+    setError("Password must be at least 6 characters long.");
     return;
   }
 
   if (normalizedData.password !== normalizedData.confirmPassword) {
-    alert("Please confirm the password again.");
+    setError("Passwords do not match.");
     return;
   }
+
+  // Store basic info in sessionStorage and navigate to Info page
+  sessionStorage.setItem('signupBasicInfo', JSON.stringify({
+    firstname: normalizedData.firstName,
+    lastname: normalizedData.lastName,
+    email: normalizedData.email,
+    username: normalizedData.username,
+    password: normalizedData.password,
+    phone_no: normalizedData.phoneNumber,
+  }));
 
   navigate("/info");
 };
@@ -70,6 +95,12 @@ const handleSubmit = (e) => {
     ],
     [
       { id: "email", label: "Email", type: "email", placeholder: "yourname@gmail.com" },
+    ],
+    [
+      { id: "username", label: "Username", type: "text", placeholder: "Choose a username" },
+    ],
+    [
+      { id: "phoneNumber", label: "Phone Number", type: "tel", placeholder: "+1234567890" },
     ],
     [
       { id: "password", label: "Password", type: "password", placeholder: "Password" },
@@ -99,6 +130,12 @@ const handleSubmit = (e) => {
       <div className="w-1/2 flex items-center justify-center px-16">
         <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
           <h3 className="text-3xl font-bold mb-6">Create An Account</h3>
+
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
 
           {fields.map((row, i) => (
             <div
@@ -142,7 +179,7 @@ const handleSubmit = (e) => {
                 type="submit"
                 className="block w-full text-center bg-primary-500 text-white py-3 rounded-md font-medium hover:bg-primary-300 transition"
             >
-                Create Account
+                Continue
             </button>
           </div>
 

@@ -16,6 +16,31 @@ import {
   updateSeat,
   deleteSeat
 } from '../controllers/flightsController';
+import {
+  getAllBookings,
+  getBookingById,
+  updateBookingStatus,
+  deleteBooking,
+  getAllPassengers,
+  getPassengerById,
+  updatePassenger,
+  getFlightPassengers,
+  getAllPayments,
+  getPaymentById,
+  processRefund,
+  updatePaymentStatus,
+  getAllAirports,
+  createAirport,
+  updateAirport,
+  deleteAirport,
+  getAllClients,
+  getClientById,
+  updateClientStatus,
+  getAllBaggage,
+  getBaggageById,
+  updateBaggageStatus,
+  getFlightBaggage
+} from '../controllers/adminController';
 import { 
   validateFlightCreation,
   validateFlightUpdate,
@@ -28,11 +53,13 @@ import {
   sanitizeInput 
 } from '../middleware/validation';
 import { authenticateToken } from '../middleware/auth';
+import { requireAdmin } from '../middleware/adminAuth';
 
 const router = express.Router();
 
-// Apply authentication and input sanitization to all admin routes
+// Apply authentication, admin check, and input sanitization to all admin routes
 router.use(authenticateToken);
+router.use(requireAdmin);
 router.use(sanitizeInput);
 
 // ============= FLIGHT MANAGEMENT ROUTES =============
@@ -182,5 +209,230 @@ router.put('/seats/:seatId', validateSeatUpdate, updateSeat);
  * @param seatId - Seat ID
  */
 router.delete('/seats/:seatId', validateIdParam('seatId'), deleteSeat);
+
+// ============= BOOKING MANAGEMENT ROUTES =============
+
+/**
+ * @route GET /api/v1/admin/bookings
+ * @desc List all bookings with filtering and pagination
+ * @access Admin
+ * @query page - Page number (optional, default: 1)
+ * @query limit - Items per page (optional, default: 20)
+ * @query status - Filter by booking status (optional)
+ * @query client_id - Filter by client ID (optional)
+ * @query flight_id - Filter by flight ID (optional)
+ */
+router.get('/bookings', getAllBookings);
+
+/**
+ * @route GET /api/v1/admin/bookings/:id
+ * @desc View specific booking details
+ * @access Admin
+ * @param id - Booking ID
+ */
+router.get('/bookings/:id', validateIdParam('id'), getBookingById);
+
+/**
+ * @route PATCH /api/v1/admin/bookings/:id/status
+ * @desc Update booking status
+ * @access Admin
+ * @param id - Booking ID
+ * @body status - New booking status
+ */
+router.patch('/bookings/:id/status', validateIdParam('id'), updateBookingStatus);
+
+/**
+ * @route DELETE /api/v1/admin/bookings/:id
+ * @desc Cancel/delete booking
+ * @access Admin
+ * @param id - Booking ID
+ */
+router.delete('/bookings/:id', validateIdParam('id'), deleteBooking);
+
+// ============= PASSENGER MANAGEMENT ROUTES =============
+
+/**
+ * @route GET /api/v1/admin/passengers
+ * @desc List all passengers with filtering
+ * @access Admin
+ * @query page - Page number (optional, default: 1)
+ * @query limit - Items per page (optional, default: 20)
+ * @query search - Search by name or nationality (optional)
+ * @query flight_id - Filter by flight ID (optional)
+ * @query booking_id - Filter by booking ID (optional)
+ */
+router.get('/passengers', getAllPassengers);
+
+/**
+ * @route GET /api/v1/admin/passengers/:id
+ * @desc View passenger details
+ * @access Admin
+ * @param id - Passenger ID
+ */
+router.get('/passengers/:id', validateIdParam('id'), getPassengerById);
+
+/**
+ * @route PUT /api/v1/admin/passengers/:id
+ * @desc Update passenger information
+ * @access Admin
+ * @param id - Passenger ID
+ * @body Any passenger fields to update
+ */
+router.put('/passengers/:id', validateIdParam('id'), updatePassenger);
+
+/**
+ * @route GET /api/v1/admin/flights/:flightId/passengers
+ * @desc List passengers for a flight
+ * @access Admin
+ * @param flightId - Flight ID
+ */
+router.get('/flights/:flightId/passengers', validateIdParam('flightId'), getFlightPassengers);
+
+// ============= PAYMENT MANAGEMENT ROUTES =============
+
+/**
+ * @route GET /api/v1/admin/payments
+ * @desc List all payments with filtering
+ * @access Admin
+ * @query page - Page number (optional, default: 1)
+ * @query limit - Items per page (optional, default: 20)
+ * @query status - Filter by payment status (optional)
+ * @query booking_id - Filter by booking ID (optional)
+ */
+router.get('/payments', getAllPayments);
+
+/**
+ * @route GET /api/v1/admin/payments/:id
+ * @desc View payment details
+ * @access Admin
+ * @param id - Payment ID
+ */
+router.get('/payments/:id', validateIdParam('id'), getPaymentById);
+
+/**
+ * @route POST /api/v1/admin/payments/:id/refund
+ * @desc Process manual refund
+ * @access Admin
+ * @param id - Payment ID
+ */
+router.post('/payments/:id/refund', validateIdParam('id'), processRefund);
+
+/**
+ * @route PATCH /api/v1/admin/payments/:id/status
+ * @desc Update payment status
+ * @access Admin
+ * @param id - Payment ID
+ * @body status - New payment status
+ */
+router.patch('/payments/:id/status', validateIdParam('id'), updatePaymentStatus);
+
+// ============= AIRPORT MANAGEMENT ROUTES =============
+
+/**
+ * @route GET /api/v1/admin/airports
+ * @desc List all airports
+ * @access Admin
+ * @query page - Page number (optional, default: 1)
+ * @query limit - Items per page (optional, default: 50)
+ * @query search - Search by name, city, IATA code, or country (optional)
+ * @query country - Filter by country (optional)
+ */
+router.get('/airports', getAllAirports);
+
+/**
+ * @route POST /api/v1/admin/airports
+ * @desc Create new airport
+ * @access Admin
+ * @body city_name - City name (required)
+ * @body airport_name - Airport name (required)
+ * @body iata_code - IATA code (required, 3 letters)
+ * @body country_name - Country name (required)
+ */
+router.post('/airports', createAirport);
+
+/**
+ * @route PUT /api/v1/admin/airports/:id
+ * @desc Update airport information
+ * @access Admin
+ * @param id - Airport ID
+ * @body Any airport fields to update
+ */
+router.put('/airports/:id', validateIdParam('id'), updateAirport);
+
+/**
+ * @route DELETE /api/v1/admin/airports/:id
+ * @desc Delete airport
+ * @access Admin
+ * @param id - Airport ID
+ */
+router.delete('/airports/:id', validateIdParam('id'), deleteAirport);
+
+// ============= CLIENT MANAGEMENT ROUTES =============
+
+/**
+ * @route GET /api/v1/admin/clients
+ * @desc List all registered clients
+ * @access Admin
+ * @query page - Page number (optional, default: 1)
+ * @query limit - Items per page (optional, default: 20)
+ * @query search - Search by name, email, or username (optional)
+ */
+router.get('/clients', getAllClients);
+
+/**
+ * @route GET /api/v1/admin/clients/:id
+ * @desc View client details and booking history
+ * @access Admin
+ * @param id - Client ID
+ */
+router.get('/clients/:id', validateIdParam('id'), getClientById);
+
+/**
+ * @route PATCH /api/v1/admin/clients/:id/status
+ * @desc Enable/disable client account
+ * @access Admin
+ * @param id - Client ID
+ * @body status - Account status ('active' or 'disabled')
+ */
+router.patch('/clients/:id/status', validateIdParam('id'), updateClientStatus);
+
+// ============= BAGGAGE MANAGEMENT ROUTES =============
+
+/**
+ * @route GET /api/v1/admin/baggage
+ * @desc List all baggage with filtering
+ * @access Admin
+ * @query page - Page number (optional, default: 1)
+ * @query limit - Items per page (optional, default: 20)
+ * @query status - Filter by baggage status (optional)
+ * @query search - Search by tracking number or passenger name (optional)
+ * @query flight_id - Filter by flight ID (optional)
+ */
+router.get('/baggage', getAllBaggage);
+
+/**
+ * @route GET /api/v1/admin/baggage/:id
+ * @desc View baggage details
+ * @access Admin
+ * @param id - Baggage ID
+ */
+router.get('/baggage/:id', validateIdParam('id'), getBaggageById);
+
+/**
+ * @route PATCH /api/v1/admin/baggage/:id/status
+ * @desc Update baggage status
+ * @access Admin
+ * @param id - Baggage ID
+ * @body status - New baggage status
+ */
+router.patch('/baggage/:id/status', validateIdParam('id'), updateBaggageStatus);
+
+/**
+ * @route GET /api/v1/admin/flights/:flightId/baggage
+ * @desc List baggage for a flight
+ * @access Admin
+ * @param flightId - Flight ID
+ */
+router.get('/flights/:flightId/baggage', validateIdParam('flightId'), getFlightBaggage);
 
 export default router;

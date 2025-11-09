@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import CountryAirportSelector from '../components/CountryAirportSelector';
 
 const EditFlight = () => {
   const navigate = useNavigate();
@@ -17,7 +18,61 @@ const EditFlight = () => {
     status: ''
   });
 
+  // Country selection state
+  const [departureCountry, setDepartureCountry] = useState('');
+  const [arrivalCountry, setArrivalCountry] = useState('');
+
+  // Airports and Airplanes data for dropdowns
+  const [airports, setAirports] = useState([]);
+  const [airplanes, setAirplanes] = useState([]);
+  const [isLoadingAirports, setIsLoadingAirports] = useState(false);
+  const [isLoadingAirplanes, setIsLoadingAirplanes] = useState(false);
+
+  // Function to fetch airports from API
+  const fetchAirports = async () => {
+    try {
+      setIsLoadingAirports(true);
+      const response = await fetch('http://localhost:8080/api/v1/airports');
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setAirports(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching airports:', error);
+    } finally {
+      setIsLoadingAirports(false);
+    }
+  };
+
+  // Function to fetch airplanes from API
+  const fetchAirplanes = async () => {
+    try {
+      setIsLoadingAirplanes(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/v1/admin/airplanes', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setAirplanes(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching airplanes:', error);
+    } finally {
+      setIsLoadingAirplanes(false);
+    }
+  };
+
   useEffect(() => {
+    // Fetch airports and airplanes
+    fetchAirports();
+    fetchAirplanes();
+
     if (flightData) {
       // Convert datetime format for input fields
       const formatDateTimeForInput = (dateTimeStr) => {
@@ -44,6 +99,25 @@ const EditFlight = () => {
     }
   }, [flightData, navigate]);
 
+  // Set country when airports are loaded and airport is selected
+  useEffect(() => {
+    if (airports.length > 0 && formData.fromAirport) {
+      const airport = airports.find(a => a.airport_id === parseInt(formData.fromAirport));
+      if (airport) {
+        setDepartureCountry(airport.country_name);
+      }
+    }
+  }, [airports, formData.fromAirport]);
+
+  useEffect(() => {
+    if (airports.length > 0 && formData.toAirport) {
+      const airport = airports.find(a => a.airport_id === parseInt(formData.toAirport));
+      if (airport) {
+        setArrivalCountry(airport.country_name);
+      }
+    }
+  }, [airports, formData.toAirport]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -52,11 +126,70 @@ const EditFlight = () => {
     }));
   };
 
-  const handleConfirm = () => {
-    console.log('Updating flight:', formData);
-    // Update flight logic here
-    alert('Flight updated successfully!');
-    navigate('/admin');
+  const handleConfirm = async () => {
+    try {
+      console.log('Updating flight:', formData);
+      
+      // Format datetime back to MySQL format
+      const formatDateTimeForMySQL = (dateTimeStr) => {
+        if (!dateTimeStr) return null;
+        const date = new Date(dateTimeStr);
+        return date.toISOString().slice(0, 19).replace('T', ' ');
+      };
+
+      // Prepare update data - only send fields that have changed
+      const updateData = {};
+      
+      if (formData.flightNo) updateData.flight_no = formData.flightNo;
+      if (formData.fromAirport) updateData.depart_airport_id = parseInt(formData.fromAirport);
+      if (formData.toAirport) updateData.arrive_airport_id = parseInt(formData.toAirport);
+      if (formData.airplane) updateData.airplane_id = parseInt(formData.airplane);
+      if (formData.departureTime) updateData.depart_when = new Date(formData.departureTime).toISOString();
+      if (formData.arrivalTime) updateData.arrive_when = new Date(formData.arrivalTime).toISOString();
+      // Note: base_price is stored in the airplane table, not the flight table, so we don't update it here
+      if (formData.status) updateData.status = formData.status;
+
+      console.log('Sending update data:', updateData);
+
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      
+      // Call API to update flight (use id or flightId depending on data structure)
+      const flightId = flightData.flightId || flightData.id;
+      const response = await fetch(`http://localhost:8080/api/v1/admin/flights/${flightId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Flight updated successfully!');
+        navigate('/admin');
+      } else {
+        // Better error handling
+        let errorMessage = 'Unknown error';
+        if (result.message) {
+          errorMessage = result.message;
+        } else if (result.error) {
+          if (typeof result.error === 'string') {
+            errorMessage = result.error;
+          } else if (result.error.message) {
+            errorMessage = result.error.message;
+          } else {
+            errorMessage = JSON.stringify(result.error);
+          }
+        }
+        alert(`Failed to update flight: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error('Error updating flight:', error);
+      alert('Failed to update flight. Please try again.');
+    }
   };
 
   const handleCancel = () => {
@@ -64,9 +197,9 @@ const EditFlight = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-primary-500 to-primary-300 px-16 py-6 shadow-lg">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with Sky Background */}
+      <header className="bg-[url('/main-bg.png')] bg-cover bg-center text-white px-16 py-6 shadow-lg rounded-b-3xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img
@@ -74,7 +207,7 @@ const EditFlight = () => {
               alt="Jett3Airlines logo"
               className="w-10 h-10 object-contain"
             />
-            <p className="text-gray-100 text-2xl font-semibold">Jett3Airlines</p>
+            <p className="text-white text-2xl font-semibold">Jett3Airlines</p>
           </div>
           <p className="text-white text-2xl font-bold">Welcome Admin!</p>
         </div>
@@ -140,32 +273,39 @@ const EditFlight = () => {
               <label className="block text-black text-base font-semibold mb-2">
                 Airplane
               </label>
-              <input
-                type="text"
+              <select
                 name="airplane"
                 value={formData.airplane}
                 onChange={handleInputChange}
-                placeholder="Airplane id"
-                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
-              />
+                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg focus:outline-none focus:border-primary-300"
+                disabled={isLoadingAirplanes}
+              >
+                <option value="">Select airplane</option>
+                {airplanes.map((airplane) => (
+                  <option key={airplane.airplane_id} value={airplane.airplane_id}>
+                    {airplane.airplane_id} - {airplane.type} ({airplane.registration})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           {/* Row 2: From and Departure Time */}
           <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="block text-black text-base font-semibold mb-2">
-                From
-              </label>
-              <input
-                type="text"
-                name="fromAirport"
-                value={formData.fromAirport}
-                onChange={handleInputChange}
-                placeholder="Airport id"
-                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
-              />
-            </div>
+            <CountryAirportSelector
+              label="From"
+              selectedCountry={departureCountry}
+              onCountryChange={(country) => {
+                setDepartureCountry(country);
+                setFormData(prev => ({ ...prev, fromAirport: '' }));
+              }}
+              selectedAirport={formData.fromAirport}
+              onAirportChange={(airportId) => {
+                setFormData(prev => ({ ...prev, fromAirport: airportId }));
+              }}
+              countryPlaceholder="Select departure country"
+              airportPlaceholder="Select departure airport"
+            />
 
             <div>
               <label className="block text-black text-base font-semibold mb-2">
@@ -183,19 +323,20 @@ const EditFlight = () => {
 
           {/* Row 3: To and Arrival Time */}
           <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="block text-black text-base font-semibold mb-2">
-                To
-              </label>
-              <input
-                type="text"
-                name="toAirport"
-                value={formData.toAirport}
-                onChange={handleInputChange}
-                placeholder="Airport id"
-                className="w-full px-4 py-3 rounded-lg border-2 border-black text-lg placeholder-gray-400 focus:outline-none focus:border-primary-300"
-              />
-            </div>
+            <CountryAirportSelector
+              label="To"
+              selectedCountry={arrivalCountry}
+              onCountryChange={(country) => {
+                setArrivalCountry(country);
+                setFormData(prev => ({ ...prev, toAirport: '' }));
+              }}
+              selectedAirport={formData.toAirport}
+              onAirportChange={(airportId) => {
+                setFormData(prev => ({ ...prev, toAirport: airportId }));
+              }}
+              countryPlaceholder="Select arrival country"
+              airportPlaceholder="Select arrival airport"
+            />
 
             <div>
               <label className="block text-black text-base font-semibold mb-2">
@@ -241,7 +382,9 @@ const EditFlight = () => {
                 <option value="Scheduled">Scheduled</option>
                 <option value="Delayed">Delayed</option>
                 <option value="Cancelled">Cancelled</option>
-                <option value="Completed">Completed</option>
+                <option value="Boarding">Boarding</option>
+                <option value="Departed">Departed</option>
+                <option value="Arrived">Arrived</option>
               </select>
             </div>
           </div>
