@@ -168,7 +168,7 @@ export interface PassengerRequest {
   lastname: string;
   passport_no: string;
   nationality: string;
-  phone_no: string;
+  phone_no?: string; // Optional field
   gender: string;
   dob: string; // ISO date string
   weight_limit?: number;
