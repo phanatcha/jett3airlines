@@ -324,7 +324,7 @@ const Seat = () => {
 
   const currentPassenger = passengers[currentPassengerIndex];
   const currentSeat = localSelectedSeats[currentPassengerIndex];
-  const seatPrice = currentSeat ? seatPricing[currentSeat] : 0;
+  const seatPrice = currentSeat ? (seatPricing[currentSeat] || 0) : 0;
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
