@@ -39,9 +39,10 @@ const Departure = () => {
     let filtered = [...allFlights];
 
     // Price filter
+    const getFlightPrice = (flight) => flight.price || flight.base_price;
     filtered = filtered.filter(flight => 
-      flight.base_price >= filters.minPrice && 
-      flight.base_price <= filters.maxPrice
+      getFlightPrice(flight) >= filters.minPrice && 
+      getFlightPrice(flight) <= filters.maxPrice
     );
 
     // Stops filter - for now, assume all flights are direct (stops = 0)
@@ -71,7 +72,7 @@ const Departure = () => {
 
     // Apply sorting based on selected tab
     if (selectedTab === 'cheapest') {
-      filtered.sort((a, b) => a.base_price - b.base_price);
+      filtered.sort((a, b) => getFlightPrice(a) - getFlightPrice(b));
     } else if (selectedTab === 'fastest') {
       filtered.sort((a, b) => {
         const durationA = new Date(a.arrive_when).getTime() - new Date(a.depart_when).getTime();
@@ -83,8 +84,8 @@ const Departure = () => {
       filtered.sort((a, b) => {
         const durationA = new Date(a.arrive_when).getTime() - new Date(a.depart_when).getTime();
         const durationB = new Date(b.arrive_when).getTime() - new Date(b.depart_when).getTime();
-        const scoreA = (a.base_price / 1000) + (durationA / 3600000); // Normalize price and duration
-        const scoreB = (b.base_price / 1000) + (durationB / 3600000);
+        const scoreA = (getFlightPrice(a) / 1000) + (durationA / 3600000); // Normalize price and duration
+        const scoreB = (getFlightPrice(b) / 1000) + (durationB / 3600000);
         return scoreA - scoreB;
       });
     }
@@ -418,7 +419,7 @@ const FlightCard = ({
       {/* RIGHT — Price + Select */}
       <div className="flex flex-col items-end justify-between ml-8">
         <div className="text-right">
-          <p className="text-xl font-semibold">{formatPrice(flight.base_price)}</p>
+          <p className="text-xl font-semibold">{formatPrice(flight.price || flight.base_price)}</p>
           <p className="text-xs text-gray-500 mt-1">per person</p>
           <button
             onClick={() => setIsOpen((prev) => !prev)}

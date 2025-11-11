@@ -15,7 +15,15 @@ const Fare = () => {
     updateFareOptions
   } = useBooking();
 
-  const [selectedFare, setSelectedFare] = useState("Economy Saver");
+  // Initialize selected fare based on cabin class
+  const getDefaultFare = () => {
+    const cabinClass = searchCriteria.cabinClass || 'Economy';
+    if (cabinClass === 'Business') return 'Business Saver';
+    if (cabinClass === 'Premium Economy') return 'Premium Economy Saver';
+    return 'Economy Saver';
+  };
+  
+  const [selectedFare, setSelectedFare] = useState(getDefaultFare());
 
   // Check if we have required data
   useEffect(() => {
@@ -78,11 +86,23 @@ const Fare = () => {
   };
 
   const basePrice = calculateBasePrice();
+  
+  // Get cabin class from search criteria or selected flight
+  const cabinClass = searchCriteria.cabinClass || selectedFlights.departure?.cabin_class || 'Economy';
+  
+  // Determine fare class prefix based on cabin class
+  const getFarePrefix = () => {
+    if (cabinClass === 'Business') return 'Business';
+    if (cabinClass === 'Premium Economy') return 'Premium Economy';
+    return 'Economy';
+  };
+  
+  const farePrefix = getFarePrefix();
 
   // Calculate fare prices based on base price with multipliers
   const fares = [
     {
-      name: "Economy Saver",
+      name: `${farePrefix} Saver`,
       price: (basePrice * 1.0).toFixed(2), // Base price
       details: [
         { text: "7kg x 1 cabin baggage", available: true },
@@ -93,7 +113,7 @@ const Fare = () => {
       ],
     },
     {
-      name: "Economy Standard",
+      name: `${farePrefix} Standard`,
       price: (basePrice * 1.15).toFixed(2), // 15% more than base
       details: [
         { text: "7kg x 1 cabin baggage", available: true },
@@ -104,7 +124,7 @@ const Fare = () => {
       ],
     },
     {
-      name: "Economy Plus",
+      name: `${farePrefix} Plus`,
       price: (basePrice * 1.35).toFixed(2), // 35% more than base
       details: [
         { text: "7kg x 1 cabin baggage", available: true },
