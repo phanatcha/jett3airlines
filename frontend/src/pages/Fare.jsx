@@ -78,12 +78,11 @@ const Fare = () => {
         150 // Default fallback
       );
       
-      // Apply class multiplier if price field doesn't exist
-      const flightPrice = selectedFlights.departure.price 
-        ? parseFloat(selectedFlights.departure.price)
-        : basePrice * multiplier;
+      // ALWAYS recalculate based on current cabin class (ignore old price field)
+      const flightPrice = basePrice * multiplier;
       
       console.log('Departure base_price:', basePrice);
+      console.log('Applied multiplier:', multiplier);
       console.log('Departure calculated price:', flightPrice);
       
       total += flightPrice;
@@ -97,11 +96,11 @@ const Fare = () => {
         150
       );
       
-      const flightPrice = selectedFlights.return.price 
-        ? parseFloat(selectedFlights.return.price)
-        : basePrice * multiplier;
+      // ALWAYS recalculate based on current cabin class
+      const flightPrice = basePrice * multiplier;
       
       console.log('Return base_price:', basePrice);
+      console.log('Applied multiplier:', multiplier);
       console.log('Return calculated price:', flightPrice);
       
       total += flightPrice;
