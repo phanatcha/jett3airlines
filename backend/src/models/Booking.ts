@@ -159,7 +159,8 @@ export class BookingModel extends BaseModel {
           // Encrypt passport number
           const encryptedPassport = Buffer.from(passengerData.passport_no, 'utf8');
 
-          await connection.execute(passengerQuery, [
+          // Debug: Check for undefined values
+          const params = [
             passengerData.firstname,
             passengerData.lastname,
             encryptedPassport,
@@ -171,7 +172,18 @@ export class BookingModel extends BaseModel {
             passengerData.seat_id,
             bookingId,
             bookingData.flight_id
-          ]);
+          ];
+
+          console.log('=== PASSENGER INSERT DEBUG ===');
+          console.log('Passenger data:', JSON.stringify(passengerData, null, 2));
+          console.log('Parameters being inserted:');
+          params.forEach((param, index) => {
+            const fieldNames = ['firstname', 'lastname', 'passport_no', 'nationality', 'phone_no', 'gender', 'dob', 'weight_limit', 'seat_id', 'booking_id', 'flight_id'];
+            console.log(`  ${fieldNames[index]}: ${param === undefined ? '❌ UNDEFINED' : param}`);
+          });
+          console.log('==============================');
+
+          await connection.execute(passengerQuery, params);
         }
 
         return bookingId;
