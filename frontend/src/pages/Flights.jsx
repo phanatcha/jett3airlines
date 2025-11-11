@@ -106,7 +106,8 @@ const Flights = () => {
         arrive_airport_id: parseInt(formData.toWhere),
         depart_date: formData.departureDate,
         passengers: parseInt(formData.passengers),
-        class: formData.cabinClass
+        class: formData.cabinClass,
+        cabin_class: formData.cabinClass // Filter flights by selected cabin class
       };
       
       // Call flight search API

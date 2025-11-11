@@ -17,6 +17,10 @@ const dbConfig = {
   port: Number(process.env.DB_PORT) || 3306,
   // Connection pool configuration
   connectionLimit: 10,
+  // Timeout settings (in milliseconds)
+  connectTimeout: 5000, // 5 seconds instead of default 10 seconds
+  acquireTimeout: 5000,
+  timeout: 5000,
   // Additional security and performance settings
   charset: 'utf8mb4',
   timezone: '+00:00',

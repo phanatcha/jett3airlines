@@ -153,6 +153,7 @@ export interface FlightSearchRequest {
   return_date?: string;
   passengers?: number;
   class?: string;
+  cabin_class?: 'Economy' | 'Premium Economy' | 'Business'; // Travel class filter
 }
 
 export interface BookingRequest {

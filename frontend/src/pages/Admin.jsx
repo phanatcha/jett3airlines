@@ -161,10 +161,10 @@ const Admin = () => {
         const transformedBookings = result.data.map(booking => ({
           id: booking.booking_id,
           bookingNo: booking.booking_no || `BK${booking.booking_id}`,
-          flightNo: booking.flight?.flight_no || 'N/A',
+          flightNo: booking.flight_no || 'N/A',
           fastTrack: booking.fasttrack ? 'Yes' : 'No',
           support: booking.support ? 'Yes' : 'No',
-          capacity: booking.passengers?.length || 0,
+          capacity: booking.passenger_count || 0,
           status: booking.status || 'Pending'
         }));
         setBookings(transformedBookings);

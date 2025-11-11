@@ -7,6 +7,7 @@ import 'react-phone-input-2/lib/style.css'
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
 import userIcon from "/icons/user-icon.svg";
+import { logDebug, logInfo, logError } from "../utils/errorLogger";
 
 const PassengerInfo = () => {
   const navigate = useNavigate();
@@ -152,63 +153,102 @@ const PassengerInfo = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Mark all fields as touched
-    const allTouched = {};
-    Object.keys(contactData).forEach(key => {
-      allTouched[`contact_${key}`] = true;
+    logInfo('PassengerInfo form submission started', {
+      passengerCount: passengers.length,
+      contextPassengerCount: contextPassengers.length,
     });
-    passengers.forEach((_, index) => {
-      allTouched[`passenger_${index}_firstName`] = true;
-      allTouched[`passenger_${index}_lastName`] = true;
-      allTouched[`passenger_${index}_gender`] = true;
-    });
-    setTouched(allTouched);
+    
+    try {
+      // Mark all fields as touched
+      const allTouched = {};
+      Object.keys(contactData).forEach(key => {
+        allTouched[`contact_${key}`] = true;
+      });
+      passengers.forEach((_, index) => {
+        allTouched[`passenger_${index}_firstName`] = true;
+        allTouched[`passenger_${index}_lastName`] = true;
+        allTouched[`passenger_${index}_gender`] = true;
+      });
+      setTouched(allTouched);
 
-    // Validate form
-    if (!validateForm()) {
-      // Scroll to first error
-      const firstErrorElement = document.querySelector('.border-red-500');
-      if (firstErrorElement) {
-        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
-
-    // Store passenger data in context
-    // Clear existing passengers first
-    while (contextPassengers.length > 0) {
-      removePassenger(0);
-    }
-
-    // Add all passengers with contact info
-    passengers.forEach((passenger, index) => {
-      // Generate a valid temporary passport number (6-20 chars, uppercase + numbers only)
-      const timestamp = Date.now().toString().slice(-8); // Last 8 digits
-      const tempPassport = `TEMP${timestamp}${index}`.toUpperCase().slice(0, 20);
+      logDebug('Validating passenger form');
       
-      const passengerData = {
-        firstname: passenger.firstName.trim(), // Changed from first_name
-        lastname: passenger.lastName.trim(), // Changed from last_name
-        gender: passenger.gender,
-        // Required fields with default values (TODO: Add form fields for these)
-        passport_no: tempPassport, // Temporary passport number (6-20 chars, uppercase+numbers)
-        nationality: contactData.country.trim() || 'Unknown', // Use contact country as nationality
-        dob: '1990-01-01', // Default DOB (TODO: Add DOB field to form)
-        // Add contact info to first passenger
-        ...(index === 0 && {
-          email: contactData.email.trim(),
-          phone: contactData.phoneNumber,
-          country: contactData.country.trim(),
-        }),
-      };
-      addPassenger(passengerData);
-    });
+      // Validate form
+      if (!validateForm()) {
+        logError('Passenger form validation failed', null, { errors });
+        // Scroll to first error
+        const firstErrorElement = document.querySelector('.border-red-500');
+        if (firstErrorElement) {
+          firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
 
-    // Navigate to seat selection
-    navigate("/seat");
+      logInfo('Validation passed, processing passengers', {
+        existingPassengers: contextPassengers.length,
+        newPassengers: passengers.length,
+      });
+
+      // Store passenger data in context
+      // Clear existing passengers first - FIXED: Use a safer approach
+      const existingCount = contextPassengers.length;
+      logDebug('Clearing existing passengers', { count: existingCount });
+      
+      // Remove passengers in reverse order to avoid index issues
+      for (let i = existingCount - 1; i >= 0; i--) {
+        logDebug(`Removing passenger at index ${i}`);
+        removePassenger(i);
+      }
+
+      logDebug('Adding new passengers to context');
+      
+      // Add all passengers with contact info
+      passengers.forEach((passenger, index) => {
+        logDebug(`Processing passenger ${index + 1}`, {
+          firstName: passenger.firstName,
+          lastName: passenger.lastName,
+          gender: passenger.gender,
+        });
+        
+        // Generate a valid temporary passport number (6-20 chars, uppercase + numbers only)
+        const timestamp = Date.now().toString().slice(-8); // Last 8 digits
+        const tempPassport = `TEMP${timestamp}${index}`.toUpperCase().slice(0, 20);
+        
+        const passengerData = {
+          firstname: passenger.firstName.trim(), // Changed from first_name
+          lastname: passenger.lastName.trim(), // Changed from last_name
+          gender: passenger.gender,
+          // Required fields with default values (TODO: Add form fields for these)
+          passport_no: tempPassport, // Temporary passport number (6-20 chars, uppercase+numbers)
+          nationality: contactData.country.trim() || 'Unknown', // Use contact country as nationality
+          dob: '1990-01-01', // Default DOB (TODO: Add DOB field to form)
+          // Add contact info to first passenger
+          ...(index === 0 && {
+            email: contactData.email.trim(),
+            phone: contactData.phoneNumber,
+            country: contactData.country.trim(),
+          }),
+        };
+        
+        logDebug(`Adding passenger ${index + 1} to context`, { passengerData });
+        addPassenger(passengerData);
+      });
+
+      logInfo('All passengers added successfully, navigating to seat selection');
+      
+      // Navigate to seat selection
+      navigate("/seat");
+      
+    } catch (error) {
+      logError('Error during passenger form submission', error, {
+        passengerCount: passengers.length,
+        contactData,
+      });
+      alert('An error occurred while processing passenger information. Please try again. Check the debug panel (Ctrl+Shift+D) for details.');
+    }
   };
 
   return (

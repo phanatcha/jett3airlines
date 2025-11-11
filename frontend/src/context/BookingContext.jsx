@@ -108,7 +108,14 @@ export const BookingProvider = ({ children }) => {
 
   // Remove passenger
   const removePassenger = (index) => {
-    setPassengers((prev) => prev.filter((_, i) => i !== index));
+    console.log(`[BookingContext] Removing passenger at index ${index}`);
+    console.log('[BookingContext] Current passengers count:', passengers.length);
+    
+    setPassengers((prev) => {
+      const filtered = prev.filter((_, i) => i !== index);
+      console.log('[BookingContext] New passengers count:', filtered.length);
+      return filtered;
+    });
   };
 
   // Select seat for passenger

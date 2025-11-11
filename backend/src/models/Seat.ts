@@ -121,9 +121,14 @@ export class SeatModel extends BaseModel {
       const query = `
         SELECT 
           s.seat_id,
-          CASE WHEN p.seat_id IS NULL THEN 1 ELSE 0 END as available
+          CASE 
+            WHEN p.seat_id IS NULL THEN 1
+            WHEN b.status = 'cancelled' THEN 1
+            ELSE 0 
+          END as available
         FROM seat s
         LEFT JOIN passenger p ON s.seat_id = p.seat_id AND p.flight_id = ?
+        LEFT JOIN booking b ON p.booking_id = b.booking_id
         WHERE s.seat_id IN (${placeholders})
       `;
 

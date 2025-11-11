@@ -73,6 +73,7 @@ export const getAllBookings = async (req: Request, res: Response) => {
         c.firstname as client_firstname,
         c.lastname as client_lastname,
         c.email as client_email,
+        f.flight_no,
         f.depart_when,
         f.arrive_when,
         f.status as flight_status,

@@ -44,6 +44,8 @@ export class FlightModel extends BaseModel {
   // Search flights based on criteria
   async searchFlights(searchParams: FlightSearchRequest) {
     try {
+      const cabinClass = searchParams.cabin_class || 'Economy';
+      
       let query = `
         SELECT 
           f.*,
@@ -55,17 +57,26 @@ export class FlightModel extends BaseModel {
           arr_airport.iata_code as arrival_iata,
           a.type as airplane_type,
           a.capacity as airplane_capacity,
-          a.min_price as base_price,
-          COUNT(DISTINCT p.passenger_id) as booked_seats
+          COALESCE(f.base_price, a.min_price, 100.00) as base_price,
+          COALESCE(f.premium_economy_multiplier, 1.50) as premium_economy_multiplier,
+          COALESCE(f.business_multiplier, 2.50) as business_multiplier,
+          CASE 
+            WHEN ? = 'Business' THEN COALESCE(f.base_price, a.min_price, 100.00) * COALESCE(f.business_multiplier, 2.50)
+            WHEN ? = 'Premium Economy' THEN COALESCE(f.base_price, a.min_price, 100.00) * COALESCE(f.premium_economy_multiplier, 1.50)
+            ELSE COALESCE(f.base_price, a.min_price, 100.00)
+          END as price,
+          COUNT(DISTINCT CASE WHEN s.class = ? THEN p.passenger_id END) as booked_seats_in_class,
+          COUNT(DISTINCT CASE WHEN s.class = ? THEN s.seat_id END) as total_seats_in_class
         FROM flight f
         LEFT JOIN airport dep_airport ON f.depart_airport_id = dep_airport.airport_id
         LEFT JOIN airport arr_airport ON f.arrive_airport_id = arr_airport.airport_id
         LEFT JOIN airplane a ON f.airplane_id = a.airplane_id
-        LEFT JOIN passenger p ON f.flight_id = p.flight_id
+        LEFT JOIN seat s ON a.airplane_id = s.airplane_id
+        LEFT JOIN passenger p ON f.flight_id = p.flight_id AND s.seat_id = p.seat_id
         WHERE f.status = 'Scheduled'
       `;
 
-      const params: any[] = [];
+      const params: any[] = [cabinClass, cabinClass, cabinClass, cabinClass];
 
       // Add search filters
       if (searchParams.depart_airport_id) {
@@ -83,14 +94,15 @@ export class FlightModel extends BaseModel {
         params.push(searchParams.depart_date);
       }
 
-      query += ' GROUP BY f.flight_id ORDER BY f.depart_when ASC';
+      query += ' GROUP BY f.flight_id HAVING total_seats_in_class > 0 ORDER BY f.depart_when ASC';
 
       const results = await this.executeQuery(query, params);
       
-      // Calculate available seats for each flight
+      // Calculate available seats for each flight in the selected class
       return results.map((flight: any) => ({
         ...flight,
-        available_seats: flight.airplane_capacity - flight.booked_seats,
+        cabin_class: cabinClass,
+        available_seats: flight.total_seats_in_class - flight.booked_seats_in_class,
         duration: this.calculateFlightDuration(flight.depart_when, flight.arrive_when)
       }));
     } catch (error) {
@@ -105,9 +117,14 @@ export class FlightModel extends BaseModel {
       let query = `
         SELECT 
           s.*,
-          CASE WHEN p.seat_id IS NULL THEN 'available' ELSE 'booked' END as availability
+          CASE 
+            WHEN p.seat_id IS NULL THEN 'available'
+            WHEN b.status = 'cancelled' THEN 'available'
+            ELSE 'booked' 
+          END as availability
         FROM seat s
         LEFT JOIN passenger p ON s.seat_id = p.seat_id AND p.flight_id = ?
+        LEFT JOIN booking b ON p.booking_id = b.booking_id
         WHERE s.airplane_id = (SELECT airplane_id FROM flight WHERE flight_id = ?)
       `;
 
@@ -135,8 +152,11 @@ export class FlightModel extends BaseModel {
       const placeholders = seatIds.map(() => '?').join(',');
       const query = `
         SELECT COUNT(*) as booked_count
-        FROM passenger 
-        WHERE flight_id = ? AND seat_id IN (${placeholders})
+        FROM passenger p
+        INNER JOIN booking b ON p.booking_id = b.booking_id
+        WHERE p.flight_id = ? 
+          AND p.seat_id IN (${placeholders})
+          AND b.status != 'cancelled'
       `;
 
       const params = [flightId, ...seatIds];
