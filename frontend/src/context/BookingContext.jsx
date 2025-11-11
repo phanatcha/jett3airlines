@@ -176,11 +176,14 @@ export const BookingProvider = ({ children }) => {
             nationality: passenger.nationality || passenger.country || 'Unknown',
             dob: passenger.dob || '1990-01-01',
             seat_id: seatData?.seatId ?? null, // Use nullish coalescing to ensure null instead of undefined
-            phone_no: passenger.phone_no || passenger.phone || null, // Always include phone_no, use null if not provided
             weight_limit: passenger.weight_limit || 20, // Default to 20kg
           };
           
           // Add optional fields only if they have values (not undefined)
+          const phoneNumber = passenger.phone_no || passenger.phone;
+          if (phoneNumber) {
+            transformedPassenger.phone_no = phoneNumber;
+          }
           if (passenger.email) transformedPassenger.email = passenger.email;
           if (passenger.country) transformedPassenger.country = passenger.country;
           
