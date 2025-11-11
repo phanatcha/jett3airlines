@@ -615,7 +615,7 @@ export const validateBookingCreation = [
     .withMessage('Nationality must be less than 50 characters'),
     
   body('passengers.*.phone_no')
-    .optional()
+    .optional({ nullable: true, checkFalsy: false })
     .matches(/^\+?[\d\s\-\(\)]+$/)
     .withMessage('Phone number format is invalid'),
     
