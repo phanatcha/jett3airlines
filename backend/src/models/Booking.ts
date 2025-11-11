@@ -161,15 +161,15 @@ export class BookingModel extends BaseModel {
 
           // Debug: Check for undefined values
           const params = [
-            passengerData.firstname,
-            passengerData.lastname,
+            passengerData.firstname || null,
+            passengerData.lastname || null,
             encryptedPassport,
-            passengerData.nationality,
+            passengerData.nationality || null,
             passengerData.phone_no || null, // Use null if phone_no is not provided
-            passengerData.gender,
-            new Date(passengerData.dob),
+            passengerData.gender || 'Other',
+            passengerData.dob ? new Date(passengerData.dob) : null,
             passengerData.weight_limit || 20,
-            passengerData.seat_id,
+            passengerData.seat_id ?? null, // Use nullish coalescing to handle 0 as valid
             bookingId,
             bookingData.flight_id
           ];
