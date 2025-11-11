@@ -48,45 +48,63 @@ const Fare = () => {
     navigate("/passenger-info");
   };
 
-  // Calculate base price from selected flights (using class-specific price)
+  // Calculate base price from selected flights with class multiplier
   const calculateBasePrice = () => {
     let total = 0;
+    
+    // Get cabin class
+    const cabinClass = searchCriteria.cabinClass || selectedFlights.departure?.cabin_class || 'Economy';
+    
+    // Determine multiplier based on cabin class
+    const getClassMultiplier = () => {
+      if (cabinClass === 'Business') return 2.5;
+      if (cabinClass === 'Premium Economy') return 1.5;
+      return 1.0; // Economy
+    };
+    
+    const multiplier = getClassMultiplier();
 
     console.log('=== FARE PRICE CALCULATION DEBUG ===');
+    console.log('Cabin Class:', cabinClass);
+    console.log('Class Multiplier:', multiplier);
     console.log('Selected Flights:', selectedFlights);
-    console.log('Search Criteria:', searchCriteria);
     
-    // Add departure flight price (class-specific)
+    // Add departure flight price
     if (selectedFlights.departure) {
-      // Use 'price' (class-specific) if available, otherwise fall back to base_price
-      const depPrice = parseFloat(
-        selectedFlights.departure.price || 
+      // Get base price from flight
+      const basePrice = parseFloat(
         selectedFlights.departure.base_price || 
         selectedFlights.departure.min_price || 
-        0
+        150 // Default fallback
       );
-      console.log('Departure Flight Data:', selectedFlights.departure);
-      console.log('Departure price (class-specific):', selectedFlights.departure.price);
-      console.log('Departure base_price:', selectedFlights.departure.base_price);
-      console.log('Calculated departure price:', depPrice);
       
-      total += depPrice;
+      // Apply class multiplier if price field doesn't exist
+      const flightPrice = selectedFlights.departure.price 
+        ? parseFloat(selectedFlights.departure.price)
+        : basePrice * multiplier;
+      
+      console.log('Departure base_price:', basePrice);
+      console.log('Departure calculated price:', flightPrice);
+      
+      total += flightPrice;
     }
 
     // Add return flight price ONLY if it's actually selected
     if (selectedFlights.return) {
-      const retPrice = parseFloat(
-        selectedFlights.return.price || 
+      const basePrice = parseFloat(
         selectedFlights.return.base_price || 
         selectedFlights.return.min_price || 
-        0
+        150
       );
-      console.log('Return Flight Data:', selectedFlights.return);
-      console.log('Return price (class-specific):', selectedFlights.return.price);
-      console.log('Return base_price:', selectedFlights.return.base_price);
-      console.log('Calculated return price:', retPrice);
       
-      total += retPrice;
+      const flightPrice = selectedFlights.return.price 
+        ? parseFloat(selectedFlights.return.price)
+        : basePrice * multiplier;
+      
+      console.log('Return base_price:', basePrice);
+      console.log('Return calculated price:', flightPrice);
+      
+      total += flightPrice;
     } else if (searchCriteria.tripType === 'round-trip') {
       console.log('Round-trip but no return flight selected yet - showing departure price only');
     }
