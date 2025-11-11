@@ -156,7 +156,7 @@ const Fare = () => {
       </div>
 
       <div className="flex flex-col px-20 pt-8 gap-2">
-        <Back />
+        <Back to="/departure" />
         <div>
           <h2 className="text-3xl font-semibold mb-1">
             {selectedFlights.departure?.depart_city_name || 'Bangkok'}, {selectedFlights.departure?.depart_iata_code || 'BKK'} ↔ {selectedFlights.departure?.arrive_city_name || 'Berlin'}, {selectedFlights.departure?.arrive_iata_code || 'BER'}
