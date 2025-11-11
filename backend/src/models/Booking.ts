@@ -165,7 +165,7 @@ export class BookingModel extends BaseModel {
             passengerData.lastname,
             encryptedPassport,
             passengerData.nationality,
-            passengerData.phone_no,
+            passengerData.phone_no || null, // Use null if phone_no is not provided
             passengerData.gender,
             new Date(passengerData.dob),
             passengerData.weight_limit || 20,
