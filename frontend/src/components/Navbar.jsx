@@ -27,7 +27,7 @@ const Navbar = () => {
             <a href="/flights" className="hover:text-primary-300 transition-colors duration-200">
                 Home
             </a>
-            <a href="/book" className="hover:text-primary-300 transition-colors duration-200">
+            <a href="/my-bookings" className="hover:text-primary-300 transition-colors duration-200">
                 Book
             </a>
             <a href="/experience" className="hover:text-primary-300 transition-colors duration-200">
