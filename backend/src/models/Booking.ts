@@ -149,16 +149,8 @@ export class BookingModel extends BaseModel {
 
         const bookingId = (bookingResult as any)[0].insertId;
 
-        console.log('=== BOOKING CREATED ===');
-        console.log('Booking ID:', bookingId);
-        console.log('Number of passengers:', bookingData.passengers.length);
-        console.log('=======================');
-
         // Create passengers
         for (const passengerData of bookingData.passengers) {
-          console.log('=== PROCESSING PASSENGER ===');
-          console.log('Raw passenger data:', JSON.stringify(passengerData, null, 2));
-          
           const passengerQuery = `
             INSERT INTO passenger (firstname, lastname, passport_no, nationality, phone_no, gender, dob, weight_limit, seat_id, booking_id, flight_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -182,15 +174,6 @@ export class BookingModel extends BaseModel {
             bookingId,
             bookingData.flight_id
           ];
-
-          console.log('=== PASSENGER INSERT DEBUG ===');
-          console.log('Passenger data:', JSON.stringify(passengerData, null, 2));
-          console.log('Parameters being inserted:');
-          params.forEach((param, index) => {
-            const fieldNames = ['firstname', 'lastname', 'passport_no', 'nationality', 'phone_no', 'gender', 'dob', 'weight_limit', 'seat_id', 'booking_id', 'flight_id'];
-            console.log(`  ${fieldNames[index]}: ${param === undefined ? '❌ UNDEFINED' : param}`);
-          });
-          console.log('==============================');
 
           await connection.execute(passengerQuery, params);
         }

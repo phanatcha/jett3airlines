@@ -20,8 +20,7 @@ router.use(sanitizeInput);
  * @body support - Support service flag (optional)
  * @body fasttrack - Fast track service flag (optional)
  */
-// Temporarily bypass validation to test
-router.post('/', (req: Request, res: Response) => bookingsController.createBooking(req, res));
+router.post('/', validateBookingCreation, (req: Request, res: Response) => bookingsController.createBooking(req, res));
 
 /**
  * @route GET /api/v1/bookings
