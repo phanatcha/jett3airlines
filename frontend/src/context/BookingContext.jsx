@@ -162,6 +162,8 @@ export const BookingProvider = ({ children }) => {
         fasttrack: fareOptions.fasttrack,
         passengers: passengers.map((passenger, index) => {
           // Transform passenger data to match backend expectations
+          const seatData = selectedSeats.find((s) => s.passengerId === index);
+          
           const transformedPassenger = {
             // Handle both old format (first_name) and new format (firstname)
             firstname: passenger.firstname || passenger.first_name || '',
@@ -173,13 +175,14 @@ export const BookingProvider = ({ children }) => {
             passport_no: passenger.passport_no || `TEMP${Date.now().toString().slice(-8)}${index}`.toUpperCase().slice(0, 20),
             nationality: passenger.nationality || passenger.country || 'Unknown',
             dob: passenger.dob || '1990-01-01',
-            seat_id: selectedSeats.find((s) => s.passengerId === index)?.seatId || null,
-            // Optional fields
-            ...(passenger.email && { email: passenger.email }),
-            ...(passenger.phone && { phone_no: passenger.phone }), // Changed to phone_no
-            ...(passenger.country && { country: passenger.country }),
-            ...(passenger.weight_limit && { weight_limit: passenger.weight_limit }),
+            seat_id: seatData?.seatId ?? null, // Use nullish coalescing to ensure null instead of undefined
           };
+          
+          // Add optional fields only if they have values (not undefined)
+          if (passenger.email) transformedPassenger.email = passenger.email;
+          if (passenger.phone) transformedPassenger.phone_no = passenger.phone;
+          if (passenger.country) transformedPassenger.country = passenger.country;
+          if (passenger.weight_limit) transformedPassenger.weight_limit = passenger.weight_limit;
           
           return transformedPassenger;
         }),
