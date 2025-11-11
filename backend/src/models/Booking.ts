@@ -164,8 +164,9 @@ export class BookingModel extends BaseModel {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `;
 
-          // Encrypt passport number
-          const encryptedPassport = Buffer.from(passengerData.passport_no, 'utf8');
+          // Encrypt passport number - ensure it's not undefined
+          const passportValue = passengerData.passport_no || 'UNKNOWN';
+          const encryptedPassport = Buffer.from(passportValue, 'utf8');
 
           // Debug: Check for undefined values
           const params = [
