@@ -48,7 +48,7 @@ const Fare = () => {
     navigate("/passenger-info");
   };
 
-  // Calculate base price from selected flights
+  // Calculate base price from selected flights (using class-specific price)
   const calculateBasePrice = () => {
     let total = 0;
 
@@ -56,23 +56,34 @@ const Fare = () => {
     console.log('Selected Flights:', selectedFlights);
     console.log('Search Criteria:', searchCriteria);
     
-    // Add departure flight base price
+    // Add departure flight price (class-specific)
     if (selectedFlights.departure) {
-      const depPrice = parseFloat(selectedFlights.departure.base_price || selectedFlights.departure.min_price || 0);
+      // Use 'price' (class-specific) if available, otherwise fall back to base_price
+      const depPrice = parseFloat(
+        selectedFlights.departure.price || 
+        selectedFlights.departure.base_price || 
+        selectedFlights.departure.min_price || 
+        0
+      );
       console.log('Departure Flight Data:', selectedFlights.departure);
+      console.log('Departure price (class-specific):', selectedFlights.departure.price);
       console.log('Departure base_price:', selectedFlights.departure.base_price);
-      console.log('Departure min_price:', selectedFlights.departure.min_price);
       console.log('Calculated departure price:', depPrice);
       
       total += depPrice;
     }
 
-    // Add return flight base price ONLY if it's actually selected
+    // Add return flight price ONLY if it's actually selected
     if (selectedFlights.return) {
-      const retPrice = parseFloat(selectedFlights.return.base_price || selectedFlights.return.min_price || 0);
+      const retPrice = parseFloat(
+        selectedFlights.return.price || 
+        selectedFlights.return.base_price || 
+        selectedFlights.return.min_price || 
+        0
+      );
       console.log('Return Flight Data:', selectedFlights.return);
+      console.log('Return price (class-specific):', selectedFlights.return.price);
       console.log('Return base_price:', selectedFlights.return.base_price);
-      console.log('Return min_price:', selectedFlights.return.min_price);
       console.log('Calculated return price:', retPrice);
       
       total += retPrice;
