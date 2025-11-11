@@ -17,7 +17,12 @@ export class BookingsController {
   // Create new booking with passenger validation and seat conflict prevention
   async createBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
+      console.log('=== CREATE BOOKING CONTROLLER START ===');
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+      
       const clientId = req.user?.client_id;
+      console.log('Client ID:', clientId);
+      
       if (!clientId) {
         res.status(401).json({
           success: false,
@@ -30,6 +35,8 @@ export class BookingsController {
       }
 
       const bookingData: BookingRequest = req.body;
+      console.log('Booking data parsed, flight_id:', bookingData.flight_id);
+      console.log('Number of passengers:', bookingData.passengers?.length);
 
       // Validate booking data
       const validationErrors = bookingModel.validateBookingData(bookingData);
