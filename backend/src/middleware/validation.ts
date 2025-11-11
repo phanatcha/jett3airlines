@@ -615,9 +615,17 @@ export const validateBookingCreation = [
     .withMessage('Nationality must be less than 50 characters'),
     
   body('passengers.*.phone_no')
-    .optional({ nullable: true, checkFalsy: false })
-    .matches(/^\+?[\d\s\-\(\)]+$/)
-    .withMessage('Phone number format is invalid'),
+    .custom((value) => {
+      // Allow null or undefined (optional field)
+      if (value === null || value === undefined || value === '') {
+        return true;
+      }
+      // If provided, validate format
+      if (!/^\+?[\d\s\-\(\)]+$/.test(value)) {
+        throw new Error('Phone number format is invalid');
+      }
+      return true;
+    }),
     
   body('passengers.*.gender')
     .isIn(['Male', 'Female', 'Other'])
