@@ -18,17 +18,14 @@ const EditFlight = () => {
     status: ''
   });
 
-  // Country selection state
   const [departureCountry, setDepartureCountry] = useState('');
   const [arrivalCountry, setArrivalCountry] = useState('');
 
-  // Airports and Airplanes data for dropdowns
   const [airports, setAirports] = useState([]);
   const [airplanes, setAirplanes] = useState([]);
   const [isLoadingAirports, setIsLoadingAirports] = useState(false);
   const [isLoadingAirplanes, setIsLoadingAirplanes] = useState(false);
 
-  // Function to fetch airports from API
   const fetchAirports = async () => {
     try {
       setIsLoadingAirports(true);
@@ -45,7 +42,6 @@ const EditFlight = () => {
     }
   };
 
-  // Function to fetch airplanes from API
   const fetchAirplanes = async () => {
     try {
       setIsLoadingAirplanes(true);
@@ -69,14 +65,11 @@ const EditFlight = () => {
   };
 
   useEffect(() => {
-    // Fetch airports and airplanes
     fetchAirports();
     fetchAirplanes();
 
     if (flightData) {
-      // Convert datetime format for input fields
       const formatDateTimeForInput = (dateTimeStr) => {
-        // Convert "10/11/2030 12:30:00" to "2030-11-10T12:30"
         const [date, time] = dateTimeStr.split(' ');
         const [day, month, year] = date.split('/');
         const [hours, minutes] = time.split(':');
@@ -94,12 +87,10 @@ const EditFlight = () => {
         status: flightData.status || ''
       });
     } else {
-      // If no flight data, redirect back to admin
       navigate('/admin');
     }
   }, [flightData, navigate]);
 
-  // Set country when airports are loaded and airport is selected
   useEffect(() => {
     if (airports.length > 0 && formData.fromAirport) {
       const airport = airports.find(a => a.airport_id === parseInt(formData.fromAirport));
@@ -130,14 +121,12 @@ const EditFlight = () => {
     try {
       console.log('Updating flight:', formData);
       
-      // Format datetime back to MySQL format
       const formatDateTimeForMySQL = (dateTimeStr) => {
         if (!dateTimeStr) return null;
         const date = new Date(dateTimeStr);
         return date.toISOString().slice(0, 19).replace('T', ' ');
       };
 
-      // Prepare update data - only send fields that have changed
       const updateData = {};
       
       if (formData.flightNo) updateData.flight_no = formData.flightNo;
@@ -146,15 +135,12 @@ const EditFlight = () => {
       if (formData.airplane) updateData.airplane_id = parseInt(formData.airplane);
       if (formData.departureTime) updateData.depart_when = new Date(formData.departureTime).toISOString();
       if (formData.arrivalTime) updateData.arrive_when = new Date(formData.arrivalTime).toISOString();
-      // Note: base_price is stored in the airplane table, not the flight table, so we don't update it here
       if (formData.status) updateData.status = formData.status;
 
       console.log('Sending update data:', updateData);
 
-      // Get token from localStorage
       const token = localStorage.getItem('token');
       
-      // Call API to update flight (use id or flightId depending on data structure)
       const flightId = flightData.flightId || flightData.id;
       const response = await fetch(`http://localhost:8080/api/v1/admin/flights/${flightId}`, {
         method: 'PUT',
@@ -171,7 +157,6 @@ const EditFlight = () => {
         alert('Flight updated successfully!');
         navigate('/admin');
       } else {
-        // Better error handling
         let errorMessage = 'Unknown error';
         if (result.message) {
           errorMessage = result.message;

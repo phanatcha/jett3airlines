@@ -9,7 +9,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Initialize auth state from localStorage
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -21,7 +20,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Register new user
   const register = async (userData) => {
     try {
       setError(null);
@@ -30,14 +28,12 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.register(userData);
       
       if (response.success) {
-        // Auto-login after registration
         const loginResponse = await authAPI.login({
           username: userData.username,
           password: userData.password,
         });
         
         if (loginResponse.success) {
-          // Handle both old and new token response formats
           const token = loginResponse.data.tokens?.accessToken || loginResponse.data.token;
           const { client } = loginResponse.data;
           setToken(token);
@@ -46,7 +42,6 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('user', JSON.stringify(client));
           return { success: true, data: client };
         } else {
-          // Login failed after registration
           const errorMessage = loginResponse.error?.message || 'Auto-login failed after registration';
           setError(errorMessage);
           return { success: false, error: errorMessage };
@@ -55,17 +50,13 @@ export const AuthProvider = ({ children }) => {
       
       return response;
     } catch (err) {
-      // Handle different error formats
       let errorResponse;
       
       if (err.error) {
-        // API returned structured error
         errorResponse = err.error;
       } else if (err.message) {
-        // Simple error message
         errorResponse = err.message;
       } else {
-        // Unknown error format
         errorResponse = 'Registration failed';
       }
       
@@ -76,7 +67,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Login user
   const login = async (credentials) => {
     try {
       setError(null);
@@ -85,7 +75,6 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.login(credentials);
       
       if (response.success) {
-        // Handle both old and new token response formats
         const token = response.data.tokens?.accessToken || response.data.token;
         const { client, isAdmin } = response.data;
         setToken(token);
@@ -100,7 +89,6 @@ export const AuthProvider = ({ children }) => {
       console.error('Login error in AuthContext:', err);
       let errorMessage = 'Login failed';
       
-      // Handle different error formats
       if (err.error?.message) {
         errorMessage = err.error.message;
       } else if (err.message) {
@@ -109,7 +97,6 @@ export const AuthProvider = ({ children }) => {
         errorMessage = err;
       }
       
-      // Check if it's a network/server error
       if (errorMessage.toLowerCase().includes('network') || 
           errorMessage.toLowerCase().includes('fetch') ||
           errorMessage.toLowerCase().includes('server')) {
@@ -123,15 +110,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout user
+
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('searchCriteria');
+    localStorage.removeItem('selectedFlights');
+    localStorage.removeItem('passengers');
+    localStorage.removeItem('selectedSeats');
+    localStorage.removeItem('fareOptions');
+    localStorage.removeItem('paymentConfirmation');
   };
 
-  // Update user profile
+
   const updateProfile = async (updates) => {
     try {
       setError(null);
@@ -156,7 +149,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Get fresh profile data
+
   const refreshProfile = async () => {
     try {
       const response = await authAPI.getProfile();
@@ -174,12 +167,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Check if user is authenticated
+
   const isAuthenticated = () => {
     return !!token && !!user;
   };
 
-  // Check if user is admin
   const isAdmin = () => {
     return user?.is_admin === 1 || user?.is_admin === true;
   };
@@ -201,7 +193,6 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom hook to use auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

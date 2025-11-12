@@ -14,24 +14,15 @@ export interface TokenPair {
   refreshToken: string;
 }
 
-/**
- * Hash a password using bcrypt
- */
 export const hashPassword = async (password: string): Promise<string> => {
   const saltRounds = config.security.bcryptRounds;
   return await bcrypt.hash(password, saltRounds);
 };
 
-/**
- * Compare a plain text password with a hashed password
- */
 export const comparePassword = async (password: string, hashedPassword: string): Promise<boolean> => {
   return await bcrypt.compare(password, hashedPassword);
 };
 
-/**
- * Generate JWT access token
- */
 export const generateAccessToken = (payload: JWTPayload): string => {
   return jwt.sign(payload, config.jwt.secret, {
     expiresIn: config.jwt.expiresIn,
@@ -40,9 +31,6 @@ export const generateAccessToken = (payload: JWTPayload): string => {
   } as any);
 };
 
-/**
- * Generate JWT refresh token
- */
 export const generateRefreshToken = (payload: JWTPayload): string => {
   return jwt.sign(payload, config.jwt.secret, {
     expiresIn: config.jwt.refreshExpiresIn,
@@ -51,9 +39,6 @@ export const generateRefreshToken = (payload: JWTPayload): string => {
   } as any);
 };
 
-/**
- * Generate both access and refresh tokens
- */
 export const generateTokenPair = (payload: JWTPayload): TokenPair => {
   return {
     accessToken: generateAccessToken(payload),
@@ -61,9 +46,6 @@ export const generateTokenPair = (payload: JWTPayload): TokenPair => {
   };
 };
 
-/**
- * Verify JWT token and return payload
- */
 export const verifyToken = (token: string): JWTPayload => {
   try {
     const decoded = jwt.verify(token, config.jwt.secret, {
@@ -82,9 +64,6 @@ export const verifyToken = (token: string): JWTPayload => {
   }
 };
 
-/**
- * Extract token from Authorization header
- */
 export const extractTokenFromHeader = (authHeader: string | undefined): string | null => {
   if (!authHeader) {
     return null;

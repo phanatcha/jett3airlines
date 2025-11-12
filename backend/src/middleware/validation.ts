@@ -3,9 +3,6 @@ import { body, param, query, validationResult, ValidationChain } from 'express-v
 import { ValidationError } from '../utils/errors';
 import { formatValidationErrors } from './errorHandler';
 
-/**
- * Middleware to handle validation errors
- */
 export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
   const errors = validationResult(req);
   
@@ -19,9 +16,6 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
   next();
 };
 
-/**
- * Common validation rules for authentication
- */
 export const validateRegistration = [
   body('username')
     .isLength({ min: 3, max: 50 })
@@ -162,9 +156,6 @@ export const validateProfileUpdate = [
   handleValidationErrors
 ];
 
-/**
- * Validation for password change
- */
 export const validatePasswordChange = [
   body('currentPassword')
     .notEmpty()
@@ -187,20 +178,13 @@ export const validatePasswordChange = [
   handleValidationErrors
 ];
 
-/**
- * Generic ID parameter validation
- */
 export const validateIdParam = (paramName: string = 'id'): ValidationChain[] => [
   param(paramName)
     .isInt({ min: 1 })
     .withMessage(`${paramName} must be a positive integer`)
 ];
 
-/**
- * Sanitize input to prevent XSS
- */
 export const sanitizeInput = (req: Request, res: Response, next: NextFunction): void => {
-  // Basic XSS prevention - remove script tags and javascript: protocols
   const sanitizeValue = (value: any): any => {
     if (typeof value === 'string') {
       return value
@@ -218,19 +202,16 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction): 
     return value;
   };
 
-  // Sanitize body (mutable)
   if (req.body) {
     req.body = sanitizeValue(req.body);
   }
   
-  // Sanitize query parameters (need to modify in place)
   if (req.query) {
     for (const key in req.query) {
       (req.query as any)[key] = sanitizeValue(req.query[key]);
     }
   }
   
-  // Sanitize params (need to modify in place)
   if (req.params) {
     for (const key in req.params) {
       (req.params as any)[key] = sanitizeValue(req.params[key]);
@@ -278,9 +259,6 @@ export const validateFlightSearch = [
   handleValidationErrors
 ];
 
-/**
- * Validation for seat availability check
- */
 export const validateSeatAvailabilityCheck = [
   param('id')
     .isInt({ min: 1 })
@@ -299,9 +277,6 @@ export const validateSeatAvailabilityCheck = [
   handleValidationErrors
 ];
 
-/**
- * Validation for flight creation (admin)
- */
 export const validateFlightCreation = [
   body('depart_when')
     .isISO8601()
@@ -355,9 +330,6 @@ export const validateFlightCreation = [
   handleValidationErrors
 ];
 
-/**
- * Validation for flight update (admin)
- */
 export const validateFlightUpdate = [
   param('id')
     .isInt({ min: 1 })
@@ -463,9 +435,6 @@ export const validateAirplaneCreation = [
   handleValidationErrors
 ];
 
-/**
- * Validation for airplane update (admin)
- */
 export const validateAirplaneUpdate = [
   param('id')
     .isInt({ min: 1 })
@@ -519,9 +488,6 @@ export const validateAirplaneUpdate = [
   handleValidationErrors
 ];
 
-/**
- * Validation for seat creation (admin)
- */
 export const validateSeatCreation = [
   param('id')
     .isInt({ min: 1 })
@@ -544,9 +510,6 @@ export const validateSeatCreation = [
   handleValidationErrors
 ];
 
-/**
- * Validation for seat update (admin)
- */
 export const validateSeatUpdate = [
   param('seatId')
     .isInt({ min: 1 })
@@ -572,9 +535,6 @@ export const validateSeatUpdate = [
   handleValidationErrors
 ];
 
-/**
- * Validation for booking creation
- */
 export const validateBookingCreation = [
   body('flight_id')
     .isInt({ min: 1 })
@@ -616,11 +576,9 @@ export const validateBookingCreation = [
     
   body('passengers.*.phone_no')
     .custom((value) => {
-      // Allow null or undefined (optional field)
       if (value === null || value === undefined || value === '') {
         return true;
       }
-      // If provided, validate format
       if (!/^\+?[\d\s\-\(\)]+$/.test(value)) {
         throw new Error('Phone number format is invalid');
       }
@@ -667,9 +625,6 @@ export const validateBookingCreation = [
   handleValidationErrors
 ];
 
-/**
- * Validation for booking update
- */
 export const validateBookingUpdate = [
   param('bookingId')
     .isInt({ min: 1 })
@@ -703,9 +658,6 @@ export const validateBookingUpdate = [
   handleValidationErrors
 ];
 
-/**
- * Validation for passenger creation
- */
 export const validatePassengerCreation = [
   body('firstname')
     .notEmpty()
@@ -780,9 +732,6 @@ export const validatePassengerCreation = [
   handleValidationErrors
 ];
 
-/**
- * Validation for passenger update
- */
 export const validatePassengerUpdate = [
   param('passengerId')
     .isInt({ min: 1 })
@@ -849,10 +798,6 @@ export const validatePassengerUpdate = [
     
   handleValidationErrors
 ];
-/**
-
- * Validation for payment processing
- */
 export const validatePaymentProcessing = [
   body('booking_id')
     .isInt({ min: 1 })
@@ -875,9 +820,6 @@ export const validatePaymentProcessing = [
   handleValidationErrors
 ];
 
-/**
- * Validation for refund processing
- */
 export const validateRefundProcessing = [
   param('bookingId')
     .isInt({ min: 1 })
@@ -891,9 +833,6 @@ export const validateRefundProcessing = [
   handleValidationErrors
 ];
 
-/**
- * Validation for baggage creation
- */
 export const validateBaggageCreation = [
   body('passenger_id')
     .isInt({ min: 1 })
@@ -912,9 +851,6 @@ export const validateBaggageCreation = [
   handleValidationErrors
 ];
 
-/**
- * Validation for baggage status update
- */
 export const validateBaggageStatusUpdate = [
   param('baggageId')
     .optional()
@@ -933,9 +869,6 @@ export const validateBaggageStatusUpdate = [
   handleValidationErrors
 ];
 
-/**
- * Validation for baggage tracking
- */
 export const validateBaggageTracking = [
   param('trackingNo')
     .matches(/^[A-Z0-9]{10,20}$/)
@@ -944,9 +877,6 @@ export const validateBaggageTracking = [
   handleValidationErrors
 ];
 
-/**
- * Validation for baggage search
- */
 export const validateBaggageSearch = [
   query('tracking_no')
     .optional()
@@ -971,9 +901,6 @@ export const validateBaggageSearch = [
   handleValidationErrors
 ];
 
-/**
- * Validation for report date range queries
- */
 export const validateReportDateRange = [
   query('startDate')
     .optional()
@@ -1004,9 +931,6 @@ export const validateReportDateRange = [
   handleValidationErrors
 ];
 
-/**
- * Validation for report export
- */
 export const validateReportExport = [
   query('type')
     .isIn(['metrics', 'bookings', 'flights', 'revenue', 'passengers'])
@@ -1025,9 +949,6 @@ export const validateReportExport = [
   handleValidationErrors
 ];
 
-/**
- * Validation for airport operations
- */
 export const validateAirportCreation = [
   body('city_name')
     .notEmpty()
@@ -1056,9 +977,6 @@ export const validateAirportCreation = [
   handleValidationErrors
 ];
 
-/**
- * Validation for airport update
- */
 export const validateAirportUpdate = [
   param('id')
     .isInt({ min: 1 })
@@ -1095,9 +1013,6 @@ export const validateAirportUpdate = [
   handleValidationErrors
 ];
 
-/**
- * Validation for pagination parameters
- */
 export const validatePagination = [
   query('page')
     .optional()

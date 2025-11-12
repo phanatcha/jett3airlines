@@ -21,10 +21,8 @@ const Info = () => {
   const [basicInfo, setBasicInfo] = useState(null);
 
   useEffect(() => {
-    // Get basic info from sessionStorage
     const storedInfo = sessionStorage.getItem('signupBasicInfo');
     if (!storedInfo) {
-      // If no basic info, redirect to signup
       navigate('/signup');
       return;
     }
@@ -37,7 +35,7 @@ const Info = () => {
       ...prev,
       [id]: value,
     }));
-    setError(""); // Clear error on input change
+    setError("");
   };
 
 const handleSubmit = async (e) => {
@@ -82,7 +80,6 @@ const handleSubmit = async (e) => {
     return;
   }
 
-  // Combine basic info with detailed info
   const registrationData = {
     ...basicInfo,
     dob: normalizedData.dateOfBirth,
@@ -96,20 +93,14 @@ const handleSubmit = async (e) => {
     payment_type: normalizedData.paymentType,
   };
 
-  // Call register API
   const result = await register(registrationData);
 
   if (result.success) {
-    // Clear stored data
     sessionStorage.removeItem('signupBasicInfo');
-    // Redirect to success page after successful registration
     navigate("/signup-success");
   } else {
-    // Handle different error types
     if (result.error) {
-      // Check if it's a validation error with details
       if (typeof result.error === 'object' && result.error.details) {
-        // Format validation errors
         const errorMessages = result.error.details.map(detail => 
           `${detail.field}: ${detail.message}`
         ).join('\n');
@@ -129,7 +120,7 @@ const handleSubmit = async (e) => {
 
 
   if (!basicInfo) {
-    return null; // or a loading spinner
+    return null;
   }
 
   return (

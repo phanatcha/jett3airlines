@@ -12,7 +12,6 @@ describe('Baggage Integration Tests', () => {
   let baggageId: number;
 
   beforeAll(async () => {
-    // Register and login a test user
     const testUser = {
       username: generateRandomUsername(),
       password: 'TestPassword123!',
@@ -46,7 +45,6 @@ describe('Baggage Integration Tests', () => {
       authToken = loginResponse.body.data.token;
     }
 
-    // Create a booking with passenger for baggage tests
     const bookingData = {
       flight_id: 1,
       support: 'no',
@@ -152,7 +150,6 @@ describe('Baggage Integration Tests', () => {
         return;
       }
 
-      // First get the tracking number
       const baggageResponse = await request(app)
         .get(`/api/v1/baggage/${baggageId}`)
         .set('Authorization', `Bearer ${authToken}`);

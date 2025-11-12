@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import errorLogger from '../utils/errorLogger';
 
-/**
- * Debug Panel Component
- * Shows error logs and system information for debugging
- * Press Ctrl+Shift+D to toggle
- */
 const DebugPanel = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [logs, setLogs] = useState([]);
   const [filter, setFilter] = useState('ALL');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Toggle panel with keyboard shortcut (Ctrl+Shift+D)
   useEffect(() => {
     const handleKeyPress = (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'D') {
@@ -25,7 +19,6 @@ const DebugPanel = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
 
-  // Auto-refresh logs
   useEffect(() => {
     if (!isOpen || !autoRefresh) return;
 
@@ -36,7 +29,6 @@ const DebugPanel = () => {
     return () => clearInterval(interval);
   }, [isOpen, autoRefresh]);
 
-  // Load logs when panel opens
   useEffect(() => {
     if (isOpen) {
       setLogs(errorLogger.getLogs());
@@ -76,7 +68,6 @@ const DebugPanel = () => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-6xl h-5/6 flex flex-col">
-        {/* Header */}
         <div className="bg-gray-800 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold">🐛 Debug Panel</h2>
@@ -92,7 +83,6 @@ const DebugPanel = () => {
           </button>
         </div>
 
-        {/* Controls */}
         <div className="bg-gray-100 px-6 py-3 flex items-center gap-4 border-b">
           <div className="flex gap-2">
             {['ALL', 'DEBUG', 'INFO', 'WARN', 'ERROR'].map((level) => (
@@ -144,7 +134,6 @@ const DebugPanel = () => {
           </button>
         </div>
 
-        {/* Logs */}
         <div className="flex-1 overflow-auto p-6 bg-gray-50">
           {filteredLogs.length === 0 ? (
             <div className="text-center text-gray-500 py-12">
@@ -205,7 +194,6 @@ const DebugPanel = () => {
           )}
         </div>
 
-        {/* Footer */}
         <div className="bg-gray-100 px-6 py-3 rounded-b-lg text-sm text-gray-600 border-t">
           Press <kbd className="px-2 py-1 bg-white rounded border">Ctrl</kbd> +{' '}
           <kbd className="px-2 py-1 bg-white rounded border">Shift</kbd> +{' '}

@@ -3,7 +3,6 @@ import { Client, CreateClient, UpdateClient, ClientRegistrationRequest, ClientLo
 import argon2 from 'argon2';
 import crypto from 'crypto';
 
-// Type declarations for Node.js globals (fallback if @types/node is not available)
 declare const process: {
   env: { [key: string]: string | undefined };
 };
@@ -16,12 +15,10 @@ export class ClientModel extends BaseModel {
     super('client');
   }
 
-  // Find client by ID
   async findClientById(clientId: number): Promise<Client | null> {
     return await super.findById<Client>(clientId, 'client_id');
   }
 
-  // Find client by username
   async findByUsername(username: string): Promise<Client | null> {
     try {
       const query = 'SELECT * FROM client WHERE username = ? LIMIT 1';
@@ -33,7 +30,6 @@ export class ClientModel extends BaseModel {
     }
   }
 
-  // Find client by email
   async findByEmail(email: string): Promise<Client | null> {
     try {
       const query = 'SELECT * FROM client WHERE email = ? LIMIT 1';
@@ -45,13 +41,10 @@ export class ClientModel extends BaseModel {
     }
   }
 
-  // Create new client with encrypted password and card number
   async createClient(clientData: ClientRegistrationRequest): Promise<number> {
     try {
-      // Hash password using argon2
       const hashedPassword = await argon2.hash(clientData.password);
       
-      // Encrypt card number
       const encryptedCardNo = this.encryptCardNumber(clientData.card_no);
 
       const createData: CreateClient = {
@@ -65,7 +58,7 @@ export class ClientModel extends BaseModel {
         street: clientData.street,
         city: clientData.city,
         province: clientData.province,
-        Country: clientData.country, // Note: Capital C to match database
+        Country: clientData.country,
         postalcode: clientData.postalcode,
         card_no: encryptedCardNo,
         four_digit: clientData.four_digit,
@@ -79,7 +72,6 @@ export class ClientModel extends BaseModel {
     }
   }
 
-  // Validate client login credentials
   async validateLogin(loginData: ClientLoginRequest): Promise<Client | null> {
     try {
       const client = await this.findByUsername(loginData.username);
@@ -87,7 +79,6 @@ export class ClientModel extends BaseModel {
         return null;
       }
 
-      // Verify password using argon2
       const storedPassword = typeof client.password === 'string' 
         ? client.password 
         : client.password.toString('utf8');
@@ -104,10 +95,8 @@ export class ClientModel extends BaseModel {
     }
   }
 
-  // Update client information
   async updateClient(clientId: number, updateData: UpdateClient): Promise<boolean> {
     try {
-      // If password is being updated, hash it using argon2
       if (updateData.password) {
         const passwordStr = typeof updateData.password === 'string' 
           ? updateData.password 
@@ -115,7 +104,6 @@ export class ClientModel extends BaseModel {
         updateData.password = await argon2.hash(passwordStr);
       }
 
-      // If card number is being updated, encrypt it
       if (updateData.card_no && typeof updateData.card_no === 'string') {
         updateData.card_no = this.encryptCardNumber(updateData.card_no);
       }
@@ -127,12 +115,10 @@ export class ClientModel extends BaseModel {
     }
   }
 
-  // Delete client
   async deleteClient(clientId: number): Promise<boolean> {
     return await this.delete(clientId, 'client_id');
   }
 
-  // Check if username exists
   async usernameExists(username: string): Promise<boolean> {
     try {
       const client = await this.findByUsername(username);
@@ -143,7 +129,6 @@ export class ClientModel extends BaseModel {
     }
   }
 
-  // Check if email exists
   async emailExists(email: string): Promise<boolean> {
     try {
       const client = await this.findByEmail(email);
@@ -154,7 +139,6 @@ export class ClientModel extends BaseModel {
     }
   }
 
-  // Get client profile (without sensitive data)
   async getClientProfile(clientId: number): Promise<Omit<Client, 'password' | 'card_no'> | null> {
     try {
       const client = await this.findClientById(clientId);
@@ -162,7 +146,6 @@ export class ClientModel extends BaseModel {
         return null;
       }
 
-      // Remove sensitive fields
       const { password, card_no, ...profile } = client;
       return profile;
     } catch (error) {
@@ -171,12 +154,10 @@ export class ClientModel extends BaseModel {
     }
   }
 
-  // Get all clients (admin function)
   async getAllClients(limit?: number, offset?: number): Promise<Client[]> {
     return await this.findAll<Client>({}, limit, offset, 'created_date DESC');
   }
 
-  // Private method to encrypt card number
   private encryptCardNumber(cardNumber: string): any {
     try {
       const algorithm = 'aes-256-cbc';
@@ -187,7 +168,6 @@ export class ClientModel extends BaseModel {
       let encrypted = cipher.update(cardNumber, 'utf8', 'hex');
       encrypted += cipher.final('hex');
       
-      // Combine IV and encrypted data
       const combined = iv.toString('hex') + ':' + encrypted;
       return Buffer.from(combined, 'utf8');
     } catch (error) {
@@ -196,13 +176,11 @@ export class ClientModel extends BaseModel {
     }
   }
 
-  // Private method to decrypt card number (for admin purposes)
   private decryptCardNumber(encryptedCardNumber: any): string {
     try {
       const algorithm = 'aes-256-cbc';
       const key = crypto.scryptSync(process.env.ENCRYPTION_KEY || 'default-key', 'salt', 32);
       
-      // Extract IV and encrypted data
       const combined = encryptedCardNumber.toString('utf8');
       const parts = combined.split(':');
       if (parts.length !== 2) {
@@ -223,7 +201,6 @@ export class ClientModel extends BaseModel {
     }
   }
 
-  // Validate client data
   validateClientData(clientData: ClientRegistrationRequest): string[] {
     const errors: string[] = [];
 
@@ -262,13 +239,11 @@ export class ClientModel extends BaseModel {
     return errors;
   }
 
-  // Helper method to validate email format
   private isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }
 
-  // Helper method to validate date format
   private isValidDate(dateString: string): boolean {
     const date = new Date(dateString);
     return date instanceof Date && !isNaN(date.getTime());

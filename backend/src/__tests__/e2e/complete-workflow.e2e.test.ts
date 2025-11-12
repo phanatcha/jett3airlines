@@ -1,7 +1,3 @@
-/**
- * End-to-End Test Suite for Complete Airline Booking Workflow
- * Tests the entire user journey from registration to booking completion
- */
 
 import request from 'supertest';
 import { createTestApp } from '../integration/app';
@@ -16,7 +12,6 @@ describe('Complete Airline Booking Workflow E2E Tests', () => {
   let bookingId: number;
   let paymentId: number;
 
-  // Cleanup after all tests
   afterAll(async () => {
     await database.close();
   });

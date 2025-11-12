@@ -8,12 +8,10 @@ const baggageModel = new BaggageModel();
 const passengerModel = new PassengerModel();
 
 export class BaggageController {
-  // Create new baggage record with tracking number
   async createBaggage(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const baggageData: CreateBaggage = req.body;
 
-      // Validate baggage data
       const validationErrors = baggageModel.validateBaggageData(baggageData);
       if (validationErrors.length > 0) {
         res.status(400).json({
@@ -27,7 +25,6 @@ export class BaggageController {
         return;
       }
 
-      // Verify passenger exists
       const passenger = await passengerModel.findPassengerById(baggageData.passenger_id);
       if (!passenger) {
         res.status(404).json({
@@ -40,7 +37,6 @@ export class BaggageController {
         return;
       }
 
-      // Check if tracking number already exists (if provided)
       if (baggageData.tracking_no) {
         const exists = await baggageModel.trackingNumberExists(baggageData.tracking_no);
         if (exists) {
@@ -55,10 +51,8 @@ export class BaggageController {
         }
       }
 
-      // Create baggage record (tracking number will be auto-generated if not provided)
       const baggageId = await baggageModel.createBaggage(baggageData);
 
-      // Get created baggage details
       const baggageDetails = await baggageModel.getBaggageDetails(baggageId);
 
       res.status(201).json({
@@ -79,7 +73,6 @@ export class BaggageController {
     }
   }
 
-  // Update baggage status
   async updateBaggageStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const baggageId = parseInt(req.params.baggageId);
@@ -107,7 +100,6 @@ export class BaggageController {
         return;
       }
 
-      // Validate status value
       const validStatuses = Object.values(BaggageStatus);
       if (!validStatuses.includes(status)) {
         res.status(400).json({
@@ -120,7 +112,6 @@ export class BaggageController {
         return;
       }
 
-      // Check if baggage exists
       const baggage = await baggageModel.findBaggageById(baggageId);
       if (!baggage) {
         res.status(404).json({
@@ -133,7 +124,6 @@ export class BaggageController {
         return;
       }
 
-      // Update baggage status
       const updateSuccess = await baggageModel.updateBaggageStatus(baggageId, status);
 
       if (!updateSuccess) {
@@ -147,7 +137,6 @@ export class BaggageController {
         return;
       }
 
-      // Get updated baggage details
       const updatedBaggage = await baggageModel.getBaggageDetails(baggageId);
 
       res.json({
@@ -168,7 +157,6 @@ export class BaggageController {
     }
   }
 
-  // Track baggage by tracking number
   async trackBaggage(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { trackingNo } = req.params;
@@ -184,7 +172,6 @@ export class BaggageController {
         return;
       }
 
-      // Track baggage
       const baggageInfo = await baggageModel.trackBaggage(trackingNo);
 
       if (!baggageInfo) {
@@ -216,7 +203,6 @@ export class BaggageController {
     }
   }
 
-  // Get baggage details by ID
   async getBaggageDetails(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const baggageId = parseInt(req.params.baggageId);
@@ -263,7 +249,6 @@ export class BaggageController {
     }
   }
 
-  // Get baggage by passenger ID
   async getBaggageByPassenger(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const passengerId = parseInt(req.params.passengerId);
@@ -279,7 +264,6 @@ export class BaggageController {
         return;
       }
 
-      // Verify passenger exists
       const passenger = await passengerModel.findPassengerById(passengerId);
       if (!passenger) {
         res.status(404).json({
@@ -312,7 +296,6 @@ export class BaggageController {
     }
   }
 
-  // Get baggage by flight ID (admin)
   async getBaggageByFlight(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const flightId = parseInt(req.params.flightId);
@@ -348,7 +331,6 @@ export class BaggageController {
     }
   }
 
-  // Get baggage by status (admin)
   async getBaggageByStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { status } = req.params;
@@ -356,7 +338,6 @@ export class BaggageController {
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = (page - 1) * limit;
 
-      // Validate status value
       const validStatuses = Object.values(BaggageStatus);
       if (!validStatuses.includes(status as BaggageStatus)) {
         res.status(400).json({
@@ -394,7 +375,6 @@ export class BaggageController {
     }
   }
 
-  // Search baggage (admin)
   async searchBaggage(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { query } = req.query;
@@ -431,7 +411,6 @@ export class BaggageController {
     }
   }
 
-  // Get baggage statistics (admin)
   async getBaggageStats(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const stats = await baggageModel.getBaggageStats();
@@ -454,7 +433,6 @@ export class BaggageController {
     }
   }
 
-  // Get lost baggage report (admin)
   async getLostBaggageReport(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const days = parseInt(req.query.days as string) || 30;
@@ -490,7 +468,6 @@ export class BaggageController {
     }
   }
 
-  // Update baggage status by tracking number (public endpoint)
   async updateBaggageStatusByTracking(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { trackingNo } = req.params;
@@ -518,7 +495,6 @@ export class BaggageController {
         return;
       }
 
-      // Validate status value
       const validStatuses = Object.values(BaggageStatus);
       if (!validStatuses.includes(status)) {
         res.status(400).json({
@@ -531,7 +507,6 @@ export class BaggageController {
         return;
       }
 
-      // Check if baggage exists
       const baggage = await baggageModel.findByTrackingNumber(trackingNo);
       if (!baggage) {
         res.status(404).json({
@@ -544,7 +519,6 @@ export class BaggageController {
         return;
       }
 
-      // Update baggage status
       const updateSuccess = await baggageModel.updateBaggageStatusByTracking(trackingNo, status);
 
       if (!updateSuccess) {
@@ -558,7 +532,6 @@ export class BaggageController {
         return;
       }
 
-      // Get updated baggage details
       const updatedBaggage = await baggageModel.trackBaggage(trackingNo);
 
       res.json({
@@ -579,7 +552,6 @@ export class BaggageController {
     }
   }
 
-  // Delete baggage record (admin)
   async deleteBaggage(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const baggageId = parseInt(req.params.baggageId);
@@ -595,7 +567,6 @@ export class BaggageController {
         return;
       }
 
-      // Check if baggage exists
       const baggage = await baggageModel.findBaggageById(baggageId);
       if (!baggage) {
         res.status(404).json({
@@ -608,7 +579,6 @@ export class BaggageController {
         return;
       }
 
-      // Delete baggage
       const deleteSuccess = await baggageModel.deleteBaggage(baggageId);
 
       if (!deleteSuccess) {

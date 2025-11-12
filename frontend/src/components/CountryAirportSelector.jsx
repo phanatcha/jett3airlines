@@ -1,25 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-/**
- * CountryAirportSelector Component
- * 
- * A reusable component for selecting countries and airports with filtering.
- * Provides a two-step selection: first country, then airport within that country.
- * 
- * @param {Object} props
- * @param {string} props.label - Label for the selector (e.g., "Departure", "Arrival")
- * @param {string} props.selectedCountry - Currently selected country
- * @param {Function} props.onCountryChange - Callback when country changes
- * @param {string} props.selectedAirport - Currently selected airport ID
- * @param {Function} props.onAirportChange - Callback when airport changes
- * @param {string} props.countryPlaceholder - Placeholder text for country dropdown
- * @param {string} props.airportPlaceholder - Placeholder text for airport dropdown
- * @param {boolean} props.disabled - Whether the selector is disabled
- * @param {string} props.className - Additional CSS classes
- * @param {boolean} props.showIcons - Whether to show icons (default: false)
- * @param {string} props.iconSrc - Icon source path
- */
 const CountryAirportSelector = ({
   label,
   selectedCountry,
@@ -40,12 +21,12 @@ const CountryAirportSelector = ({
   const [isLoadingAirports, setIsLoadingAirports] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch all airports and extract unique countries on mount
+ 
   useEffect(() => {
     fetchCountriesAndAirports();
   }, []);
 
-  // Filter airports when country or search term changes
+  
   useEffect(() => {
     filterAirports();
   }, [selectedCountry, airports, searchTerm]);
@@ -61,7 +42,7 @@ const CountryAirportSelector = ({
       if (result.success && result.data) {
         setAirports(result.data);
         
-        // Extract unique countries and sort them
+        
         const uniqueCountries = [...new Set(result.data.map(airport => airport.country_name))];
         setCountries(uniqueCountries.sort());
       }
@@ -76,12 +57,12 @@ const CountryAirportSelector = ({
   const filterAirports = () => {
     let filtered = airports;
     
-    // Filter by country if selected
+    
     if (selectedCountry) {
       filtered = filtered.filter(airport => airport.country_name === selectedCountry);
     }
     
-    // Filter by search term if provided
+    
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(airport => 
@@ -98,7 +79,6 @@ const CountryAirportSelector = ({
   const handleCountryChange = (e) => {
     const country = e.target.value;
     onCountryChange(country);
-    // Reset airport selection when country changes
     onAirportChange('');
     setSearchTerm('');
   };
@@ -112,7 +92,7 @@ const CountryAirportSelector = ({
     setSearchTerm(e.target.value);
   };
 
-  // Group airports by country for display
+
   const groupedAirports = filteredAirports.reduce((acc, airport) => {
     const country = airport.country_name;
     if (!acc[country]) {
@@ -122,10 +102,10 @@ const CountryAirportSelector = ({
     return acc;
   }, {});
 
-  // Determine if this is being used in the Flights page (compact mode)
+
   const isCompactMode = className.includes('country-airport-selector-flights');
   
-  // Base classes for selects
+
   const selectBaseClass = isCompactMode 
     ? "w-full bg-transparent outline-none text-sm"
     : "w-full px-4 py-3 rounded-lg border-2 border-black text-lg focus:outline-none focus:border-primary-300 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -139,7 +119,6 @@ const CountryAirportSelector = ({
       )}
       
       <div className={isCompactMode ? "space-y-0" : "space-y-3"}>
-        {/* Country Selection */}
         <div className={`flex items-center ${isCompactMode ? 'space-x-2 mb-2' : 'space-x-2'}`}>
           {showIcons && iconSrc && (
             <img
@@ -163,7 +142,7 @@ const CountryAirportSelector = ({
           </select>
         </div>
 
-        {/* Airport Selection - Only show when country is selected */}
+
         {selectedCountry && (
           <div className={isCompactMode ? "pl-7" : "pl-7"}>
             {/* Optional search input for airports */}
@@ -185,7 +164,7 @@ const CountryAirportSelector = ({
             >
               <option value="">{airportPlaceholder}</option>
               
-              {/* If no country filter, group by country */}
+
               {!selectedCountry && Object.keys(groupedAirports).length > 0 ? (
                 Object.keys(groupedAirports).sort().map((country) => (
                   <optgroup key={country} label={country}>
@@ -200,7 +179,7 @@ const CountryAirportSelector = ({
                   </optgroup>
                 ))
               ) : (
-                /* If country is selected, show flat list */
+
                 filteredAirports.map((airport) => (
                   <option key={airport.airport_id} value={airport.airport_id}>
                     {isCompactMode 

@@ -1,7 +1,3 @@
-/**
- * Performance Audit and Optimization Script
- * Analyzes database queries, API performance, and security measures
- */
 
 import database from '../src/db';
 import { hashPassword, comparePassword } from '../src/utils/auth';
@@ -15,18 +11,13 @@ interface PerformanceMetrics {
 class PerformanceAuditor {
   private results: { [key: string]: PerformanceMetrics[] } = {};
 
-  /**
-   * Test database query performance
-   */
   async testDatabasePerformance(): Promise<void> {
     console.log('\n📊 Testing Database Performance...\n');
 
-    // Test 1: Simple SELECT query
     await this.measureQuery('Simple SELECT', async () => {
       await database.query('SELECT 1');
     });
 
-    // Test 2: Complex JOIN query (flights with airports)
     await this.measureQuery('Complex JOIN (Flights)', async () => {
       await database.query(`
         SELECT f.*, 
@@ -41,7 +32,6 @@ class PerformanceAuditor {
       `);
     });
 
-    // Test 3: Booking with passengers query
     await this.measureQuery('Booking with Passengers', async () => {
       await database.query(`
         SELECT b.*, p.*
@@ -51,7 +41,6 @@ class PerformanceAuditor {
       `);
     });
 
-    // Test 4: Aggregation query
     await this.measureQuery('Aggregation (Booking Count)', async () => {
       await database.query(`
         SELECT client_id, COUNT(*) as booking_count
@@ -64,20 +53,15 @@ class PerformanceAuditor {
     this.printResults('Database Queries');
   }
 
-  /**
-   * Test encryption performance
-   */
   async testEncryptionPerformance(): Promise<void> {
     console.log('\n🔐 Testing Encryption Performance...\n');
 
     const testPassword = 'TestPassword123!';
 
-    // Test password hashing
     await this.measureQuery('Password Hashing (bcrypt)', async () => {
       await hashPassword(testPassword);
     });
 
-    // Test password comparison
     const hashedPassword = await hashPassword(testPassword);
     await this.measureQuery('Password Comparison (bcrypt)', async () => {
       await comparePassword(testPassword, hashedPassword);
@@ -86,21 +70,16 @@ class PerformanceAuditor {
     this.printResults('Encryption Operations');
   }
 
-  /**
-   * Validate database indexes
-   */
   async validateDatabaseIndexes(): Promise<void> {
     console.log('\n📑 Validating Database Indexes...\n');
 
     try {
-      // Check indexes on critical tables
       const tables = ['flight', 'booking', 'passenger', 'client', 'payment'];
       
       for (const table of tables) {
         const indexes = await database.query(`SHOW INDEX FROM ${table}`);
         console.log(`✅ ${table}: ${indexes.length} indexes found`);
         
-        // Print index details
         indexes.forEach((idx: any) => {
           console.log(`   - ${idx.Key_name} on ${idx.Column_name}`);
         });
@@ -110,9 +89,6 @@ class PerformanceAuditor {
     }
   }
 
-  /**
-   * Check connection pool health
-   */
   async checkConnectionPool(): Promise<void> {
     console.log('\n🔌 Checking Connection Pool Health...\n');
 
@@ -124,9 +100,6 @@ class PerformanceAuditor {
     console.log(`  Queued Requests: ${stats.queuedRequests}`);
   }
 
-  /**
-   * Test concurrent query performance
-   */
   async testConcurrentQueries(): Promise<void> {
     console.log('\n⚡ Testing Concurrent Query Performance...\n');
 
@@ -151,9 +124,6 @@ class PerformanceAuditor {
     }
   }
 
-  /**
-   * Validate security configurations
-   */
   async validateSecurityMeasures(): Promise<void> {
     console.log('\n🛡️  Validating Security Measures...\n');
 
@@ -169,7 +139,6 @@ class PerformanceAuditor {
       console.log(`${result ? '✅' : '❌'} ${name}: ${result ? 'Configured' : 'Missing'}`);
     });
 
-    // Check password hashing strength
     console.log('\n🔒 Password Security:');
     const testPassword = 'Test123!';
     const hash1 = await hashPassword(testPassword);
@@ -179,9 +148,6 @@ class PerformanceAuditor {
     console.log(`✅ Hash length: ${hash1.length} characters`);
   }
 
-  /**
-   * Generate optimization recommendations
-   */
   generateRecommendations(): void {
     console.log('\n💡 Optimization Recommendations:\n');
 
@@ -201,9 +167,6 @@ class PerformanceAuditor {
     recommendations.forEach(rec => console.log(rec));
   }
 
-  /**
-   * Measure query execution time
-   */
   private async measureQuery(name: string, queryFn: () => Promise<any>): Promise<void> {
     const iterations = 5;
     const results: PerformanceMetrics[] = [];
@@ -227,9 +190,6 @@ class PerformanceAuditor {
     this.results[name] = results;
   }
 
-  /**
-   * Print performance results
-   */
   private printResults(category: string): void {
     console.log(`\n📈 ${category} Results:\n`);
 
@@ -252,13 +212,9 @@ class PerformanceAuditor {
       console.log(`   Success Rate: ${successfulMetrics.length}/${metrics.length}`);
     });
 
-    // Clear results for next category
     this.results = {};
   }
 
-  /**
-   * Run complete audit
-   */
   async runCompleteAudit(): Promise<void> {
     console.log('🚀 Starting Performance Audit...\n');
     console.log('='.repeat(60));
@@ -282,7 +238,6 @@ class PerformanceAuditor {
   }
 }
 
-// Run audit if executed directly
 if (require.main === module) {
   const auditor = new PerformanceAuditor();
   auditor.runCompleteAudit().catch(console.error);

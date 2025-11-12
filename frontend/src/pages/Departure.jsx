@@ -11,7 +11,6 @@ const Departure = () => {
   const { searchCriteria, selectDepartureFlight } = useBooking();
   const [selectedTab, setSelectedTab] = useState("best");
 
-  // Filter state
   const [filters, setFilters] = useState({
     minPrice: 0,
     maxPrice: 100000,
@@ -23,14 +22,12 @@ const Departure = () => {
   const [allFlights, setAllFlights] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Get flight results from location state or BookingContext
   useEffect(() => {
     const flights = location.state?.flights || searchCriteria.searchResults || [];
     setAllFlights(flights);
     setLoading(false);
   }, [location.state, searchCriteria.searchResults]);
 
-  // Apply filters whenever filters, flight data, or selected tab changes
   useEffect(() => {
     applyFilters();
   }, [filters, allFlights, selectedTab]);
@@ -38,21 +35,16 @@ const Departure = () => {
   const applyFilters = () => {
     let filtered = [...allFlights];
 
-    // Price filter
     const getFlightPrice = (flight) => flight.price || flight.base_price;
     filtered = filtered.filter(flight => 
       getFlightPrice(flight) >= filters.minPrice && 
       getFlightPrice(flight) <= filters.maxPrice
     );
 
-    // Stops filter - for now, assume all flights are direct (stops = 0)
-    // This can be enhanced when flight connection data is available
     if (filters.maxStops === '0') {
-      // Filter for direct flights only
       filtered = filtered.filter(flight => !flight.stops || flight.stops === 0);
     }
 
-    // Departure time filter
     if (filters.departureTimeRanges.length > 0) {
       filtered = filtered.filter(flight => {
         const departureDate = new Date(flight.depart_when);
@@ -70,7 +62,6 @@ const Departure = () => {
       });
     }
 
-    // Apply sorting based on selected tab
     if (selectedTab === 'cheapest') {
       filtered.sort((a, b) => getFlightPrice(a) - getFlightPrice(b));
     } else if (selectedTab === 'fastest') {
@@ -80,11 +71,10 @@ const Departure = () => {
         return durationA - durationB;
       });
     } else {
-      // 'best' - balance of price and duration
       filtered.sort((a, b) => {
         const durationA = new Date(a.arrive_when).getTime() - new Date(a.depart_when).getTime();
         const durationB = new Date(b.arrive_when).getTime() - new Date(b.depart_when).getTime();
-        const scoreA = (getFlightPrice(a) / 1000) + (durationA / 3600000); // Normalize price and duration
+        const scoreA = (getFlightPrice(a) / 1000) + (durationA / 3600000);
         const scoreB = (getFlightPrice(b) / 1000) + (durationB / 3600000);
         return scoreA - scoreB;
       });
@@ -100,19 +90,16 @@ const Departure = () => {
     }));
   };
 
-  // Format price for display
   const formatPrice = (price) => {
     return `$${parseFloat(price).toFixed(2)}`;
   };
 
-  // Format stops for display
   const formatStops = (stops) => {
     if (!stops || stops === 0) return 'Direct';
     if (stops === 1) return '1 stop';
     return `${stops} stops`;
   };
 
-  // Format time from ISO string
   const formatTime = (isoString) => {
     const date = new Date(isoString);
     return date.toLocaleTimeString('en-US', { 
@@ -122,7 +109,6 @@ const Departure = () => {
     });
   };
 
-  // Format date from ISO string
   const formatDate = (isoString) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('en-US', { 
@@ -132,7 +118,6 @@ const Departure = () => {
     });
   };
 
-  // Calculate flight duration
   const calculateDuration = (departTime, arriveTime) => {
     const depart = new Date(departTime);
     const arrive = new Date(arriveTime);
@@ -142,22 +127,16 @@ const Departure = () => {
     return `${hours}h ${minutes}m`;
   };
 
-  // Handle flight selection
   const handleSelectFlight = (flight) => {
-    // Store selected departure flight in BookingContext
     selectDepartureFlight(flight);
 
-    // Navigate based on trip type
     if (searchCriteria.tripType === 'round-trip') {
-      // Navigate to return flight selection
       navigate('/flights/return');
     } else {
-      // Navigate to fare options for one-way trips
       navigate('/fare');
     }
   };
 
-  // Get route display (for now, just show departure and arrival airports)
   const getRouteDisplay = (flight) => {
     return [
       flight.depart_airport_name || 'Departure Airport',
@@ -294,7 +273,6 @@ const Departure = () => {
   );
 };
 
-// FlightCard component for displaying individual flight details
 const FlightCard = ({ 
   flight, 
   onSelect, 

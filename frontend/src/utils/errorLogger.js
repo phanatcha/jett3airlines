@@ -1,7 +1,3 @@
-/**
- * Error Logging Utility
- * Provides comprehensive error logging for debugging production issues
- */
 
 const LOG_LEVELS = {
   DEBUG: 'DEBUG',
@@ -13,13 +9,10 @@ const LOG_LEVELS = {
 class ErrorLogger {
   constructor() {
     this.logs = [];
-    this.maxLogs = 100; // Keep last 100 logs in memory
+    this.maxLogs = 100;
     this.enabled = true;
   }
 
-  /**
-   * Format log entry with timestamp and context
-   */
   formatLog(level, message, context = {}) {
     return {
       timestamp: new Date().toISOString(),
@@ -31,23 +24,17 @@ class ErrorLogger {
     };
   }
 
-  /**
-   * Add log entry to memory
-   */
   addLog(logEntry) {
     this.logs.push(logEntry);
     
-    // Keep only last maxLogs entries
     if (this.logs.length > this.maxLogs) {
       this.logs.shift();
     }
 
-    // Also store in localStorage for persistence
     try {
       const storedLogs = JSON.parse(localStorage.getItem('errorLogs') || '[]');
       storedLogs.push(logEntry);
       
-      // Keep only last 50 in localStorage
       if (storedLogs.length > 50) {
         storedLogs.shift();
       }
@@ -58,9 +45,6 @@ class ErrorLogger {
     }
   }
 
-  /**
-   * Log debug message
-   */
   debug(message, context = {}) {
     if (!this.enabled) return;
     
@@ -69,9 +53,6 @@ class ErrorLogger {
     console.log(`[${LOG_LEVELS.DEBUG}]`, message, context);
   }
 
-  /**
-   * Log info message
-   */
   info(message, context = {}) {
     if (!this.enabled) return;
     
@@ -80,9 +61,6 @@ class ErrorLogger {
     console.info(`[${LOG_LEVELS.INFO}]`, message, context);
   }
 
-  /**
-   * Log warning message
-   */
   warn(message, context = {}) {
     if (!this.enabled) return;
     
@@ -91,9 +69,6 @@ class ErrorLogger {
     console.warn(`[${LOG_LEVELS.WARN}]`, message, context);
   }
 
-  /**
-   * Log error message
-   */
   error(message, error = null, context = {}) {
     if (!this.enabled) return;
     
@@ -111,16 +86,10 @@ class ErrorLogger {
     console.error(`[${LOG_LEVELS.ERROR}]`, message, error, context);
   }
 
-  /**
-   * Get all logs
-   */
   getLogs() {
     return this.logs;
   }
 
-  /**
-   * Get logs from localStorage
-   */
   getStoredLogs() {
     try {
       return JSON.parse(localStorage.getItem('errorLogs') || '[]');
@@ -130,9 +99,6 @@ class ErrorLogger {
     }
   }
 
-  /**
-   * Clear all logs
-   */
   clearLogs() {
     this.logs = [];
     try {
@@ -142,9 +108,6 @@ class ErrorLogger {
     }
   }
 
-  /**
-   * Export logs as JSON
-   */
   exportLogs() {
     const allLogs = {
       memoryLogs: this.logs,
@@ -155,9 +118,6 @@ class ErrorLogger {
     return JSON.stringify(allLogs, null, 2);
   }
 
-  /**
-   * Download logs as file
-   */
   downloadLogs() {
     const logsJson = this.exportLogs();
     const blob = new Blob([logsJson], { type: 'application/json' });
@@ -171,18 +131,13 @@ class ErrorLogger {
     URL.revokeObjectURL(url);
   }
 
-  /**
-   * Enable/disable logging
-   */
   setEnabled(enabled) {
     this.enabled = enabled;
   }
 }
 
-// Create singleton instance
 const errorLogger = new ErrorLogger();
 
-// Add global error handler
 window.addEventListener('error', (event) => {
   errorLogger.error('Uncaught error', event.error, {
     message: event.message,
@@ -192,7 +147,6 @@ window.addEventListener('error', (event) => {
   });
 });
 
-// Add unhandled promise rejection handler
 window.addEventListener('unhandledrejection', (event) => {
   errorLogger.error('Unhandled promise rejection', event.reason, {
     promise: event.promise,
@@ -201,7 +155,6 @@ window.addEventListener('unhandledrejection', (event) => {
 
 export default errorLogger;
 
-// Convenience exports
 export const logDebug = (message, context) => errorLogger.debug(message, context);
 export const logInfo = (message, context) => errorLogger.info(message, context);
 export const logWarn = (message, context) => errorLogger.warn(message, context);

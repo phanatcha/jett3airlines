@@ -13,7 +13,6 @@ describe('Missing Functionality Verification Tests', () => {
   let testClientId: number;
 
   beforeAll(async () => {
-    // Login as admin
     const adminLogin = await request(app)
       .post('/api/v1/auth/login')
       .send({
@@ -25,7 +24,6 @@ describe('Missing Functionality Verification Tests', () => {
       adminToken = adminLogin.body.data.token;
     }
 
-    // Create and login as regular user
     const testUser = {
       username: generateRandomUsername(),
       password: 'TestPassword123!',
@@ -70,7 +68,6 @@ describe('Missing Functionality Verification Tests', () => {
         return;
       }
 
-      // Get airports for testing
       const airportsResponse = await request(app)
         .get('/api/v1/airports')
         .expect(200);
@@ -81,7 +78,6 @@ describe('Missing Functionality Verification Tests', () => {
         return;
       }
 
-      // Get airplanes for testing
       const airplanesResponse = await request(app)
         .get('/api/v1/admin/airplanes')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -125,7 +121,6 @@ describe('Missing Functionality Verification Tests', () => {
 
       const invalidFlightData = {
         flight_no: 'TEST123'
-        // Missing other required fields
       };
 
       const response = await request(app)
@@ -171,7 +166,7 @@ describe('Missing Functionality Verification Tests', () => {
         arrive_airport_id: airports[1].airport_id,
         airplane_id: airplanes[0].airplane_id,
         depart_when: new Date(Date.now() + 90000000).toISOString(),
-        arrive_when: new Date(Date.now() + 86400000).toISOString(), // Arrives before departure
+        arrive_when: new Date(Date.now() + 86400000).toISOString(),
         base_price: 299.99,
         status: 'Scheduled'
       };
@@ -194,7 +189,6 @@ describe('Missing Functionality Verification Tests', () => {
         return;
       }
 
-      // Get existing bookings
       const bookingsResponse = await request(app)
         .get('/api/v1/admin/bookings')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -382,7 +376,6 @@ describe('Missing Functionality Verification Tests', () => {
         payment_type: 'credit'
       };
 
-      // Register
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')
         .send(newUser)
@@ -390,7 +383,6 @@ describe('Missing Functionality Verification Tests', () => {
 
       expect(registerResponse.body.success).toBe(true);
 
-      // Login with same credentials
       const loginResponse = await request(app)
         .post('/api/v1/auth/login')
         .send({

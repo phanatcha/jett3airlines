@@ -37,7 +37,6 @@ const Navbar = () => {
                 Contact
             </a>
             
-            {/* Logout button - only show when logged in */}
             {isAuthenticated && isAuthenticated() && (
               <button
                 onClick={handleLogout}

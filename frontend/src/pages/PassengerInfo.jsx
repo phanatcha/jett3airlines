@@ -22,7 +22,6 @@ const PassengerInfo = () => {
   });
 
   const [passengers, setPassengers] = useState(() => {
-    // Get the expected passenger count from search criteria
     const passengerCount = parseInt(searchCriteria.passengers) || 1;
     
     console.log('=== PassengerInfo Initialization ===');
@@ -31,11 +30,9 @@ const PassengerInfo = () => {
     console.log('Context passengers length:', contextPassengers.length);
     console.log('Context passengers:', contextPassengers);
     
-    // If context already has the correct number of passengers with data, use them
     if (contextPassengers.length === passengerCount && 
         contextPassengers.some(p => p.firstname || p.firstName)) {
       console.log('Using existing context passengers');
-      // Map context passengers to local format
       return contextPassengers.map(p => ({
         firstName: p.firstname || p.firstName || "",
         lastName: p.lastname || p.lastName || "",
@@ -43,7 +40,6 @@ const PassengerInfo = () => {
       }));
     }
     
-    // Initialize empty passenger array based on count
     console.log('Initializing new passenger array with count:', passengerCount);
     return Array.from({ length: passengerCount }, () => ({
       firstName: "",
@@ -54,7 +50,6 @@ const PassengerInfo = () => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
-  // Sync passenger count with search criteria when it changes
   useEffect(() => {
     const expectedCount = parseInt(searchCriteria.passengers) || 1;
     
@@ -63,14 +58,12 @@ const PassengerInfo = () => {
     console.log('Current passenger array length:', passengers.length);
     console.log('Context passengers length:', contextPassengers.length);
     
-    // Only adjust if the count doesn't match and we don't have filled context passengers
     const hasFilledContextPassengers = contextPassengers.length > 0 && 
                                        contextPassengers.some(p => p.firstname || p.firstName);
     
     if (!hasFilledContextPassengers && passengers.length !== expectedCount) {
       console.log('Adjusting passenger count from', passengers.length, 'to', expectedCount);
       setPassengers(Array.from({ length: expectedCount }, (_, index) => {
-        // Preserve existing data if available
         if (passengers[index]) {
           return passengers[index];
         }
@@ -87,7 +80,6 @@ const PassengerInfo = () => {
     const { name, value } = e.target;
     setContactData((prev) => ({ ...prev, [name]: value }));
     
-    // Clear error for this field when user starts typing
     if (errors[`contact_${name}`]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -101,7 +93,6 @@ const PassengerInfo = () => {
     const { name, value } = e.target;
     setPassengers((prev) => {
       const newData = [...prev];
-      // Ensure the passenger object exists
       if (!newData[index]) {
         newData[index] = {};
       }
@@ -109,7 +100,6 @@ const PassengerInfo = () => {
       return newData;
     });
     
-    // Clear error for this field when user starts typing
     const errorKey = `passenger_${index}_${name}`;
     if (errors[errorKey]) {
       setErrors((prev) => {
@@ -124,19 +114,16 @@ const PassengerInfo = () => {
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
-  // Validation functions
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
   const validatePhoneNumber = (phone) => {
-    // Phone number should be at least 10 digits (excluding country code)
     return phone && phone.length >= 10;
   };
 
   const validateName = (name) => {
-    // Name should be at least 2 characters and contain only letters, spaces, hyphens, and apostrophes
     const nameRegex = /^[a-zA-Z\s\-']{2,}$/;
     return nameRegex.test(name);
   };
@@ -144,7 +131,6 @@ const PassengerInfo = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Validate contact details
     if (!contactData.firstName.trim()) {
       newErrors.contact_firstName = "First name is required";
     } else if (!validateName(contactData.firstName)) {
@@ -173,7 +159,6 @@ const PassengerInfo = () => {
       newErrors.contact_phoneNumber = "Please enter a valid phone number (at least 10 digits)";
     }
 
-    // Validate passenger details
     passengers.forEach((passenger, index) => {
       if (!passenger.firstName.trim()) {
         newErrors[`passenger_${index}_firstName`] = `Passenger ${index + 1} first name is required`;
@@ -205,7 +190,6 @@ const PassengerInfo = () => {
     });
     
     try {
-      // Mark all fields as touched
       const allTouched = {};
       Object.keys(contactData).forEach(key => {
         allTouched[`contact_${key}`] = true;
@@ -219,10 +203,8 @@ const PassengerInfo = () => {
 
       logDebug('Validating passenger form');
       
-      // Validate form
       if (!validateForm()) {
         logError('Passenger form validation failed', null, { errors });
-        // Scroll to first error
         const firstErrorElement = document.querySelector('.border-red-500');
         if (firstErrorElement) {
           firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -235,12 +217,9 @@ const PassengerInfo = () => {
         newPassengers: passengers.length,
       });
 
-      // Store passenger data in context
-      // Clear existing passengers first - FIXED: Use a safer approach
       const existingCount = contextPassengers.length;
       logDebug('Clearing existing passengers', { count: existingCount });
       
-      // Remove passengers in reverse order to avoid index issues
       for (let i = existingCount - 1; i >= 0; i--) {
         logDebug(`Removing passenger at index ${i}`);
         removePassenger(i);
@@ -248,7 +227,6 @@ const PassengerInfo = () => {
 
       logDebug('Adding new passengers to context');
       
-      // Add all passengers with contact info
       passengers.forEach((passenger, index) => {
         logDebug(`Processing passenger ${index + 1}`, {
           firstName: passenger.firstName,
@@ -256,19 +234,16 @@ const PassengerInfo = () => {
           gender: passenger.gender,
         });
         
-        // Generate a valid temporary passport number (6-20 chars, uppercase + numbers only)
-        const timestamp = Date.now().toString().slice(-8); // Last 8 digits
+        const timestamp = Date.now().toString().slice(-8);
         const tempPassport = `TEMP${timestamp}${index}`.toUpperCase().slice(0, 20);
         
         const passengerData = {
-          firstname: passenger.firstName.trim(), // Changed from first_name
-          lastname: passenger.lastName.trim(), // Changed from last_name
+          firstname: passenger.firstName.trim(),
+          lastname: passenger.lastName.trim(),
           gender: passenger.gender,
-          // Required fields with default values (TODO: Add form fields for these)
-          passport_no: tempPassport, // Temporary passport number (6-20 chars, uppercase+numbers)
-          nationality: contactData.country.trim() || 'Unknown', // Use contact country as nationality
-          dob: '1990-01-01', // Default DOB (TODO: Add DOB field to form)
-          // Add contact info to first passenger
+          passport_no: tempPassport,
+          nationality: contactData.country.trim() || 'Unknown',
+          dob: '1990-01-01',
           ...(index === 0 && {
             email: contactData.email.trim(),
             phone: contactData.phoneNumber,
@@ -282,7 +257,6 @@ const PassengerInfo = () => {
 
       logInfo('All passengers added successfully, navigating to seat selection');
       
-      // Navigate to seat selection
       navigate("/seat");
       
     } catch (error) {

@@ -25,15 +25,12 @@ const Profile = () => {
     postalcode: '',
   });
 
-  // Redirect if not authenticated
   useEffect(() => {
-    // Wait for auth to finish loading before checking
     if (authLoading) return;
     
     if (!isAuthenticated()) {
       navigate('/login', { state: { from: '/profile' } });
     } else if (user) {
-      // Initialize form with user data
       setFormData({
         firstname: user.firstname || '',
         lastname: user.lastname || '',
@@ -69,7 +66,6 @@ const Profile = () => {
       if (result.success) {
         setSuccess('Profile updated successfully!');
         setIsEditing(false);
-        // Clear success message after 3 seconds
         setTimeout(() => setSuccess(null), 3000);
       } else {
         setError(result.error || 'Failed to update profile');
@@ -83,7 +79,6 @@ const Profile = () => {
   };
 
   const handleCancel = () => {
-    // Reset form to original user data
     if (user) {
       setFormData({
         firstname: user.firstname || '',

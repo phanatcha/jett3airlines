@@ -6,12 +6,10 @@ export class AirplaneModel extends BaseModel {
     super('airplane');
   }
 
-  // Find airplane by ID
   async findAirplaneById(airplaneId: number): Promise<Airplane | null> {
     return await super.findById<Airplane>(airplaneId, 'airplane_id');
   }
 
-  // Find airplane by registration
   async findByRegistration(registration: string): Promise<Airplane | null> {
     try {
       const query = 'SELECT * FROM airplane WHERE registration = ? LIMIT 1';
@@ -23,7 +21,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Get all airplanes
   async getAllAirplanes(limit?: number, offset?: number) {
     try {
       return await this.findAll<Airplane>({}, limit, offset, 'type, registration');
@@ -33,7 +30,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Get airplane with detailed information including seat configuration
   async getAirplaneDetails(airplaneId: number) {
     try {
       const query = `
@@ -61,7 +57,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Get airplanes by type
   async getAirplanesByType(type: string) {
     try {
       const query = `
@@ -77,7 +72,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Get airplanes by country
   async getAirplanesByCountry(country: string) {
     try {
       const query = `
@@ -93,7 +87,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Get airplane utilization statistics
   async getAirplaneUtilization(airplaneId: number, days: number = 30) {
     try {
       const query = `
@@ -124,7 +117,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Get airplane fleet statistics
   async getFleetStatistics() {
     try {
       const query = `
@@ -151,7 +143,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Get airplane types with counts
   async getAirplaneTypes() {
     try {
       const query = `
@@ -174,7 +165,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Get available airplanes for a time period
   async getAvailableAirplanes(startTime: string, endTime: string) {
     try {
       const query = `
@@ -205,7 +195,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Create new airplane (admin function)
   async createAirplane(airplaneData: Omit<Airplane, 'airplane_id'>): Promise<number> {
     try {
       return await this.create(airplaneData as any);
@@ -215,7 +204,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Update airplane information (admin function)
   async updateAirplane(airplaneId: number, updateData: Partial<Airplane>): Promise<boolean> {
     try {
       return await this.update<Airplane>(airplaneId, updateData, 'airplane_id');
@@ -225,10 +213,8 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Delete airplane (admin function)
   async deleteAirplane(airplaneId: number): Promise<boolean> {
     try {
-      // Check if airplane has any flights
       const flightCount = await this.executeQuery(
         'SELECT COUNT(*) as count FROM flight WHERE airplane_id = ?',
         [airplaneId]
@@ -238,7 +224,6 @@ export class AirplaneModel extends BaseModel {
         throw new Error('Cannot delete airplane with existing flights');
       }
 
-      // Check if airplane has any seats
       const seatCount = await this.executeQuery(
         'SELECT COUNT(*) as count FROM seat WHERE airplane_id = ?',
         [airplaneId]
@@ -255,7 +240,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Check if registration exists
   async registrationExists(registration: string, excludeAirplaneId?: number): Promise<boolean> {
     try {
       let query = 'SELECT COUNT(*) as count FROM airplane WHERE registration = ?';
@@ -274,11 +258,8 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Get airplane maintenance schedule (placeholder for future implementation)
   async getMaintenanceSchedule(airplaneId: number) {
     try {
-      // This would integrate with a maintenance system
-      // For now, return basic information
       const airplane = await this.findAirplaneById(airplaneId);
       if (!airplane) return null;
 
@@ -289,9 +270,9 @@ export class AirplaneModel extends BaseModel {
       return {
         airplane_id: airplaneId,
         age_years: age,
-        next_maintenance_due: 'TBD', // Would be calculated based on flight hours/cycles
+        next_maintenance_due: 'TBD',
         maintenance_status: age > 10 ? 'Due Soon' : 'Current',
-        last_maintenance: 'TBD' // Would come from maintenance records
+        last_maintenance: 'TBD'
       };
     } catch (error) {
       console.error('Error getting maintenance schedule:', error);
@@ -299,7 +280,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Search airplanes
   async searchAirplanes(searchTerm: string, limit: number = 20) {
     try {
       const query = `
@@ -326,7 +306,6 @@ export class AirplaneModel extends BaseModel {
     }
   }
 
-  // Validate airplane data
   validateAirplaneData(airplaneData: any): string[] {
     const errors: string[] = [];
 
@@ -378,7 +357,6 @@ export class AirplaneModel extends BaseModel {
     return errors;
   }
 
-  // Helper method to validate date format
   private isValidDate(dateString: string): boolean {
     const date = new Date(dateString);
     return date instanceof Date && !isNaN(date.getTime());

@@ -14,18 +14,14 @@ const MyBookings = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Filter states
-  const [activeFilter, setActiveFilter] = useState('all'); // all, upcoming, past, cancelled
+  const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
 
-  // Redirect if not authenticated
   useEffect(() => {
-    // Wait for auth to finish loading
     if (authLoading) return;
     
     if (!isAuthenticated()) {
@@ -33,9 +29,7 @@ const MyBookings = () => {
     }
   }, [authLoading, isAuthenticated, navigate]);
 
-  // Fetch bookings on mount
   useEffect(() => {
-    // Wait for auth to finish loading
     if (authLoading) return;
     
     if (isAuthenticated()) {
@@ -43,7 +37,6 @@ const MyBookings = () => {
     }
   }, [authLoading, currentPage]);
 
-  // Apply filters when bookings or filter state changes
   useEffect(() => {
     applyFilters();
   }, [bookings, activeFilter, searchQuery]);
@@ -75,7 +68,6 @@ const MyBookings = () => {
     let filtered = [...bookings];
     const now = new Date();
 
-    // Apply status filter
     if (activeFilter === 'upcoming') {
       filtered = filtered.filter(booking => {
         const departureDate = new Date(booking.depart_when);
@@ -90,7 +82,6 @@ const MyBookings = () => {
       filtered = filtered.filter(booking => booking.status === 'cancelled');
     }
 
-    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(booking => 
@@ -118,7 +109,6 @@ const MyBookings = () => {
 
       if (response.success) {
         alert(response.message || 'Booking cancelled successfully');
-        // Refresh bookings
         fetchBookings();
       } else {
         alert(response.error?.message || 'Failed to cancel booking');
@@ -177,7 +167,6 @@ const MyBookings = () => {
     const now = new Date();
     const hoursDifference = (departureDate - now) / (1000 * 60 * 60);
     
-    // Can cancel if more than 24 hours before departure
     return hoursDifference > 24;
   };
 

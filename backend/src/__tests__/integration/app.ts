@@ -14,21 +14,17 @@ import { securityHeaders, generalRateLimit, corsOptions, securityErrorHandler } 
 import { errorHandler, notFoundHandler } from '../../middleware/errorHandler';
 import { sanitizeInput } from '../../middleware/validation';
 
-// Create test app instance
 export const createTestApp = () => {
   const app = express();
 
-  // Security middleware
   app.use(securityHeaders);
   app.use(cors(corsOptions));
   app.use(generalRateLimit);
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  // Input sanitization middleware
   app.use(sanitizeInput);
 
-  // API routes
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/flights', flightsRouter);
   app.use('/api/v1/bookings', bookingsRouter);
@@ -48,18 +44,14 @@ export const createTestApp = () => {
     });
   });
 
-  // 404 handler
   app.use(notFoundHandler);
 
-  // Security error handling middleware
   app.use(securityErrorHandler);
 
-  // Global error handler
   app.use(errorHandler);
 
   return app;
 };
 
-// Create and export default app instance for tests
 const app = createTestApp();
 export default app;

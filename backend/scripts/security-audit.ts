@@ -1,16 +1,9 @@
-/**
- * Security Audit Script
- * Validates security measures, encryption, and data protection
- */
 
 import database from '../src/db';
 import { hashPassword, comparePassword, generateTokenPair, verifyToken } from '../src/utils/auth';
 import crypto from 'crypto';
 
 class SecurityAuditor {
-  /**
-   * Test password encryption strength
-   */
   async testPasswordEncryption(): Promise<void> {
     console.log('\n🔐 Testing Password Encryption...\n');
 
@@ -23,7 +16,6 @@ class SecurityAuditor {
     for (const password of testPasswords) {
       console.log(`Testing: "${password}"`);
       
-      // Hash the password
       const startHash = Date.now();
       const hash = await hashPassword(password);
       const hashTime = Date.now() - startHash;
@@ -31,27 +23,21 @@ class SecurityAuditor {
       console.log(`  ✅ Hash generated in ${hashTime}ms`);
       console.log(`  ✅ Hash length: ${hash.length} characters`);
       
-      // Verify correct password
       const startVerify = Date.now();
       const isValid = await comparePassword(password, hash);
       const verifyTime = Date.now() - startVerify;
       
       console.log(`  ${isValid ? '✅' : '❌'} Correct password verified in ${verifyTime}ms`);
       
-      // Verify incorrect password
       const isInvalid = await comparePassword('WrongPassword', hash);
       console.log(`  ${!isInvalid ? '✅' : '❌'} Incorrect password rejected`);
       
-      // Test uniqueness (same password should produce different hashes)
       const hash2 = await hashPassword(password);
       console.log(`  ${hash !== hash2 ? '✅' : '❌'} Unique salts used`);
       console.log('');
     }
   }
 
-  /**
-   * Test JWT token security
-   */
   async testJWTSecurity(): Promise<void> {
     console.log('\n🎫 Testing JWT Token Security...\n');
 
@@ -61,13 +47,11 @@ class SecurityAuditor {
       email: 'test@example.com'
     };
 
-    // Generate tokens
     const tokens = generateTokenPair(testPayload);
     console.log('✅ Token pair generated successfully');
     console.log(`   Access Token Length: ${tokens.accessToken.length}`);
     console.log(`   Refresh Token Length: ${tokens.refreshToken.length}`);
 
-    // Verify valid token
     try {
       const decoded = verifyToken(tokens.accessToken);
       console.log('✅ Valid token verified successfully');
@@ -77,7 +61,6 @@ class SecurityAuditor {
       console.log('❌ Valid token verification failed');
     }
 
-    // Test invalid token
     try {
       verifyToken('invalid.token.here');
       console.log('❌ Invalid token was accepted (SECURITY ISSUE!)');
@@ -85,7 +68,6 @@ class SecurityAuditor {
       console.log('✅ Invalid token rejected correctly');
     }
 
-    // Test tampered token
     const tamperedToken = tokens.accessToken.slice(0, -10) + 'tampered123';
     try {
       verifyToken(tamperedToken);
@@ -95,24 +77,18 @@ class SecurityAuditor {
     }
   }
 
-  /**
-   * Check for sensitive data exposure in database
-   */
   async checkSensitiveDataEncryption(): Promise<void> {
     console.log('\n🔒 Checking Sensitive Data Encryption...\n');
 
     try {
-      // Check client table for encrypted passwords
       const clients = await database.query('SELECT password, card_no FROM client LIMIT 5');
       
       if (clients.length > 0) {
         const client = clients[0] as any;
         
-        // Check if password is hashed (bcrypt hashes start with $2b$)
         const isPasswordHashed = client.password && client.password.startsWith('$2');
         console.log(`${isPasswordHashed ? '✅' : '❌'} Passwords are ${isPasswordHashed ? 'hashed' : 'NOT hashed'}`);
         
-        // Check card number encryption
         if (client.card_no) {
           const looksEncrypted = client.card_no.length > 16 && !client.card_no.match(/^\d{16}$/);
           console.log(`${looksEncrypted ? '✅' : '⚠️'} Card numbers appear ${looksEncrypted ? 'encrypted' : 'potentially unencrypted'}`);
@@ -121,7 +97,6 @@ class SecurityAuditor {
         console.log('ℹ️  No client data found to check');
       }
 
-      // Check passenger table for sensitive data
       const passengers = await database.query('SELECT passport_no FROM passenger LIMIT 5');
       if (passengers.length > 0) {
         console.log(`✅ Found ${passengers.length} passenger records`);
@@ -133,9 +108,6 @@ class SecurityAuditor {
     }
   }
 
-  /**
-   * Validate SQL injection prevention
-   */
   async testSQLInjectionPrevention(): Promise<void> {
     console.log('\n💉 Testing SQL Injection Prevention...\n');
 
@@ -151,7 +123,6 @@ class SecurityAuditor {
 
     for (const input of maliciousInputs) {
       try {
-        // Test with parameterized query (safe)
         await database.query('SELECT * FROM client WHERE username = ? LIMIT 1', [input]);
         console.log(`✅ Parameterized query handled: "${input.substring(0, 30)}..."`);
       } catch (error) {
@@ -162,9 +133,6 @@ class SecurityAuditor {
     console.log('\n✅ All queries use parameterized statements (SQL injection protected)');
   }
 
-  /**
-   * Check environment variable security
-   */
   checkEnvironmentSecurity(): void {
     console.log('\n🌍 Checking Environment Security...\n');
 
@@ -189,7 +157,6 @@ class SecurityAuditor {
       }
     });
 
-    // Check for weak JWT secret
     if (process.env.JWT_SECRET) {
       const secret = process.env.JWT_SECRET;
       const isWeak = secret === 'secret' || secret === 'your-secret-key' || secret.length < 32;
@@ -203,13 +170,9 @@ class SecurityAuditor {
     }
   }
 
-  /**
-   * Test rate limiting configuration
-   */
   testRateLimitingConfig(): void {
     console.log('\n⏱️  Checking Rate Limiting Configuration...\n');
 
-    // Check if rate limiting middleware exists
     try {
       const securityMiddleware = require('../src/middleware/security');
       
@@ -227,9 +190,6 @@ class SecurityAuditor {
     }
   }
 
-  /**
-   * Check CORS configuration
-   */
   checkCORSConfiguration(): void {
     console.log('\n🌐 Checking CORS Configuration...\n');
 
@@ -244,9 +204,6 @@ class SecurityAuditor {
     }
   }
 
-  /**
-   * Generate security recommendations
-   */
   generateSecurityRecommendations(): void {
     console.log('\n🛡️  Security Recommendations:\n');
 
@@ -271,9 +228,6 @@ class SecurityAuditor {
     recommendations.forEach(rec => console.log(rec));
   }
 
-  /**
-   * Run complete security audit
-   */
   async runCompleteAudit(): Promise<void> {
     console.log('🔒 Starting Security Audit...\n');
     console.log('='.repeat(60));
@@ -298,7 +252,6 @@ class SecurityAuditor {
   }
 }
 
-// Run audit if executed directly
 if (require.main === module) {
   const auditor = new SecurityAuditor();
   auditor.runCompleteAudit().catch(console.error);

@@ -10,7 +10,6 @@ describe('Payments Integration Tests', () => {
   let bookingId: number;
 
   beforeAll(async () => {
-    // Register and login a test user
     const testUser = {
       username: generateRandomUsername(),
       password: 'TestPassword123!',
@@ -44,7 +43,6 @@ describe('Payments Integration Tests', () => {
       authToken = loginResponse.body.data.token;
     }
 
-    // Create a booking for payment tests
     const bookingData = {
       flight_id: 1,
       support: 'no',

@@ -30,39 +30,59 @@ const Payment = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [totalCost, setTotalCost] = useState(0);
+  const [fetchingCost, setFetchingCost] = useState(false);
 
-  // Calculate total cost from selected seats and fare options
   useEffect(() => {
-    console.log('Payment - Calculating cost...');
-    console.log('Selected Seats:', selectedSeats);
-    console.log('Fare Options:', fareOptions);
+    const fetchBookingCost = async () => {
+      if (currentBooking?.booking?.booking_id) {
+        setFetchingCost(true);
+        try {
+          const response = await fetch(`http://localhost:8080/api/v1/bookings/${currentBooking.booking.booking_id}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          const data = await response.json();
+          if (data.success && data.data.totalCost) {
+            console.log('Fetched booking cost from backend:', data.data.totalCost);
+            setTotalCost(parseFloat(data.data.totalCost));
+            return;
+          }
+        } catch (error) {
+          console.error('Error fetching booking cost:', error);
+        } finally {
+          setFetchingCost(false);
+        }
+      }
+      
+      calculateCostFromSeats();
+    };
+
+    const calculateCostFromSeats = () => {
+      console.log('Payment - Calculating cost from seats...');
+      console.log('Selected Seats:', selectedSeats);
+      console.log('Fare Options:', fareOptions);
+      
+      let cost = 0;
     
-    let cost = 0;
-    
-    // Add seat prices from selected seats
     if (selectedSeats && selectedSeats.length > 0) {
       selectedSeats.forEach(seat => {
-        // Check different possible price properties
         const seatPrice = seat.price || seat.seat_price || 0;
         console.log(`Seat ${seat.seatId}: price = ${seatPrice}`);
         cost += parseFloat(seatPrice) || 0;
       });
     }
 
-    // If no seat prices, use a default base fare per passenger
     if (cost === 0 && selectedSeats && selectedSeats.length > 0) {
-      // Default base fare: $200 per passenger
       cost = selectedSeats.length * 200;
       console.log(`Using default base fare: ${selectedSeats.length} passengers × $200 = $${cost}`);
     }
 
-    // Add support service cost ($50)
     if (fareOptions.support === 'yes' || fareOptions.support === 'Yes') {
       cost += 50;
       console.log('Added support service: $50');
     }
 
-    // Add fasttrack service cost ($30)
     if (fareOptions.fasttrack === 'yes' || fareOptions.fasttrack === 'Yes') {
       cost += 30;
       console.log('Added fasttrack service: $30');
@@ -70,9 +90,11 @@ const Payment = () => {
 
     console.log('Total Cost:', cost);
     setTotalCost(cost);
-  }, [selectedSeats, fareOptions]);
+    };
 
-  // Redirect if no flight selected
+    fetchBookingCost();
+  }, [selectedSeats, fareOptions, currentBooking]);
+
   useEffect(() => {
     if (!selectedFlights.departure) {
       navigate('/flights');
@@ -82,23 +104,19 @@ const Payment = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Format card number with spaces
     if (name === 'cardNumber') {
       const formatted = value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
       setPaymentData((prev) => ({ ...prev, [name]: formatted }));
     } else if (name === 'expiryMonth' || name === 'expiryYear') {
-      // Only allow numbers
       const numericValue = value.replace(/\D/g, '');
       setPaymentData((prev) => ({ ...prev, [name]: numericValue }));
     } else if (name === 'cvvNumber') {
-      // Only allow numbers, max 4 digits
       const numericValue = value.replace(/\D/g, '').slice(0, 4);
       setPaymentData((prev) => ({ ...prev, [name]: numericValue }));
     } else {
       setPaymentData((prev) => ({ ...prev, [name]: value }));
     }
 
-    // Clear validation error for this field
     if (validationErrors[name]) {
       setValidationErrors(prev => {
         const updated = { ...prev };
@@ -111,12 +129,10 @@ const Payment = () => {
   const validatePaymentData = () => {
     const errors = {};
 
-    // Skip validation for digital wallets
     if (paymentData.paymentMethod === 'Apple Pay' || paymentData.paymentMethod === 'PayPal') {
       return errors;
     }
 
-    // Validate card number (16 digits)
     const cardNumberDigits = paymentData.cardNumber.replace(/\s/g, '');
     if (!cardNumberDigits) {
       errors.cardNumber = 'Card number is required';
@@ -126,14 +142,12 @@ const Payment = () => {
       errors.cardNumber = 'Card number must contain only digits';
     }
 
-    // Validate CVV (3-4 digits)
     if (!paymentData.cvvNumber) {
       errors.cvvNumber = 'CVV is required';
     } else if (paymentData.cvvNumber.length < 3 || paymentData.cvvNumber.length > 4) {
       errors.cvvNumber = 'CVV must be 3 or 4 digits';
     }
 
-    // Validate expiry month (01-12)
     if (!paymentData.expiryMonth) {
       errors.expiryMonth = 'Expiry month is required';
     } else {
@@ -143,18 +157,16 @@ const Payment = () => {
       }
     }
 
-    // Validate expiry year (current year or future)
     if (!paymentData.expiryYear) {
       errors.expiryYear = 'Expiry year is required';
     } else {
-      const currentYear = new Date().getFullYear() % 100; // Get last 2 digits
+      const currentYear = new Date().getFullYear() % 100;
       const year = parseInt(paymentData.expiryYear);
       if (year < currentYear) {
         errors.expiryYear = 'Card has expired';
       }
     }
 
-    // Validate card holder name
     if (!paymentData.cardHolderName.trim()) {
       errors.cardHolderName = 'Card holder name is required';
     } else if (paymentData.cardHolderName.trim().length < 3) {
@@ -167,7 +179,6 @@ const Payment = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate payment data
     const errors = validatePaymentData();
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
@@ -181,7 +192,6 @@ const Payment = () => {
       console.log('=== PAYMENT SUBMISSION START ===');
       console.log('Current Booking:', currentBooking);
       
-      // Step 1: Create booking if not already created
       let bookingId = currentBooking?.booking?.booking_id;
       console.log('Extracted booking ID:', bookingId);
       
@@ -202,7 +212,6 @@ const Payment = () => {
         console.log('Using existing booking ID:', bookingId);
       }
 
-      // Step 2: Process payment
       const paymentPayload = {
         booking_id: bookingId,
         amount: totalCost,
@@ -216,7 +225,6 @@ const Payment = () => {
       const paymentResult = await processPayment(paymentPayload, bookingId);
 
       if (paymentResult.success) {
-        // Store payment confirmation data
         localStorage.setItem('paymentConfirmation', JSON.stringify({
           payment_id: paymentResult.data.payment_id,
           booking_id: bookingId,
@@ -225,7 +233,6 @@ const Payment = () => {
           timestamp: new Date().toISOString()
         }));
 
-        // Navigate to confirmation page
         navigate('/confirmation', { 
           state: { 
             bookingId,
@@ -244,7 +251,6 @@ const Payment = () => {
     }
   };
 
-  // Helper function to detect card type from card number
   const getCardType = (cardNumber) => {
     const digits = cardNumber.replace(/\s/g, '');
     
@@ -255,7 +261,7 @@ const Payment = () => {
     if (/^35/.test(digits)) return 'JCB';
     if (/^(5018|5020|5038|6304|6759|676[1-3])/.test(digits)) return 'MAESTRO';
     
-    return 'VISA'; // Default to VISA
+    return 'VISA';
   };
 
   return (

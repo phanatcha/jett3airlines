@@ -6,12 +6,10 @@ export class FlightModel extends BaseModel {
     super('flight');
   }
 
-  // Find flight by ID
   async findFlightById(flightId: number): Promise<Flight | null> {
     return await super.findById<Flight>(flightId, 'flight_id');
   }
 
-  // Get flight with detailed information (including airport and airplane details)
   async getFlightDetails(flightId: number) {
     try {
       const query = `
@@ -41,7 +39,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Search flights based on criteria
   async searchFlights(searchParams: FlightSearchRequest) {
     try {
       const cabinClass = searchParams.cabin_class || 'Economy';
@@ -78,7 +75,6 @@ export class FlightModel extends BaseModel {
 
       const params: any[] = [cabinClass, cabinClass, cabinClass, cabinClass];
 
-      // Add search filters
       if (searchParams.depart_airport_id) {
         query += ' AND f.depart_airport_id = ?';
         params.push(searchParams.depart_airport_id);
@@ -98,7 +94,6 @@ export class FlightModel extends BaseModel {
 
       const results = await this.executeQuery(query, params);
       
-      // Calculate available seats for each flight in the selected class
       return results.map((flight: any) => ({
         ...flight,
         cabin_class: cabinClass,
@@ -111,7 +106,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Get available seats for a flight
   async getAvailableSeats(flightId: number, seatClass?: string) {
     try {
       let query = `
@@ -144,7 +138,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Check seat availability for specific seats
   async checkSeatAvailability(flightId: number, seatIds: number[]): Promise<boolean> {
     try {
       if (seatIds.length === 0) return true;
@@ -169,7 +162,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Get flights by airport
   async getFlightsByAirport(airportId: number, isDeparture: boolean = true) {
     try {
       const airportColumn = isDeparture ? 'depart_airport_id' : 'arrive_airport_id';
@@ -196,7 +188,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Get flights by date range
   async getFlightsByDateRange(startDate: string, endDate: string) {
     try {
       const query = `
@@ -220,7 +211,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Update flight status
   async updateFlightStatus(flightId: number, status: FlightStatus): Promise<boolean> {
     try {
       return await this.update<Flight>(flightId, { status }, 'flight_id');
@@ -230,7 +220,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Create new flight (admin function)
   async createFlight(flightData: Omit<Flight, 'flight_id'>): Promise<number> {
     try {
       return await this.create(flightData as any);
@@ -240,7 +229,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Update flight information (admin function)
   async updateFlight(flightId: number, updateData: Partial<Flight>): Promise<boolean> {
     try {
       return await this.update<Flight>(flightId, updateData, 'flight_id');
@@ -250,10 +238,8 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Delete flight (admin function)
   async deleteFlight(flightId: number): Promise<boolean> {
     try {
-      // Check if flight has bookings
       const bookingCount = await this.count({ flight_id: flightId });
       if (bookingCount > 0) {
         throw new Error('Cannot delete flight with existing bookings');
@@ -266,7 +252,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Get flight statistics
   async getFlightStats() {
     try {
       const query = `
@@ -287,7 +272,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Private helper method to calculate flight duration
   private calculateFlightDuration(departTime: Date, arriveTime: Date): string {
     const depart = new Date(departTime);
     const arrive = new Date(arriveTime);
@@ -299,7 +283,6 @@ export class FlightModel extends BaseModel {
     return `${hours}h ${minutes}m`;
   }
 
-  // Validate flight data
   validateFlightData(flightData: any): string[] {
     const errors: string[] = [];
 
@@ -339,7 +322,6 @@ export class FlightModel extends BaseModel {
     return errors;
   }
 
-  // Helper method to validate date format
   private isValidDate(dateString: string): boolean {
     const date = new Date(dateString);
     return date instanceof Date && !isNaN(date.getTime());

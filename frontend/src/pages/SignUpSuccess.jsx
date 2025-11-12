@@ -5,12 +5,10 @@ const SignUpSuccess = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to login page after 5 seconds
     const timer = setTimeout(() => {
       navigate('/login');
     }, 5000);
 
-    // Cleanup timer on unmount
     return () => clearTimeout(timer);
   }, [navigate]);
 

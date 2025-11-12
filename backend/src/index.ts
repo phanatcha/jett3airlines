@@ -19,7 +19,6 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8080;
 
-// Security middleware
 app.use(securityHeaders);
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:5174'],
@@ -28,15 +27,11 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-// TEMPORARILY DISABLED FOR DEVELOPMENT - Rate limiting causing issues
-// app.use(generalRateLimit);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Input sanitization middleware
 app.use(sanitizeInput);
 
-// Log ALL incoming requests for debugging
 app.use((req, res, next) => {
   console.log(`🔥 ${new Date().toISOString()} - ${req.method} ${req.url}`);
   console.log(`   Headers:`, req.headers);
@@ -44,9 +39,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Database connection is handled by the Database class in db.ts
 
-// API routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/flights', flightsRouter);
 app.use('/api/v1/bookings', bookingsRouter);
@@ -78,13 +71,10 @@ app.get("/", (req, res) => {
   });
 });
 
-// 404 handler - catch all unmatched routes (must be before error handlers)
 app.use(notFoundHandler);
 
-// Security error handling middleware
 app.use(securityErrorHandler);
 
-// Global error handler (must be last)
 app.use(errorHandler);
 
 app.listen(port, () => console.log(`Server running on http://localhost:${port}`));

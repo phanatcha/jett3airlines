@@ -1,7 +1,6 @@
 import { BaseModel } from './BaseModel';
 import { Passenger, CreatePassenger, UpdatePassenger } from '../types/database';
 
-// Type declaration for Buffer (fallback if @types/node is not available)
 declare const Buffer: {
   from(str: string, encoding?: string): any;
 };
@@ -11,12 +10,10 @@ export class PassengerModel extends BaseModel {
     super('passenger');
   }
 
-  // Find passenger by ID
   async findPassengerById(passengerId: number): Promise<Passenger | null> {
     return await super.findById<Passenger>(passengerId, 'passenger_id');
   }
 
-  // Get passenger with seat and flight details
   async getPassengerDetails(passengerId: number) {
     try {
       const query = `
@@ -47,7 +44,6 @@ export class PassengerModel extends BaseModel {
     }
   }
 
-  // Get passengers by booking ID
   async getPassengersByBooking(bookingId: number) {
     try {
       const query = `
@@ -69,7 +65,6 @@ export class PassengerModel extends BaseModel {
     }
   }
 
-  // Get passengers by flight ID
   async getPassengersByFlight(flightId: number) {
     try {
       const query = `
@@ -95,10 +90,8 @@ export class PassengerModel extends BaseModel {
     }
   }
 
-  // Create new passenger
   async createPassenger(passengerData: CreatePassenger): Promise<number> {
     try {
-      // Encrypt passport number
       const encryptedPassport = Buffer.from(passengerData.passport_no.toString(), 'utf8');
       
       const createData = {
@@ -113,10 +106,8 @@ export class PassengerModel extends BaseModel {
     }
   }
 
-  // Update passenger information
   async updatePassenger(passengerId: number, updateData: UpdatePassenger): Promise<boolean> {
     try {
-      // If passport number is being updated, encrypt it
       if (updateData.passport_no) {
         updateData.passport_no = Buffer.from(updateData.passport_no.toString(), 'utf8');
       }
@@ -128,16 +119,13 @@ export class PassengerModel extends BaseModel {
     }
   }
 
-  // Delete passenger
   async deletePassenger(passengerId: number): Promise<boolean> {
     return await this.delete(passengerId, 'passenger_id');
   }
 
-  // Change passenger seat
   async changeSeat(passengerId: number, newSeatId: number): Promise<boolean> {
     try {
       return await this.executeTransaction(async (connection) => {
-        // Get passenger's flight ID
         const passengerQuery = 'SELECT flight_id FROM passenger WHERE passenger_id = ?';
         const passengerResult = await connection.execute(passengerQuery, [passengerId]);
         
@@ -147,7 +135,6 @@ export class PassengerModel extends BaseModel {
 
         const flightId = (passengerResult as any)[0][0].flight_id;
 
-        // Check if new seat is available
         const seatCheckQuery = `
           SELECT COUNT(*) as count 
           FROM passenger 
@@ -159,7 +146,6 @@ export class PassengerModel extends BaseModel {
           throw new Error('Seat is already occupied');
         }
 
-        // Update passenger's seat
         const updateQuery = 'UPDATE passenger SET seat_id = ? WHERE passenger_id = ?';
         await connection.execute(updateQuery, [newSeatId, passengerId]);
 
@@ -171,7 +157,6 @@ export class PassengerModel extends BaseModel {
     }
   }
 
-  // Get passenger baggage
   async getPassengerBaggage(passengerId: number) {
     try {
       const query = `
@@ -187,7 +172,6 @@ export class PassengerModel extends BaseModel {
     }
   }
 
-  // Check if passenger can be modified
   async canModifyPassenger(passengerId: number): Promise<boolean> {
     try {
       const query = `
@@ -204,16 +188,13 @@ export class PassengerModel extends BaseModel {
 
       const { depart_when, booking_status } = result[0];
 
-      // Check if booking is cancelled or completed
       if (booking_status === 'cancelled' || booking_status === 'completed') {
         return false;
       }
 
-      // Check if flight hasn't departed yet
       const departureTime = new Date(depart_when);
       const now = new Date();
       
-      // Allow modifications up to 24 hours before departure
       const hoursUntilDeparture = (departureTime.getTime() - now.getTime()) / (1000 * 60 * 60);
       return hoursUntilDeparture > 24;
     } catch (error) {
@@ -222,7 +203,6 @@ export class PassengerModel extends BaseModel {
     }
   }
 
-  // Get passenger statistics
   async getPassengerStats() {
     try {
       const query = `
@@ -243,7 +223,6 @@ export class PassengerModel extends BaseModel {
     }
   }
 
-  // Search passengers by name
   async searchPassengersByName(searchTerm: string, limit: number = 50) {
     try {
       const query = `
@@ -272,7 +251,6 @@ export class PassengerModel extends BaseModel {
     }
   }
 
-  // Validate passenger data
   validatePassengerData(passengerData: any): string[] {
     const errors: string[] = [];
 
@@ -318,8 +296,6 @@ export class PassengerModel extends BaseModel {
       errors.push('Weight limit must be between 0 and 50 kg');
     }
 
-    // booking_id can be 0 during booking creation (before booking exists)
-    // Only validate if it's explicitly set to a negative value or undefined
     if (passengerData.booking_id !== undefined && passengerData.booking_id !== 0 && passengerData.booking_id < 0) {
       errors.push('Valid booking ID is required');
     }
@@ -331,7 +307,6 @@ export class PassengerModel extends BaseModel {
     return errors;
   }
 
-  // Helper method to validate date format
   private isValidDate(dateString: string): boolean {
     const date = new Date(dateString);
     return date instanceof Date && !isNaN(date.getTime());

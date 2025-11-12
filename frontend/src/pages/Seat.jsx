@@ -18,14 +18,12 @@ const Seat = () => {
   const [seatIdMapping, setSeatIdMapping] = useState({});
   const [localSelectedSeats, setLocalSelectedSeats] = useState({});
 
-  // Fetch seat data from backend
   useEffect(() => {
     const fetchSeats = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Check if we have a selected departure flight
         if (!selectedFlights.departure) {
           setError("No flight selected. Please select a flight first.");
           setLoading(false);
@@ -36,12 +34,10 @@ const Seat = () => {
         const response = await flightsAPI.getSeats(flightId);
 
         if (response.success) {
-          // Transform backend data to seat map format
           const seats = response.data.seat_map;
           const transformedSeats = transformSeatsToMap(seats);
           setSeatMap(transformedSeats);
           
-          // Store pricing and ID information
           const pricing = {};
           const seatIdMap = {};
           Object.keys(seats).forEach(seatClass => {
@@ -70,10 +66,8 @@ const Seat = () => {
     fetchSeats();
   }, [selectedFlights.departure]);
 
-  // Initialize local selected seats from context (only once on mount)
   useEffect(() => {
     if (selectedSeats.length > 0 && Object.keys(seatIdMapping).length > 0) {
-      // Create reverse mapping: seat_id -> seat_no
       const reverseSeatIdMapping = {};
       Object.entries(seatIdMapping).forEach(([seatNo, seatId]) => {
         reverseSeatIdMapping[seatId] = seatNo;
@@ -81,19 +75,16 @@ const Seat = () => {
       
       const seatsObj = {};
       selectedSeats.forEach(seat => {
-        // Convert database seat_id back to seat number (e.g., 241 -> "1A")
         const seatNo = reverseSeatIdMapping[seat.seatId] || seat.seatId;
         seatsObj[seat.passengerId] = seatNo;
       });
       setLocalSelectedSeats(seatsObj);
     }
-  }, [selectedSeats, seatIdMapping]); // Re-run when seatIdMapping is loaded
+  }, [selectedSeats, seatIdMapping]);
 
-  // Transform backend seat data to display format
   const transformSeatsToMap = (seats) => {
     const allSeats = [];
     
-    // Combine all seats from all classes
     Object.keys(seats).forEach(seatClass => {
       seats[seatClass].available.forEach(seat => {
         allSeats.push({
@@ -115,7 +106,6 @@ const Seat = () => {
       });
     });
 
-    // Sort seats by row and column
     allSeats.sort((a, b) => {
       const rowA = parseInt(a.number.match(/\d+/)?.[0] || 0);
       const rowB = parseInt(b.number.match(/\d+/)?.[0] || 0);
@@ -123,7 +113,6 @@ const Seat = () => {
       return a.number.localeCompare(b.number);
     });
 
-    // Group seats into rows (assuming 3-3 configuration with aisle)
     const rows = [];
     const seatsByRow = {};
     
@@ -135,16 +124,12 @@ const Seat = () => {
       seatsByRow[rowNum].push(seat);
     });
 
-    // Convert to array format with aisle spacing
     Object.keys(seatsByRow).sort((a, b) => parseInt(a) - parseInt(b)).forEach(rowNum => {
       const rowSeats = seatsByRow[rowNum];
       const formattedRow = [];
       
-      // Determine which columns exist in this row
       const availableColumns = rowSeats.map(s => s.number.slice(-1)).sort();
       
-      // Check if this is a 2-2 configuration (Business class rows 1-3)
-      // These rows only have A, C, D, F (no B or E)
       const is2x2Config = availableColumns.length === 4 && 
                           availableColumns.includes('A') && 
                           availableColumns.includes('C') && 
@@ -154,8 +139,6 @@ const Seat = () => {
                           !availableColumns.includes('E');
       
       if (is2x2Config) {
-        // Business class 2-2 layout: [empty] A C [aisle] D F [empty]
-        // Add empty space to center the 2-2 configuration
         const seatA = rowSeats.find(s => s.number.endsWith('A'));
         const seatC = rowSeats.find(s => s.number.endsWith('C'));
         const seatD = rowSeats.find(s => s.number.endsWith('D'));
@@ -163,7 +146,6 @@ const Seat = () => {
         
         formattedRow.push(undefined, seatA, seatC, null, seatD, seatF, undefined);
       } else {
-        // Standard 3-3 layout: A B C [aisle] D E F
         const seatA = rowSeats.find(s => s.number.endsWith('A'));
         const seatB = rowSeats.find(s => s.number.endsWith('B'));
         const seatC = rowSeats.find(s => s.number.endsWith('C'));
@@ -183,7 +165,6 @@ const Seat = () => {
   const handleSeatClick = (seatId, isBooked) => {
     if (isBooked) return;
 
-    // Check if seat is already selected by another passenger
     const isSelectedByOther = Object.entries(localSelectedSeats).some(
       ([passengerId, selectedSeatId]) => 
         parseInt(passengerId) !== currentPassengerIndex && selectedSeatId === seatId
@@ -194,7 +175,6 @@ const Seat = () => {
       return;
     }
 
-    // Toggle seat selection for current passenger
     setLocalSelectedSeats(prev => {
       const newSeats = { ...prev };
       if (newSeats[currentPassengerIndex] === seatId) {
@@ -215,12 +195,10 @@ const Seat = () => {
       return `${baseClass} bg-gray-400 text-gray-700 cursor-not-allowed`;
     }
     
-    // Check if selected by current passenger
     if (localSelectedSeats[currentPassengerIndex] === seat.id) {
       return `${baseClass} bg-blue-900 text-white border-2 border-blue-900`;
     }
     
-    // Check if selected by another passenger
     const isSelectedByOther = Object.entries(localSelectedSeats).some(
       ([passengerId, seatId]) => 
         parseInt(passengerId) !== currentPassengerIndex && seatId === seat.id
@@ -236,7 +214,6 @@ const Seat = () => {
   const getRowNumber = (rowIndex) => rowIndex + 1;
 
   const handleContinue = () => {
-    // Check if all passengers have selected seats
     const allSeatsSelected = passengers.every((_, index) => localSelectedSeats[index]);
     
     if (!allSeatsSelected) {
@@ -244,11 +221,10 @@ const Seat = () => {
       return;
     }
 
-    // Store selected seats in context with pricing and seat IDs
     passengers.forEach((passenger, index) => {
       if (localSelectedSeats[index]) {
         const seatNo = localSelectedSeats[index];
-        const price = seatPricing[seatNo] || 200; // Default to $200 if price not found
+        const price = seatPricing[seatNo] || 200;
         const seatId = seatIdMapping[seatNo];
         
         if (!seatId) {
@@ -261,7 +237,6 @@ const Seat = () => {
       }
     });
 
-    // Navigate to payment page
     navigate("/payment");
   };
 
@@ -282,7 +257,6 @@ const Seat = () => {
     }
   };
 
-  // Calculate total seat price
   const calculateTotalSeatPrice = () => {
     let total = 0;
     Object.values(localSelectedSeats).forEach(seatId => {
@@ -291,7 +265,6 @@ const Seat = () => {
     return total;
   };
 
-  // Show loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -309,7 +282,6 @@ const Seat = () => {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -468,15 +440,12 @@ const Seat = () => {
                     
 
                     {row.map((seat, seatIndex) => {
-                      // null = aisle space
                       if (seat === null) {
                         return <div key={`aisle-${rowIndex}-${seatIndex}`} className="w-7 mx-1"></div>;
                       }
-                      // undefined = seat doesn't exist (business class B/E positions)
                       if (seat === undefined) {
                         return <div key={`empty-${rowIndex}-${seatIndex}`} className="w-8 h-8 mx-1"></div>;
                       }
-                      // Actual seat
                       return (
                         <div
                           key={seat.id}

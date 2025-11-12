@@ -1,10 +1,8 @@
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config();
 
 interface Config {
-  // Database Configuration
   database: {
     host: string;
     port: number;
@@ -13,31 +11,26 @@ interface Config {
     name: string;
   };
   
-  // Server Configuration
   server: {
     port: number;
     nodeEnv: string;
   };
   
-  // JWT Configuration
   jwt: {
     secret: string;
     expiresIn: string;
     refreshExpiresIn: string;
   };
   
-  // Security Configuration
   security: {
     bcryptRounds: number;
   };
   
-  // Rate Limiting Configuration
   rateLimit: {
     windowMs: number;
     maxRequests: number;
   };
   
-  // CORS Configuration
   cors: {
     origin: string;
   };
@@ -68,7 +61,7 @@ const config: Config = {
   },
   
   rateLimit: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
   },
   

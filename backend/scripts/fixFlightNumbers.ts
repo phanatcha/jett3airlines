@@ -2,14 +2,12 @@ import database from '../src/db';
 
 async function fixFlightNumbers() {
   try {
-    // Get all flights with NULL flight_no
     const flights = await database.query(
       'SELECT flight_id, depart_airport_id, arrive_airport_id FROM flight WHERE flight_no IS NULL'
     );
     
     console.log(`Found ${flights.length} flights without flight numbers`);
     
-    // Generate flight numbers for each
     for (const flight of flights as any[]) {
       const flightNo = `JT${Math.floor(Math.random() * 9000) + 1000}`;
       
@@ -31,7 +29,6 @@ async function fixFlightNumbers() {
   }
 }
 
-// Run the script
 fixFlightNumbers()
   .then(() => {
     console.log('\n✨ Script completed!');

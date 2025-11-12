@@ -22,7 +22,7 @@ const SignUp = () => {
       ...prev,
       [id]: type === "checkbox" ? checked : value,
     }));
-    setError(""); // Clear error on input change
+    setError("");
   };
 
 const handleSubmit = (e) => {
@@ -64,7 +64,6 @@ const handleSubmit = (e) => {
     return;
   }
 
-  // Password validation
   if (normalizedData.password.length < 8) {
     setError("Password must be at least 8 characters long.");
     return;
@@ -85,7 +84,6 @@ const handleSubmit = (e) => {
     return;
   }
 
-  // Store basic info in sessionStorage and navigate to Info page
   sessionStorage.setItem('signupBasicInfo', JSON.stringify({
     firstname: normalizedData.firstName,
     lastname: normalizedData.lastName,

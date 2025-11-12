@@ -9,7 +9,6 @@ import { BaggageModel } from '../models/Baggage';
 import { ValidationError, NotFoundError, DatabaseError } from '../utils/errors';
 import { BookingStatus, PaymentStatus, BaggageStatus } from '../types/database';
 
-// Helper classes to expose executeQuery for admin operations
 class AdminBookingModel extends BookingModel {
   async query<T>(sql: string, params?: any[]): Promise<T[]> {
     return await this.executeQuery<T>(sql, params);
@@ -53,11 +52,7 @@ const airportModel = new AdminAirportModel();
 const clientModel = new AdminClientModel();
 const baggageModel = new AdminBaggageModel();
 
-// ============= BOOKING MANAGEMENT =============
 
-/**
- * Get all bookings with filtering and pagination
- */
 export const getAllBookings = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -113,7 +108,6 @@ export const getAllBookings = async (req: Request, res: Response) => {
 
     const bookings = await bookingModel.query(query, params);
 
-    // Get total count
     let countQuery = 'SELECT COUNT(*) as total FROM booking WHERE 1=1';
     const countParams: any[] = [];
 
@@ -155,9 +149,6 @@ export const getAllBookings = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Get specific booking details
- */
 export const getBookingById = async (req: Request, res: Response) => {
   try {
     const bookingId = parseInt(req.params.id);
@@ -172,10 +163,8 @@ export const getBookingById = async (req: Request, res: Response) => {
       throw new NotFoundError('Booking not found');
     }
 
-    // Get passengers
     const passengers = await bookingModel.getBookingPassengers(bookingId);
 
-    // Get payment info
     const payment = await bookingModel.getBookingPaymentStatus(bookingId);
 
     res.json({
@@ -203,9 +192,6 @@ export const getBookingById = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Update booking status and other fields (support, fasttrack)
- */
 export const updateBookingStatus = async (req: Request, res: Response) => {
   try {
     const bookingId = parseInt(req.params.id);
@@ -215,16 +201,13 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
       throw new ValidationError('Invalid booking ID');
     }
 
-    // Check if booking exists
     const booking = await bookingModel.findBookingById(bookingId);
     if (!booking) {
       throw new NotFoundError('Booking not found');
     }
 
-    // Build update data object
     const updateData: any = {};
 
-    // Validate and add status if provided
     if (status !== undefined) {
       const validStatuses = Object.values(BookingStatus);
       if (!validStatuses.includes(status)) {
@@ -233,7 +216,6 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
       updateData.status = status;
     }
 
-    // Validate and add support if provided
     if (support !== undefined) {
       if (support !== 'Yes' && support !== 'No') {
         throw new ValidationError('Support must be either "Yes" or "No"');
@@ -241,7 +223,6 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
       updateData.support = support;
     }
 
-    // Validate and add fasttrack if provided
     if (fasttrack !== undefined) {
       if (fasttrack !== 'Yes' && fasttrack !== 'No') {
         throw new ValidationError('Fasttrack must be either "Yes" or "No"');
@@ -249,19 +230,16 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
       updateData.fasttrack = fasttrack;
     }
 
-    // Check if there's anything to update
     if (Object.keys(updateData).length === 0) {
       throw new ValidationError('No valid fields provided for update');
     }
 
-    // Update the booking
     const updated = await bookingModel.update(bookingId, updateData, 'booking_id');
 
     if (!updated) {
       throw new DatabaseError('Failed to update booking');
     }
 
-    // Get updated booking details
     const updatedBooking = await bookingModel.getBookingDetails(bookingId);
 
     res.json({
@@ -286,9 +264,6 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Cancel/delete booking
- */
 export const deleteBooking = async (req: Request, res: Response) => {
   try {
     const bookingId = parseInt(req.params.id);
@@ -302,7 +277,6 @@ export const deleteBooking = async (req: Request, res: Response) => {
       throw new NotFoundError('Booking not found');
     }
 
-    // Cancel the booking (which handles refunds if needed)
     const cancelled = await bookingModel.cancelBooking(bookingId);
 
     if (!cancelled) {
@@ -331,11 +305,7 @@ export const deleteBooking = async (req: Request, res: Response) => {
   }
 };
 
-// ============= PASSENGER MANAGEMENT =============
 
-/**
- * Get all passengers with filtering
- */
 export const getAllPassengers = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -390,7 +360,6 @@ export const getAllPassengers = async (req: Request, res: Response) => {
 
     const passengers = await passengerModel.query(query, params);
 
-    // Get total count
     let countQuery = 'SELECT COUNT(*) as total FROM passenger WHERE 1=1';
     const countParams: any[] = [];
 
@@ -432,9 +401,6 @@ export const getAllPassengers = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Get passenger details
- */
 export const getPassengerById = async (req: Request, res: Response) => {
   try {
     const passengerId = parseInt(req.params.id);
@@ -449,7 +415,6 @@ export const getPassengerById = async (req: Request, res: Response) => {
       throw new NotFoundError('Passenger not found');
     }
 
-    // Get baggage
     const baggage = await passengerModel.getPassengerBaggage(passengerId);
 
     res.json({
@@ -476,9 +441,6 @@ export const getPassengerById = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Update passenger information
- */
 export const updatePassenger = async (req: Request, res: Response) => {
   try {
     const passengerId = parseInt(req.params.id);
@@ -494,7 +456,6 @@ export const updatePassenger = async (req: Request, res: Response) => {
 
     const updateData = req.body;
 
-    // Validate update data if provided
     const allowedFields = ['firstname', 'lastname', 'nationality', 'phone_no', 'gender', 'dob', 'weight_limit', 'seat_id'];
     const filteredData: any = {};
 
@@ -536,9 +497,6 @@ export const updatePassenger = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Get passengers for a specific flight
- */
 export const getFlightPassengers = async (req: Request, res: Response) => {
   try {
     const flightId = parseInt(req.params.flightId);
@@ -571,11 +529,7 @@ export const getFlightPassengers = async (req: Request, res: Response) => {
   }
 };
 
-// ============= PAYMENT MANAGEMENT =============
 
-/**
- * Get all payments with filtering
- */
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -622,7 +576,6 @@ export const getAllPayments = async (req: Request, res: Response) => {
 
     const payments = await paymentModel.query(query, params);
 
-    // Get total count
     let countQuery = 'SELECT COUNT(*) as total FROM payment WHERE 1=1';
     const countParams: any[] = [];
 
@@ -659,9 +612,6 @@ export const getAllPayments = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Get payment details
- */
 export const getPaymentById = async (req: Request, res: Response) => {
   try {
     const paymentId = parseInt(req.params.id);
@@ -697,9 +647,6 @@ export const getPaymentById = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Process manual refund
- */
 export const processRefund = async (req: Request, res: Response) => {
   try {
     const paymentId = parseInt(req.params.id);
@@ -717,7 +664,6 @@ export const processRefund = async (req: Request, res: Response) => {
       throw new ValidationError('Only completed payments can be refunded');
     }
 
-    // Process refund
     const refundId = await paymentModel.processRefund(payment.booking_id);
 
     res.json({
@@ -746,9 +692,6 @@ export const processRefund = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Update payment status
- */
 export const updatePaymentStatus = async (req: Request, res: Response) => {
   try {
     const paymentId = parseInt(req.params.id);
@@ -800,11 +743,7 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
   }
 };
 
-// ============= AIRPORT MANAGEMENT =============
 
-/**
- * Get all airports
- */
 export const getAllAirports = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -822,7 +761,6 @@ export const getAllAirports = async (req: Request, res: Response) => {
     } else if (country) {
       airports = await airportModel.getAirportsByCountry(country);
       total = airports.length;
-      // Apply pagination manually
       airports = airports.slice(offset, offset + limit);
     } else {
       airports = await airportModel.getAllAirports(limit, offset);
@@ -850,20 +788,15 @@ export const getAllAirports = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Create new airport
- */
 export const createAirport = async (req: Request, res: Response) => {
   try {
     const { city_name, airport_name, iata_code, country_name } = req.body;
 
-    // Validate required fields
     const errors = airportModel.validateAirportData(req.body);
     if (errors.length > 0) {
       throw new ValidationError(errors.join(', '));
     }
 
-    // Check if IATA code already exists
     const exists = await airportModel.iataCodeExists(iata_code);
     if (exists) {
       throw new ValidationError('IATA code already exists');
@@ -898,9 +831,6 @@ export const createAirport = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Update airport information
- */
 export const updateAirport = async (req: Request, res: Response) => {
   try {
     const airportId = parseInt(req.params.id);
@@ -916,7 +846,6 @@ export const updateAirport = async (req: Request, res: Response) => {
 
     const updateData = req.body;
 
-    // Validate update data if IATA code is being changed
     if (updateData.iata_code) {
       const exists = await airportModel.iataCodeExists(updateData.iata_code, airportId);
       if (exists) {
@@ -965,9 +894,6 @@ export const updateAirport = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Delete airport
- */
 export const deleteAirport = async (req: Request, res: Response) => {
   try {
     const airportId = parseInt(req.params.id);
@@ -981,7 +907,6 @@ export const deleteAirport = async (req: Request, res: Response) => {
       throw new NotFoundError('Airport not found');
     }
 
-    // This will throw an error if airport has flights
     const deleted = await airportModel.deleteAirport(airportId);
 
     if (!deleted) {
@@ -1012,11 +937,7 @@ export const deleteAirport = async (req: Request, res: Response) => {
   }
 };
 
-// ============= CLIENT MANAGEMENT =============
 
-/**
- * Get all registered clients
- */
 export const getAllClients = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -1062,7 +983,6 @@ export const getAllClients = async (req: Request, res: Response) => {
 
     const clients = await clientModel.query(query, params);
 
-    // Get total count
     let countQuery = 'SELECT COUNT(*) as total FROM client WHERE 1=1';
     const countParams: any[] = [];
 
@@ -1094,9 +1014,6 @@ export const getAllClients = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Get client details and booking history
- */
 export const getClientById = async (req: Request, res: Response) => {
   try {
     const clientId = parseInt(req.params.id);
@@ -1111,10 +1028,8 @@ export const getClientById = async (req: Request, res: Response) => {
       throw new NotFoundError('Client not found');
     }
 
-    // Get booking history
     const bookings = await bookingModel.getBookingsByClient(clientId);
 
-    // Get statistics
     const statsQuery = `
       SELECT 
         COUNT(DISTINCT b.booking_id) as total_bookings,
@@ -1163,9 +1078,6 @@ export const getClientById = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Enable/disable client account
- */
 export const updateClientStatus = async (req: Request, res: Response) => {
   try {
     const clientId = parseInt(req.params.id);
@@ -1184,10 +1096,6 @@ export const updateClientStatus = async (req: Request, res: Response) => {
       throw new NotFoundError('Client not found');
     }
 
-    // For now, we'll use a custom query since the client table doesn't have a status field
-    // In a real implementation, you'd want to add a status field to the client table
-    // For this implementation, we'll just return success
-    // You could also implement this by updating a separate status table or adding the field
 
     res.json({
       success: true,
@@ -1211,11 +1119,7 @@ export const updateClientStatus = async (req: Request, res: Response) => {
   }
 };
 
-// ============= BAGGAGE MANAGEMENT =============
 
-/**
- * Get all baggage with filtering
- */
 export const getAllBaggage = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -1268,7 +1172,6 @@ export const getAllBaggage = async (req: Request, res: Response) => {
 
     const baggage = await baggageModel.query(query, params);
 
-    // Get total count
     let countQuery = `
       SELECT COUNT(*) as total 
       FROM baggage b
@@ -1315,9 +1218,6 @@ export const getAllBaggage = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Get baggage details
- */
 export const getBaggageById = async (req: Request, res: Response) => {
   try {
     const baggageId = parseInt(req.params.id);
@@ -1353,9 +1253,6 @@ export const getBaggageById = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Update baggage status
- */
 export const updateBaggageStatus = async (req: Request, res: Response) => {
   try {
     const baggageId = parseInt(req.params.id);
@@ -1407,9 +1304,6 @@ export const updateBaggageStatus = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Get baggage for a specific flight
- */
 export const getFlightBaggage = async (req: Request, res: Response) => {
   try {
     const flightId = parseInt(req.params.flightId);

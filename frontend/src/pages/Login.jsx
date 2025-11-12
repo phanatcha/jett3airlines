@@ -24,7 +24,7 @@ const Login = () => {
       console.log('New form data:', newData);
       return newData;
     });
-    setError(""); // Clear error on input change
+    setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -37,7 +37,6 @@ const Login = () => {
     setError("");
 
     try {
-      // Validation
       if (!formData.username || !formData.password) {
         console.log('Validation failed: missing fields');
         setError("Please fill in all fields");
@@ -45,7 +44,6 @@ const Login = () => {
       }
 
       console.log('Calling login API...');
-      // Call login API
       const result = await login({
         username: formData.username,
         password: formData.password,
@@ -55,7 +53,6 @@ const Login = () => {
 
       if (result.success) {
         console.log('Login successful, navigating...');
-        // Check if user is admin and redirect accordingly
         if (result.data?.isAdmin === true) {
           navigate("/admin");
         } else {
@@ -63,7 +60,6 @@ const Login = () => {
         }
       } else {
         console.log('Login failed, showing error');
-        // Extract error message from different possible formats
         let errorMessage = "Login failed. Please try again.";
         
         if (typeof result.error === 'string') {
@@ -72,7 +68,6 @@ const Login = () => {
           errorMessage = result.error.message;
         }
         
-        // Make error message more user-friendly
         if (errorMessage.toLowerCase().includes('invalid') || 
             errorMessage.toLowerCase().includes('credentials')) {
           errorMessage = "User not found or password incorrect. Please check your credentials.";

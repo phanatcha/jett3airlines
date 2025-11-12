@@ -1,15 +1,11 @@
 import argon2 from 'argon2';
 import * as crypto from 'crypto';
 
-/**
- * Script to generate SQL for creating an admin user
- * Run with: npx ts-node scripts/createAdminUser.ts
- */
 
 async function generateAdminUserSQL() {
   const adminData = {
     username: 'admin',
-    password: 'admin123', // Change this to your desired admin password
+    password: 'admin123',
     email: 'admin@jett3airlines.com',
     phone_no: '+66812345678',
     firstname: 'Admin',
@@ -20,18 +16,16 @@ async function generateAdminUserSQL() {
     province: 'Bangkok',
     country: 'Thailand',
     postalcode: '10100',
-    card_no: '1234567890123456', // Dummy card number
+    card_no: '1234567890123456',
     four_digit: '0000',
     payment_type: 'VISA',
     role: 'admin'
   };
 
   try {
-    // Hash password with argon2
     const hashedPassword = await argon2.hash(adminData.password);
     console.log('Hashed Password:', hashedPassword);
 
-    // Encrypt card number (simple encryption for demo)
     const encryptionKey = process.env.ENCRYPTION_KEY || 'airline_encryption_key_2024_secure_random_string';
     const key = crypto.scryptSync(encryptionKey, 'salt', 32);
     const iv = crypto.randomBytes(16);

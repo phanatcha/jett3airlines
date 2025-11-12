@@ -15,7 +15,6 @@ const Fare = () => {
     updateFareOptions
   } = useBooking();
 
-  // Initialize selected fare based on cabin class
   const getDefaultFare = () => {
     const cabinClass = searchCriteria.cabinClass || 'Economy';
     if (cabinClass === 'Business') return 'Business Saver';
@@ -25,7 +24,6 @@ const Fare = () => {
   
   const [selectedFare, setSelectedFare] = useState(getDefaultFare());
 
-  // Check if we have required data
   useEffect(() => {
     if (!selectedFlights.departure) {
       alert("No flight selected. Please select a flight first.");
@@ -37,29 +35,24 @@ const Fare = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Store selected fare class in context
     updateFareOptions({
       fareClass: selectedFare,
       support: 'no',
       fasttrack: 'no',
     });
 
-    // Navigate to passenger info page
     navigate("/passenger-info");
   };
 
-  // Calculate base price from selected flights with class multiplier
   const calculateBasePrice = () => {
     let total = 0;
     
-    // Get cabin class
     const cabinClass = searchCriteria.cabinClass || selectedFlights.departure?.cabin_class || 'Economy';
     
-    // Determine multiplier based on cabin class
     const getClassMultiplier = () => {
       if (cabinClass === 'Business') return 2.5;
       if (cabinClass === 'Premium Economy') return 1.5;
-      return 1.0; // Economy
+      return 1.0;
     };
     
     const multiplier = getClassMultiplier();
@@ -69,16 +62,13 @@ const Fare = () => {
     console.log('Class Multiplier:', multiplier);
     console.log('Selected Flights:', selectedFlights);
     
-    // Add departure flight price
     if (selectedFlights.departure) {
-      // Get base price from flight
       const basePrice = parseFloat(
         selectedFlights.departure.base_price || 
         selectedFlights.departure.min_price || 
-        150 // Default fallback
+        150
       );
       
-      // ALWAYS recalculate based on current cabin class (ignore old price field)
       const flightPrice = basePrice * multiplier;
       
       console.log('Departure base_price:', basePrice);
@@ -88,7 +78,6 @@ const Fare = () => {
       total += flightPrice;
     }
 
-    // Add return flight price ONLY if it's a round-trip AND return flight is selected
     if (searchCriteria.tripType === 'round-trip' && selectedFlights.return) {
       const basePrice = parseFloat(
         selectedFlights.return.base_price || 
@@ -96,7 +85,6 @@ const Fare = () => {
         150
       );
       
-      // ALWAYS recalculate based on current cabin class
       const flightPrice = basePrice * multiplier;
       
       console.log('Return base_price:', basePrice);
@@ -117,10 +105,8 @@ const Fare = () => {
 
   const basePrice = calculateBasePrice();
   
-  // Get cabin class from search criteria or selected flight
   const cabinClass = searchCriteria.cabinClass || selectedFlights.departure?.cabin_class || 'Economy';
   
-  // Determine fare class prefix based on cabin class
   const getFarePrefix = () => {
     if (cabinClass === 'Business') return 'Business';
     if (cabinClass === 'Premium Economy') return 'Premium Economy';
@@ -129,11 +115,10 @@ const Fare = () => {
   
   const farePrefix = getFarePrefix();
 
-  // Calculate fare prices based on base price with multipliers
   const fares = [
     {
       name: `${farePrefix} Saver`,
-      price: (basePrice * 1.0).toFixed(2), // Base price
+      price: (basePrice * 1.0).toFixed(2),
       details: [
         { text: "7kg x 1 cabin baggage", available: true },
         { text: "23kg x 1 checked baggage", available: true },
@@ -144,7 +129,7 @@ const Fare = () => {
     },
     {
       name: `${farePrefix} Standard`,
-      price: (basePrice * 1.15).toFixed(2), // 15% more than base
+      price: (basePrice * 1.15).toFixed(2),
       details: [
         { text: "7kg x 1 cabin baggage", available: true },
         { text: "23kg x 1 checked baggage", available: true },
@@ -155,7 +140,7 @@ const Fare = () => {
     },
     {
       name: `${farePrefix} Plus`,
-      price: (basePrice * 1.35).toFixed(2), // 35% more than base
+      price: (basePrice * 1.35).toFixed(2),
       details: [
         { text: "7kg x 1 cabin baggage", available: true },
         { text: "30kg x 1 checked baggage", available: true },

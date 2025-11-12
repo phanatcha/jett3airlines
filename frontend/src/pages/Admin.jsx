@@ -9,7 +9,7 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState('flights');
   const [selectedFlights, setSelectedFlights] = useState([]);
   const [selectedBookings, setSelectedBookings] = useState([]);
-  const [reportView, setReportView] = useState('table'); // 'table' or 'graph'
+  const [reportView, setReportView] = useState('table');
   const [formData, setFormData] = useState({
     flightNo: '',
     fromAirport: '',
@@ -21,11 +21,9 @@ const Admin = () => {
     status: ''
   });
 
-  // Country selection state for add flight form
   const [departureCountry, setDepartureCountry] = useState('');
   const [arrivalCountry, setArrivalCountry] = useState('');
 
-  // Real reports data from API
   const [reportsMetrics, setReportsMetrics] = useState([
     { metric: 'Total flights', value: '0', note: 'All flights in system' },
     { metric: 'Total bookings', value: '0', note: 'All bookings made' },
@@ -36,27 +34,21 @@ const Admin = () => {
   const [bookingsPerDayData, setBookingsPerDayData] = useState([]);
   const [isLoadingReports, setIsLoadingReports] = useState(false);
 
-  // Fetch real booking data from API
   const [bookings, setBookings] = useState([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
 
-  // Sample flight data with IDs
-  // Fetch real flight data from API
   const [flights, setFlights] = useState([]);
   const [isLoadingFlights, setIsLoadingFlights] = useState(true);
   
-  // Airports and Airplanes data for dropdowns
   const [airports, setAirports] = useState([]);
   const [airplanes, setAirplanes] = useState([]);
   const [isLoadingAirports, setIsLoadingAirports] = useState(false);
   const [isLoadingAirplanes, setIsLoadingAirplanes] = useState(false);
 
-  // Function to fetch flights from API
   const fetchFlights = async () => {
     try {
       setIsLoadingFlights(true);
       const token = localStorage.getItem('token');
-      // Request a large limit to get all flights (or implement proper pagination later)
       const response = await fetch('http://localhost:8080/api/v1/admin/flights?limit=1000', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -66,7 +58,6 @@ const Admin = () => {
       const result = await response.json();
       
       if (result.success && result.data) {
-        // Transform API data to match component structure
         const transformedFlights = result.data.map(flight => ({
           id: flight.flight_id,
           flightNo: flight.flight_no,
@@ -103,7 +94,6 @@ const Admin = () => {
     }
   };
 
-  // Function to fetch airports from API
   const fetchAirports = async () => {
     try {
       setIsLoadingAirports(true);
@@ -120,7 +110,6 @@ const Admin = () => {
     }
   };
 
-  // Function to fetch airplanes from API
   const fetchAirplanes = async () => {
     try {
       setIsLoadingAirplanes(true);
@@ -143,7 +132,6 @@ const Admin = () => {
     }
   };
 
-  // Function to fetch bookings from API
   const fetchBookings = async () => {
     try {
       setIsLoadingBookings(true);
@@ -157,7 +145,6 @@ const Admin = () => {
       const result = await response.json();
       
       if (result.success && result.data) {
-        // Transform API data to match component structure
         const transformedBookings = result.data.map(booking => ({
           id: booking.booking_id,
           bookingNo: booking.booking_no || `BK${booking.booking_id}`,
@@ -177,27 +164,23 @@ const Admin = () => {
     }
   };
 
-  // Fetch flights, airports, and airplanes on component mount
   useEffect(() => {
     fetchFlights();
     fetchAirports();
     fetchAirplanes();
   }, []);
 
-  // Fetch bookings when bookings tab is active
   useEffect(() => {
     if (activeTab === 'bookings') {
       fetchBookings();
     }
   }, [activeTab]);
 
-  // Function to fetch reports data from API
   const fetchReportsData = async () => {
     try {
       setIsLoadingReports(true);
       const token = localStorage.getItem('token');
       
-      // Fetch metrics
       const metricsResponse = await fetch('http://localhost:8080/api/v1/admin/reports/metrics', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -228,7 +211,6 @@ const Admin = () => {
         ]);
       }
       
-      // Fetch bookings per day for graph
       const bookingsResponse = await fetch('http://localhost:8080/api/v1/admin/reports/bookings-per-day?days=7', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -248,14 +230,12 @@ const Admin = () => {
     }
   };
 
-  // Fetch reports data when reports tab is active
   useEffect(() => {
     if (activeTab === 'reports') {
       fetchReportsData();
     }
   }, [activeTab]);
 
-  // Export CSV handler
   const handleExportCSV = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -285,7 +265,6 @@ const Admin = () => {
     }
   };
 
-  // Export PDF handler
   const handleExportPDF = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -325,7 +304,6 @@ const Admin = () => {
 
   const handleAddFlight = async () => {
     try {
-      // Validate all required fields (flight_no and basePrice are optional for the API)
       if (!formData.fromAirport || !formData.toAirport || 
           !formData.airplane || !formData.departureTime || !formData.arrivalTime || 
           !formData.status) {
@@ -333,7 +311,6 @@ const Admin = () => {
         return;
       }
 
-      // Validate that departure time is before arrival time
       const departureDate = new Date(formData.departureTime);
       const arrivalDate = new Date(formData.arrivalTime);
       
@@ -342,14 +319,12 @@ const Admin = () => {
         return;
       }
 
-      // Validate that departure time is in the future
       const now = new Date();
       if (departureDate <= now) {
         alert('Departure time must be in the future');
         return;
       }
 
-      // Parse and validate IDs
       const departAirportId = parseInt(formData.fromAirport);
       const arriveAirportId = parseInt(formData.toAirport);
       const airplaneId = parseInt(formData.airplane);
@@ -364,9 +339,8 @@ const Admin = () => {
         return;
       }
 
-      // Format data for API
       const flightData = {
-        flight_no: formData.flightNo || undefined, // Send flight_no if provided, otherwise backend will auto-generate
+        flight_no: formData.flightNo || undefined,
         depart_airport_id: departAirportId,
         arrive_airport_id: arriveAirportId,
         airplane_id: airplaneId,
@@ -375,13 +349,11 @@ const Admin = () => {
         status: formData.status
       };
 
-      // Call API
       const response = await adminAPI.createFlight(flightData);
       
       if (response.success) {
         alert('Flight created successfully!');
         
-        // Reset form
         setFormData({
           flightNo: '',
           fromAirport: '',
@@ -393,11 +365,9 @@ const Admin = () => {
           status: ''
         });
         
-        // Reset country selections
         setDepartureCountry('');
         setArrivalCountry('');
         
-        // Refresh flights list
         await fetchFlights();
       } else {
         alert(`Failed to create flight: ${response.message || 'Unknown error'}`);
@@ -405,13 +375,11 @@ const Admin = () => {
     } catch (error) {
       console.error('Error creating flight:', error);
       
-      // Handle specific error messages
       let errorMessage = 'Failed to create flight. Please check all fields and try again.';
       
       if (error.message) {
         errorMessage = error.message;
       } else if (error.error) {
-        // Handle error object
         if (typeof error.error === 'string') {
           errorMessage = error.error;
         } else if (error.error.message) {
@@ -426,7 +394,6 @@ const Admin = () => {
   };
 
   const handleSelectFlight = (flightId) => {
-    // Only allow one selection at a time (radio button behavior)
     setSelectedFlights([flightId]);
   };
 
@@ -435,13 +402,11 @@ const Admin = () => {
       alert('Please select a flight to edit');
       return;
     }
-    // Navigate to edit page with the selected flight ID
     const selectedFlight = flights.find(f => f.id === selectedFlights[0]);
     navigate('/admin/edit-flight', { state: { flight: selectedFlight } });
   };
 
   const handleSelectBooking = (bookingId) => {
-    // Only allow one selection at a time (radio button behavior)
     setSelectedBookings([bookingId]);
   };
 
@@ -450,7 +415,6 @@ const Admin = () => {
       alert('Please select a booking to edit');
       return;
     }
-    // Navigate to edit booking page with the selected booking ID
     const selectedBooking = bookings.find(b => b.id === selectedBookings[0]);
     navigate('/admin/edit-booking', { state: { booking: selectedBooking } });
   };
