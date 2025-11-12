@@ -11,7 +11,6 @@ const Return = () => {
   const { searchCriteria, selectedFlights, selectReturnFlight } = useBooking();
   const [selectedTab, setSelectedTab] = useState("best");
 
-  // Filter state
   const [filters, setFilters] = useState({
     minPrice: 0,
     maxPrice: 100000,
@@ -23,34 +22,27 @@ const Return = () => {
   const [allFlights, setAllFlights] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Check if this is a one-way trip and redirect if needed
   useEffect(() => {
     if (searchCriteria.tripType === 'one-way') {
-      // Skip return flight selection for one-way trips
       navigate('/fare');
       return;
     }
 
-    // Check if departure flight is selected
     if (!selectedFlights.departure) {
-      // Redirect back to departure selection if no departure flight selected
       navigate('/flights/departure');
       return;
     }
 
-    // Fetch return flights
     fetchReturnFlights();
   }, []);
 
-  // Fetch return flights based on search criteria
   const fetchReturnFlights = async () => {
     try {
       setLoading(true);
 
-      // Prepare search parameters for return flight (reverse direction)
       const searchParams = {
-        depart_airport_id: parseInt(searchCriteria.toWhere), // Reverse: arrival becomes departure
-        arrive_airport_id: parseInt(searchCriteria.fromWhere), // Reverse: departure becomes arrival
+        depart_airport_id: parseInt(searchCriteria.toWhere),
+        arrive_airport_id: parseInt(searchCriteria.fromWhere),
         depart_date: searchCriteria.returnDate,
         passengers: parseInt(searchCriteria.passengers),
         class: searchCriteria.cabinClass,
@@ -78,7 +70,6 @@ const Return = () => {
     }
   };
 
-  // Apply filters whenever filters, flight data, or selected tab changes
   useEffect(() => {
     applyFilters();
   }, [filters, allFlights, selectedTab]);
@@ -86,18 +77,15 @@ const Return = () => {
   const applyFilters = () => {
     let filtered = [...allFlights];
 
-    // Price filter
     filtered = filtered.filter(flight => 
       flight.base_price >= filters.minPrice && 
       flight.base_price <= filters.maxPrice
     );
 
-    // Stops filter - for now, assume all flights are direct (stops = 0)
     if (filters.maxStops === '0') {
       filtered = filtered.filter(flight => !flight.stops || flight.stops === 0);
     }
 
-    // Departure time filter
     if (filters.departureTimeRanges.length > 0) {
       filtered = filtered.filter(flight => {
         const departureDate = new Date(flight.depart_when);
@@ -115,7 +103,6 @@ const Return = () => {
       });
     }
 
-    // Apply sorting based on selected tab
     if (selectedTab === 'cheapest') {
       filtered.sort((a, b) => a.base_price - b.base_price);
     } else if (selectedTab === 'fastest') {
@@ -125,7 +112,6 @@ const Return = () => {
         return durationA - durationB;
       });
     } else {
-      // 'best' - balance of price and duration
       filtered.sort((a, b) => {
         const durationA = new Date(a.arrive_when).getTime() - new Date(a.depart_when).getTime();
         const durationB = new Date(b.arrive_when).getTime() - new Date(b.depart_when).getTime();
@@ -145,19 +131,16 @@ const Return = () => {
     }));
   };
 
-  // Format price for display
   const formatPrice = (price) => {
-    return `$${price.toLocaleString()}`;
+    return `$${parseFloat(price).toFixed(2)}`;
   };
 
-  // Format stops for display
   const formatStops = (stops) => {
     if (!stops || stops === 0) return 'Direct';
     if (stops === 1) return '1 stop';
     return `${stops} stops`;
   };
 
-  // Format time from ISO string
   const formatTime = (isoString) => {
     const date = new Date(isoString);
     return date.toLocaleTimeString('en-US', { 
@@ -167,7 +150,6 @@ const Return = () => {
     });
   };
 
-  // Format date from ISO string
   const formatDate = (isoString) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('en-US', { 
@@ -177,7 +159,6 @@ const Return = () => {
     });
   };
 
-  // Calculate flight duration
   const calculateDuration = (departTime, arriveTime) => {
     const depart = new Date(departTime);
     const arrive = new Date(arriveTime);
@@ -187,16 +168,12 @@ const Return = () => {
     return `${hours}h ${minutes}m`;
   };
 
-  // Handle return flight selection
   const handleSelectFlight = (flight) => {
-    // Store selected return flight in BookingContext
     selectReturnFlight(flight);
 
-    // Navigate to fare options page
     navigate('/fare');
   };
 
-  // Get route display
   const getRouteDisplay = (flight) => {
     return [
       flight.depart_airport_name || 'Departure Airport',
@@ -204,7 +181,6 @@ const Return = () => {
     ];
   };
 
-  // Get departure flight summary for display
   const getDepartureSummary = () => {
     if (!selectedFlights.departure) return null;
     
@@ -395,7 +371,6 @@ const Return = () => {
   );
 };
 
-// FlightCard component for displaying individual flight details
 const FlightCard = ({ 
   flight, 
   onSelect, 

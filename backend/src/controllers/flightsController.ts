@@ -10,17 +10,12 @@ const airportModel = new AirportModel();
 const airplaneModel = new AirplaneModel();
 const seatModel = new SeatModel();
 
-// Helper function to create error responses
 const createErrorResponse = (code: string, message: string, details?: string[]): ApiResponse => ({
   success: false,
   message,
   error: details ? `${code}: ${message} - Details: ${details.join(', ')}` : `${code}: ${message}`
 });
 
-/**
- * Search flights based on criteria
- * GET /api/v1/flights/search
- */
 export const searchFlights = async (req: Request, res: Response): Promise<void> => {
   try {
     const searchParams: FlightSearchRequest = {
@@ -31,7 +26,6 @@ export const searchFlights = async (req: Request, res: Response): Promise<void> 
       class: req.query.class as string
     };
 
-    // Validate required parameters
     if (!searchParams.depart_airport_id || !searchParams.arrive_airport_id) {
       res.status(400).json(createErrorResponse('MISSING_PARAMETERS', 'Departure and arrival airport IDs are required'));
       return;
@@ -42,13 +36,11 @@ export const searchFlights = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Validate that departure and arrival airports are different
     if (searchParams.depart_airport_id === searchParams.arrive_airport_id) {
       res.status(400).json(createErrorResponse('INVALID_ROUTE', 'Departure and arrival airports must be different'));
       return;
     }
 
-    // Validate airports exist
     const [departureAirport, arrivalAirport] = await Promise.all([
       airportModel.findAirportById(searchParams.depart_airport_id),
       airportModel.findAirportById(searchParams.arrive_airport_id)
@@ -64,15 +56,12 @@ export const searchFlights = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Search flights
     const flights = await flightModel.searchFlights(searchParams);
 
-    // Filter by available seats if passengers specified
     const filteredFlights = searchParams.passengers && searchParams.passengers > 1 
       ? flights.filter(flight => flight.available_seats >= searchParams.passengers!)
       : flights;
 
-    // Transform flight data to match frontend expectations
     const transformedFlights = filteredFlights.map((flight: any) => ({
       ...flight,
       depart_iata_code: flight.departure_iata,
@@ -102,10 +91,6 @@ export const searchFlights = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-/**
- * Get flight details by ID
- * GET /api/v1/flights/:id
- */
 export const getFlightDetails = async (req: Request, res: Response): Promise<void> => {
   try {
     const flightId = parseInt(req.params.id);
@@ -122,7 +107,6 @@ export const getFlightDetails = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Transform flight data to match frontend expectations
     const transformedFlight = {
       ...flightDetails,
       depart_iata_code: (flightDetails as any).departure_iata,
@@ -146,10 +130,6 @@ export const getFlightDetails = async (req: Request, res: Response): Promise<voi
   }
 };
 
-/**
- * Get available seats for a flight
- * GET /api/v1/flights/:id/seats
- */
 export const getFlightSeats = async (req: Request, res: Response): Promise<void> => {
   try {
     const flightId = parseInt(req.params.id);
@@ -160,7 +140,6 @@ export const getFlightSeats = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Verify flight exists
     const flight = await flightModel.findFlightById(flightId);
     if (!flight) {
       res.status(404).json(createErrorResponse('FLIGHT_NOT_FOUND', 'Flight not found'));
@@ -169,7 +148,6 @@ export const getFlightSeats = async (req: Request, res: Response): Promise<void>
 
     const seats = await flightModel.getAvailableSeats(flightId, seatClass);
 
-    // Group seats by class and availability
     const seatMap: Record<string, { available: any[]; booked: any[] }> = seats.reduce((acc: Record<string, { available: any[]; booked: any[] }>, seat: any) => {
       if (!acc[seat.class]) {
         acc[seat.class] = {
@@ -187,7 +165,6 @@ export const getFlightSeats = async (req: Request, res: Response): Promise<void>
       return acc;
     }, {});
 
-    // Calculate summary statistics
     const summary = Object.keys(seatMap).map(seatClass => ({
       class: seatClass,
       total_seats: seatMap[seatClass].available.length + seatMap[seatClass].booked.length,
@@ -215,10 +192,6 @@ export const getFlightSeats = async (req: Request, res: Response): Promise<void>
   }
 };
 
-/**
- * Check seat availability for specific seats
- * POST /api/v1/flights/:id/seats/check
- */
 export const checkSeatAvailability = async (req: Request, res: Response): Promise<void> => {
   try {
     const flightId = parseInt(req.params.id);
@@ -234,7 +207,6 @@ export const checkSeatAvailability = async (req: Request, res: Response): Promis
       return;
     }
 
-    // Verify flight exists
     const flight = await flightModel.findFlightById(flightId);
     if (!flight) {
       res.status(404).json(createErrorResponse('FLIGHT_NOT_FOUND', 'Flight not found'));
@@ -259,12 +231,7 @@ export const checkSeatAvailability = async (req: Request, res: Response): Promis
   }
 };
 
-// ============= ADMIN FUNCTIONS =============
 
-/**
- * Get all flights with pagination (admin)
- * GET /api/v1/admin/flights
- */
 export const getAllFlights = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -283,14 +250,12 @@ export const getAllFlights = async (req: Request, res: Response): Promise<void> 
       flights = await flightModel.findAll({}, limit, offset, 'depart_when ASC');
     }
 
-    // Get detailed information for each flight
     const detailedFlights = await Promise.all(
       flights.map(async (flight: any) => {
         return await flightModel.getFlightDetails(flight.flight_id);
       })
     );
 
-    // Get total count for pagination
     const totalCount = await flightModel.count(status ? { status } : {});
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -312,16 +277,11 @@ export const getAllFlights = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-/**
- * Create new flight (admin)
- * POST /api/v1/admin/flights
- */
 export const createFlight = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Generate flight number if not provided
     const generateFlightNumber = () => {
       const prefix = 'JT';
-      const randomNum = Math.floor(Math.random() * 9000) + 1000; // 4-digit number
+      const randomNum = Math.floor(Math.random() * 9000) + 1000;
       return `${prefix}${randomNum}`;
     };
 
@@ -335,21 +295,18 @@ export const createFlight = async (req: Request, res: Response): Promise<void> =
       arrive_airport_id: req.body.arrive_airport_id
     };
 
-    // Validate flight data
     const validationErrors = flightModel.validateFlightData(flightData);
     if (validationErrors.length > 0) {
       res.status(400).json(createErrorResponse('VALIDATION_ERROR', 'Flight data validation failed', validationErrors));
       return;
     }
 
-    // Verify airplane exists and get details
     const airplane = await airplaneModel.findAirplaneById(flightData.airplane_id);
     if (!airplane) {
       res.status(404).json(createErrorResponse('AIRPLANE_NOT_FOUND', 'Airplane not found'));
       return;
     }
 
-    // Verify airports exist
     const [departureAirport, arrivalAirport] = await Promise.all([
       airportModel.findAirportById(flightData.depart_airport_id),
       airportModel.findAirportById(flightData.arrive_airport_id)
@@ -360,7 +317,6 @@ export const createFlight = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Check airplane availability for the time period
     const availableAirplanes = await airplaneModel.getAvailableAirplanes(
       flightData.depart_when,
       flightData.arrive_when
@@ -375,10 +331,8 @@ export const createFlight = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Create the flight
     const flightId = await flightModel.createFlight(flightData);
 
-    // Get the created flight details
     const createdFlight = await flightModel.getFlightDetails(flightId);
 
     res.status(201).json({
@@ -393,10 +347,6 @@ export const createFlight = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-/**
- * Update flight (admin)
- * PUT /api/v1/admin/flights/:id
- */
 export const updateFlight = async (req: Request, res: Response): Promise<void> => {
   try {
     const flightId = parseInt(req.params.id);
@@ -409,20 +359,17 @@ export const updateFlight = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Verify flight exists
     const existingFlight = await flightModel.findFlightById(flightId);
     if (!existingFlight) {
       res.status(404).json(createErrorResponse('FLIGHT_NOT_FOUND', 'Flight not found'));
       return;
     }
 
-    // Skip complex validation for now - just do basic checks
     if (Object.keys(updateData).length === 0) {
       res.status(400).json(createErrorResponse('NO_DATA', 'No update data provided'));
       return;
     }
 
-    // If airplane is being changed, verify it exists (skip availability check for now)
     if (updateData.airplane_id && updateData.airplane_id !== existingFlight.airplane_id) {
       const airplane = await airplaneModel.findAirplaneById(updateData.airplane_id);
       if (!airplane) {
@@ -431,7 +378,6 @@ export const updateFlight = async (req: Request, res: Response): Promise<void> =
       }
     }
 
-    // If airports are being changed, verify they exist
     if (updateData.depart_airport_id || updateData.arrive_airport_id) {
       const departAirportId = updateData.depart_airport_id || existingFlight.depart_airport_id;
       const arriveAirportId = updateData.arrive_airport_id || existingFlight.arrive_airport_id;
@@ -447,7 +393,6 @@ export const updateFlight = async (req: Request, res: Response): Promise<void> =
       }
     }
 
-    // Update the flight
     console.log('Updating flight with data:', JSON.stringify(updateData, null, 2));
     const success = await flightModel.updateFlight(flightId, updateData);
     console.log('Update result:', success);
@@ -458,7 +403,6 @@ export const updateFlight = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Get updated flight details
     const updatedFlight = await flightModel.getFlightDetails(flightId);
 
     res.json({
@@ -474,10 +418,6 @@ export const updateFlight = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-/**
- * Delete flight (admin)
- * DELETE /api/v1/admin/flights/:id
- */
 export const deleteFlight = async (req: Request, res: Response): Promise<void> => {
   try {
     const flightId = parseInt(req.params.id);
@@ -487,14 +427,12 @@ export const deleteFlight = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Verify flight exists
     const existingFlight = await flightModel.findFlightById(flightId);
     if (!existingFlight) {
       res.status(404).json(createErrorResponse('FLIGHT_NOT_FOUND', 'Flight not found'));
       return;
     }
 
-    // Delete the flight (this will check for existing bookings)
     const success = await flightModel.deleteFlight(flightId);
 
     if (!success) {
@@ -510,7 +448,6 @@ export const deleteFlight = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     console.error('Error deleting flight:', error);
     
-    // Handle specific error for flights with bookings
     if (error instanceof Error && error.message.includes('existing bookings')) {
       res.status(409).json(createErrorResponse('FLIGHT_HAS_BOOKINGS', 'Cannot delete flight with existing bookings'));
       return;
@@ -520,10 +457,6 @@ export const deleteFlight = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-/**
- * Update flight status (admin)
- * PATCH /api/v1/admin/flights/:id/status
- */
 export const updateFlightStatus = async (req: Request, res: Response): Promise<void> => {
   try {
     const flightId = parseInt(req.params.id);
@@ -539,14 +472,12 @@ export const updateFlightStatus = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    // Verify flight exists
     const existingFlight = await flightModel.findFlightById(flightId);
     if (!existingFlight) {
       res.status(404).json(createErrorResponse('FLIGHT_NOT_FOUND', 'Flight not found'));
       return;
     }
 
-    // Update flight status
     const success = await flightModel.updateFlightStatus(flightId, status);
 
     if (!success) {
@@ -554,7 +485,6 @@ export const updateFlightStatus = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    // Get updated flight details
     const updatedFlight = await flightModel.getFlightDetails(flightId);
 
     res.json({
@@ -569,10 +499,6 @@ export const updateFlightStatus = async (req: Request, res: Response): Promise<v
   }
 };
 
-/**
- * Get flight statistics (admin)
- * GET /api/v1/admin/flights/stats
- */
 export const getFlightStats = async (_req: Request, res: Response): Promise<void> => {
   try {
     const stats = await flightModel.getFlightStats();
@@ -589,12 +515,7 @@ export const getFlightStats = async (_req: Request, res: Response): Promise<void
   }
 };
 
-// ============= AIRPLANE MANAGEMENT FUNCTIONS =============
 
-/**
- * Get all airplanes (admin)
- * GET /api/v1/admin/airplanes
- */
 export const getAllAirplanes = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -610,14 +531,12 @@ export const getAllAirplanes = async (req: Request, res: Response): Promise<void
       airplanes = await airplaneModel.getAllAirplanes(limit, offset);
     }
 
-    // Get detailed information for each airplane
     const detailedAirplanes = await Promise.all(
       airplanes.map(async (airplane: any) => {
         return await airplaneModel.getAirplaneDetails(airplane.airplane_id);
       })
     );
 
-    // Get total count for pagination
     const totalCount = await airplaneModel.count({});
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -639,10 +558,6 @@ export const getAllAirplanes = async (req: Request, res: Response): Promise<void
   }
 };
 
-/**
- * Get airplane details (admin)
- * GET /api/v1/admin/airplanes/:id
- */
 export const getAirplaneDetails = async (req: Request, res: Response): Promise<void> => {
   try {
     const airplaneId = parseInt(req.params.id);
@@ -671,15 +586,10 @@ export const getAirplaneDetails = async (req: Request, res: Response): Promise<v
   }
 };
 
-/**
- * Create new airplane (admin)
- * POST /api/v1/admin/airplanes
- */
 export const createAirplane = async (req: Request, res: Response): Promise<void> => {
   try {
     const airplaneData = req.body;
 
-    // Validate airplane data
     const validationErrors = airplaneModel.validateAirplaneData(airplaneData);
     if (validationErrors.length > 0) {
       res.status(400).json(createErrorResponse('VALIDATION_ERROR', 'Airplane data validation failed', validationErrors
@@ -687,17 +597,14 @@ export const createAirplane = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Check if registration already exists
     const existingAirplane = await airplaneModel.findByRegistration(airplaneData.registration);
     if (existingAirplane) {
       res.status(409).json(createErrorResponse('REGISTRATION_EXISTS', 'Airplane with this registration already exists'));
       return;
     }
 
-    // Create the airplane
     const airplaneId = await airplaneModel.createAirplane(airplaneData);
 
-    // Get the created airplane details
     const createdAirplane = await airplaneModel.getAirplaneDetails(airplaneId);
 
     res.status(201).json({
@@ -712,10 +619,6 @@ export const createAirplane = async (req: Request, res: Response): Promise<void>
   }
 };
 
-/**
- * Update airplane (admin)
- * PUT /api/v1/admin/airplanes/:id
- */
 export const updateAirplane = async (req: Request, res: Response): Promise<void> => {
   try {
     const airplaneId = parseInt(req.params.id);
@@ -726,14 +629,12 @@ export const updateAirplane = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Verify airplane exists
     const existingAirplane = await airplaneModel.findAirplaneById(airplaneId);
     if (!existingAirplane) {
       res.status(404).json(createErrorResponse('AIRPLANE_NOT_FOUND', 'Airplane not found'));
       return;
     }
 
-    // Validate update data
     if (Object.keys(updateData).length > 0) {
       const validationErrors = airplaneModel.validateAirplaneData({
         ...existingAirplane,
@@ -747,7 +648,6 @@ export const updateAirplane = async (req: Request, res: Response): Promise<void>
       }
     }
 
-    // Check if registration is being changed and if it already exists
     if (updateData.registration && updateData.registration !== existingAirplane.registration) {
       const registrationExists = await airplaneModel.registrationExists(updateData.registration, airplaneId);
       if (registrationExists) {
@@ -756,7 +656,6 @@ export const updateAirplane = async (req: Request, res: Response): Promise<void>
       }
     }
 
-    // Update the airplane
     const success = await airplaneModel.updateAirplane(airplaneId, updateData);
 
     if (!success) {
@@ -764,7 +663,6 @@ export const updateAirplane = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Get updated airplane details
     const updatedAirplane = await airplaneModel.getAirplaneDetails(airplaneId);
 
     res.json({
@@ -779,10 +677,6 @@ export const updateAirplane = async (req: Request, res: Response): Promise<void>
   }
 };
 
-/**
- * Delete airplane (admin)
- * DELETE /api/v1/admin/airplanes/:id
- */
 export const deleteAirplane = async (req: Request, res: Response): Promise<void> => {
   try {
     const airplaneId = parseInt(req.params.id);
@@ -792,14 +686,12 @@ export const deleteAirplane = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Verify airplane exists
     const existingAirplane = await airplaneModel.findAirplaneById(airplaneId);
     if (!existingAirplane) {
       res.status(404).json(createErrorResponse('AIRPLANE_NOT_FOUND', 'Airplane not found'));
       return;
     }
 
-    // Delete the airplane (this will check for existing flights and seats)
     const success = await airplaneModel.deleteAirplane(airplaneId);
 
     if (!success) {
@@ -815,7 +707,6 @@ export const deleteAirplane = async (req: Request, res: Response): Promise<void>
   } catch (error) {
     console.error('Error deleting airplane:', error);
     
-    // Handle specific errors
     if (error instanceof Error) {
       if (error.message.includes('existing flights')) {
         res.status(409).json(createErrorResponse('AIRPLANE_HAS_FLIGHTS', 'Cannot delete airplane with existing flights'));
@@ -832,12 +723,7 @@ export const deleteAirplane = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// ============= SEAT CONFIGURATION MANAGEMENT FUNCTIONS =============
 
-/**
- * Get airplane seat configuration (admin)
- * GET /api/v1/admin/airplanes/:id/seats
- */
 export const getAirplaneSeatConfiguration = async (req: Request, res: Response): Promise<void> => {
   try {
     const airplaneId = parseInt(req.params.id);
@@ -847,14 +733,12 @@ export const getAirplaneSeatConfiguration = async (req: Request, res: Response):
       return;
     }
 
-    // Verify airplane exists
     const airplane = await airplaneModel.findAirplaneById(airplaneId);
     if (!airplane) {
       res.status(404).json(createErrorResponse('AIRPLANE_NOT_FOUND', 'Airplane not found'));
       return;
     }
 
-    // Get seat configuration
     const seats = await seatModel.getSeatsByAirplane(airplaneId);
     const seatPricing = await seatModel.getSeatPricing(airplaneId);
 
@@ -875,10 +759,6 @@ export const getAirplaneSeatConfiguration = async (req: Request, res: Response):
   }
 };
 
-/**
- * Create seat for airplane (admin)
- * POST /api/v1/admin/airplanes/:id/seats
- */
 export const createSeat = async (req: Request, res: Response): Promise<void> => {
   try {
     const airplaneId = parseInt(req.params.id);
@@ -892,14 +772,12 @@ export const createSeat = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Verify airplane exists
     const airplane = await airplaneModel.findAirplaneById(airplaneId);
     if (!airplane) {
       res.status(404).json(createErrorResponse('AIRPLANE_NOT_FOUND', 'Airplane not found'));
       return;
     }
 
-    // Validate seat data
     const validationErrors = seatModel.validateSeatData(seatData);
     if (validationErrors.length > 0) {
       res.status(400).json(createErrorResponse('VALIDATION_ERROR', 'Seat data validation failed', validationErrors
@@ -907,7 +785,6 @@ export const createSeat = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Check if seat number already exists for this airplane
     const existingSeats = await seatModel.getSeatsByAirplane(airplaneId);
     const seatExists = existingSeats.some((seat: any) => seat.seat_no === seatData.seat_no);
     
@@ -916,10 +793,8 @@ export const createSeat = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Create the seat
     const seatId = await seatModel.createSeat(seatData);
 
-    // Get the created seat
     const createdSeat = await seatModel.findSeatById(seatId);
 
     res.status(201).json({
@@ -934,10 +809,6 @@ export const createSeat = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-/**
- * Update seat (admin)
- * PUT /api/v1/admin/seats/:seatId
- */
 export const updateSeat = async (req: Request, res: Response): Promise<void> => {
   try {
     const seatId = parseInt(req.params.seatId);
@@ -948,14 +819,12 @@ export const updateSeat = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Verify seat exists
     const existingSeat = await seatModel.findSeatById(seatId);
     if (!existingSeat) {
       res.status(404).json(createErrorResponse('SEAT_NOT_FOUND', 'Seat not found'));
       return;
     }
 
-    // Validate update data
     if (Object.keys(updateData).length > 0) {
       const validationErrors = seatModel.validateSeatData({
         ...existingSeat,
@@ -969,7 +838,6 @@ export const updateSeat = async (req: Request, res: Response): Promise<void> => 
       }
     }
 
-    // Check if seat number is being changed and if it already exists
     if (updateData.seat_no && updateData.seat_no !== existingSeat.seat_no) {
       const existingSeats = await seatModel.getSeatsByAirplane(existingSeat.airplane_id);
       const seatExists = existingSeats.some((seat: any) => 
@@ -982,7 +850,6 @@ export const updateSeat = async (req: Request, res: Response): Promise<void> => 
       }
     }
 
-    // Update the seat
     const success = await seatModel.updateSeat(seatId, updateData);
 
     if (!success) {
@@ -990,7 +857,6 @@ export const updateSeat = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Get updated seat
     const updatedSeat = await seatModel.findSeatById(seatId);
 
     res.json({
@@ -1005,10 +871,6 @@ export const updateSeat = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-/**
- * Delete seat (admin)
- * DELETE /api/v1/admin/seats/:seatId
- */
 export const deleteSeat = async (req: Request, res: Response): Promise<void> => {
   try {
     const seatId = parseInt(req.params.seatId);
@@ -1018,14 +880,12 @@ export const deleteSeat = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Verify seat exists
     const existingSeat = await seatModel.findSeatById(seatId);
     if (!existingSeat) {
       res.status(404).json(createErrorResponse('SEAT_NOT_FOUND', 'Seat not found'));
       return;
     }
 
-    // Delete the seat (this will check for existing bookings)
     const success = await seatModel.deleteSeat(seatId);
 
     if (!success) {
@@ -1041,7 +901,6 @@ export const deleteSeat = async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     console.error('Error deleting seat:', error);
     
-    // Handle specific error for seats with bookings
     if (error instanceof Error && error.message.includes('existing bookings')) {
       res.status(409).json(createErrorResponse('SEAT_HAS_BOOKINGS', 'Cannot delete seat with existing bookings'));
       return;

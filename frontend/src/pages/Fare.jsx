@@ -15,9 +15,15 @@ const Fare = () => {
     updateFareOptions
   } = useBooking();
 
-  const [selectedFare, setSelectedFare] = useState("Economy Saver");
+  const getDefaultFare = () => {
+    const cabinClass = searchCriteria.cabinClass || 'Economy';
+    if (cabinClass === 'Business') return 'Business Saver';
+    if (cabinClass === 'Premium Economy') return 'Premium Economy Saver';
+    return 'Economy Saver';
+  };
+  
+  const [selectedFare, setSelectedFare] = useState(getDefaultFare());
 
-  // Check if we have required data
   useEffect(() => {
     if (!selectedFlights.departure) {
       alert("No flight selected. Please select a flight first.");
@@ -29,47 +35,67 @@ const Fare = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Store selected fare class in context
     updateFareOptions({
       fareClass: selectedFare,
       support: 'no',
       fasttrack: 'no',
     });
 
-    // Navigate to passenger info page
     navigate("/passenger-info");
   };
 
-  // Calculate base price from selected flights
   const calculateBasePrice = () => {
     let total = 0;
+    
+    const cabinClass = searchCriteria.cabinClass || selectedFlights.departure?.cabin_class || 'Economy';
+    
+    const getClassMultiplier = () => {
+      if (cabinClass === 'Business') return 2.5;
+      if (cabinClass === 'Premium Economy') return 1.5;
+      return 1.0;
+    };
+    
+    const multiplier = getClassMultiplier();
 
     console.log('=== FARE PRICE CALCULATION DEBUG ===');
+    console.log('Cabin Class:', cabinClass);
+    console.log('Class Multiplier:', multiplier);
     console.log('Selected Flights:', selectedFlights);
-    console.log('Search Criteria:', searchCriteria);
     
-    // Add departure flight base price
     if (selectedFlights.departure) {
-      const depPrice = parseFloat(selectedFlights.departure.base_price || selectedFlights.departure.min_price || 0);
-      console.log('Departure Flight Data:', selectedFlights.departure);
-      console.log('Departure base_price:', selectedFlights.departure.base_price);
-      console.log('Departure min_price:', selectedFlights.departure.min_price);
-      console.log('Calculated departure price:', depPrice);
+      const basePrice = parseFloat(
+        selectedFlights.departure.base_price || 
+        selectedFlights.departure.min_price || 
+        150
+      );
       
-      total += depPrice;
+      const flightPrice = basePrice * multiplier;
+      
+      console.log('Departure base_price:', basePrice);
+      console.log('Applied multiplier:', multiplier);
+      console.log('Departure calculated price:', flightPrice);
+      
+      total += flightPrice;
     }
 
-    // Add return flight base price ONLY if it's actually selected
-    if (selectedFlights.return) {
-      const retPrice = parseFloat(selectedFlights.return.base_price || selectedFlights.return.min_price || 0);
-      console.log('Return Flight Data:', selectedFlights.return);
-      console.log('Return base_price:', selectedFlights.return.base_price);
-      console.log('Return min_price:', selectedFlights.return.min_price);
-      console.log('Calculated return price:', retPrice);
+    if (searchCriteria.tripType === 'round-trip' && selectedFlights.return) {
+      const basePrice = parseFloat(
+        selectedFlights.return.base_price || 
+        selectedFlights.return.min_price || 
+        150
+      );
       
-      total += retPrice;
+      const flightPrice = basePrice * multiplier;
+      
+      console.log('Return base_price:', basePrice);
+      console.log('Applied multiplier:', multiplier);
+      console.log('Return calculated price:', flightPrice);
+      
+      total += flightPrice;
     } else if (searchCriteria.tripType === 'round-trip') {
       console.log('Round-trip but no return flight selected yet - showing departure price only');
+    } else {
+      console.log('One-way trip - no return flight price added');
     }
 
     console.log('Total base price:', total);
@@ -78,12 +104,21 @@ const Fare = () => {
   };
 
   const basePrice = calculateBasePrice();
+  
+  const cabinClass = searchCriteria.cabinClass || selectedFlights.departure?.cabin_class || 'Economy';
+  
+  const getFarePrefix = () => {
+    if (cabinClass === 'Business') return 'Business';
+    if (cabinClass === 'Premium Economy') return 'Premium Economy';
+    return 'Economy';
+  };
+  
+  const farePrefix = getFarePrefix();
 
-  // Calculate fare prices based on base price with multipliers
   const fares = [
     {
-      name: "Economy Saver",
-      price: (basePrice * 1.0).toFixed(2), // Base price
+      name: `${farePrefix} Saver`,
+      price: (basePrice * 1.0).toFixed(2),
       details: [
         { text: "7kg x 1 cabin baggage", available: true },
         { text: "23kg x 1 checked baggage", available: true },
@@ -93,8 +128,8 @@ const Fare = () => {
       ],
     },
     {
-      name: "Economy Standard",
-      price: (basePrice * 1.15).toFixed(2), // 15% more than base
+      name: `${farePrefix} Standard`,
+      price: (basePrice * 1.15).toFixed(2),
       details: [
         { text: "7kg x 1 cabin baggage", available: true },
         { text: "23kg x 1 checked baggage", available: true },
@@ -104,8 +139,8 @@ const Fare = () => {
       ],
     },
     {
-      name: "Economy Plus",
-      price: (basePrice * 1.35).toFixed(2), // 35% more than base
+      name: `${farePrefix} Plus`,
+      price: (basePrice * 1.35).toFixed(2),
       details: [
         { text: "7kg x 1 cabin baggage", available: true },
         { text: "30kg x 1 checked baggage", available: true },
@@ -125,7 +160,7 @@ const Fare = () => {
       </div>
 
       <div className="flex flex-col px-20 pt-8 gap-2">
-        <Back />
+        <Back to="/flights/departure" />
         <div>
           <h2 className="text-3xl font-semibold mb-1">
             {selectedFlights.departure?.depart_city_name || 'Bangkok'}, {selectedFlights.departure?.depart_iata_code || 'BKK'} ↔ {selectedFlights.departure?.arrive_city_name || 'Berlin'}, {selectedFlights.departure?.arrive_iata_code || 'BER'}

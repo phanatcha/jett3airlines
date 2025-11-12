@@ -1,18 +1,8 @@
-/**
- * Example Component: How to Use the API Integration
- * 
- * This file demonstrates various patterns for using the API
- * in your React components. Copy these patterns to your pages.
- */
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useBooking } from '../context/BookingContext';
 import { flightsAPI, bookingsAPI, adminAPI } from '../services/api';
 
-// ============================================
-// Example 1: Using Auth Context
-// ============================================
 export const AuthExample = () => {
   const { user, isAuthenticated, logout } = useAuth();
 
@@ -30,9 +20,6 @@ export const AuthExample = () => {
   );
 };
 
-// ============================================
-// Example 2: Fetching Data on Component Mount
-// ============================================
 export const FlightSearchExample = () => {
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -82,9 +69,6 @@ export const FlightSearchExample = () => {
   );
 };
 
-// ============================================
-// Example 3: Form Submission with API
-// ============================================
 export const BookingFormExample = () => {
   const { createBooking, loading } = useBooking();
   const [formData, setFormData] = useState({
@@ -104,7 +88,6 @@ export const BookingFormExample = () => {
 
     if (result.success) {
       setSuccess(true);
-      // Redirect or show confirmation
     } else {
       setError(result.error || 'Booking failed');
     }
@@ -124,9 +107,6 @@ export const BookingFormExample = () => {
   );
 };
 
-// ============================================
-// Example 4: Direct API Call (without context)
-// ============================================
 export const DirectAPIExample = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -168,9 +148,6 @@ export const DirectAPIExample = () => {
   );
 };
 
-// ============================================
-// Example 5: Admin Operations
-// ============================================
 export const AdminExample = () => {
   const { isAdmin } = useAuth();
   const [flights, setFlights] = useState([]);
@@ -202,7 +179,7 @@ export const AdminExample = () => {
       
       if (response.success) {
         alert('Flight created successfully!');
-        fetchAllFlights(); // Refresh list
+        fetchAllFlights();
       }
     } catch (err) {
       alert('Failed to create flight: ' + err.error?.message);
@@ -224,9 +201,6 @@ export const AdminExample = () => {
   );
 };
 
-// ============================================
-// Example 6: Error Handling Pattern
-// ============================================
 export const ErrorHandlingExample = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -242,11 +216,9 @@ export const ErrorHandlingExample = () => {
       if (response.success) {
         setData(response.data);
       } else {
-        // Handle API error response
         setError(response.error?.message || 'Operation failed');
       }
     } catch (err) {
-      // Handle network or unexpected errors
       if (err.error) {
         setError(err.error.message);
       } else if (err.message) {
@@ -269,9 +241,6 @@ export const ErrorHandlingExample = () => {
   );
 };
 
-// ============================================
-// Example 7: Conditional Rendering Based on Auth
-// ============================================
 export const ConditionalRenderExample = () => {
   const { isAuthenticated, user } = useAuth();
 
@@ -293,9 +262,6 @@ export const ConditionalRenderExample = () => {
   );
 };
 
-// ============================================
-// Example 8: Using Booking Context
-// ============================================
 export const BookingContextExample = () => {
   const {
     searchCriteria,
@@ -346,9 +312,6 @@ export const BookingContextExample = () => {
   );
 };
 
-// ============================================
-// Example 9: Loading States
-// ============================================
 export const LoadingStateExample = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
@@ -380,9 +343,6 @@ export const LoadingStateExample = () => {
   );
 };
 
-// ============================================
-// Example 10: Pagination
-// ============================================
 export const PaginationExample = () => {
   const [bookings, setBookings] = useState([]);
   const [page, setPage] = useState(1);

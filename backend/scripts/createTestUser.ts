@@ -5,11 +5,9 @@ async function createTestUser() {
   const db = database;
   
   try {
-    // Hash the password using argon2 (same as the backend uses)
     const password = 'Test123!';
     const hashedPassword = await argon2.hash(password);
     
-    // Check if user already exists
     const existingUser = await db.query(
       'SELECT * FROM client WHERE username = ? OR email = ?',
       ['testuser', 'test@jett3airlines.com']
@@ -23,7 +21,6 @@ async function createTestUser() {
       return;
     }
     
-    // Create the test user
     const result = await db.query(
       `INSERT INTO client (
         username,
@@ -45,7 +42,7 @@ async function createTestUser() {
         'User',
         '1990-01-01',
         'United States',
-        'user'  // Regular user role
+        'user'
       ]
     );
     
@@ -72,7 +69,6 @@ async function createTestUser() {
   }
 }
 
-// Run the script
 createTestUser()
   .then(() => {
     console.log('\n✨ Script completed successfully!');

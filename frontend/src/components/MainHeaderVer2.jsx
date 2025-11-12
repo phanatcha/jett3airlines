@@ -12,19 +12,18 @@ const MainHeaderVer2 = () => {
     navigate('/');
   };
 
-  // Check if user is logged in
+
   const loggedIn = isAuthenticated && isAuthenticated();
   console.log('MainHeaderVer2 - Is Authenticated:', loggedIn);
   console.log('MainHeaderVer2 - User:', user);
 
   return (
       <div>
-        {/* Header Section */}
+        
         <div className="bg-[url('/main-bg.png')] bg-cover bg-center text-white rounded-bl-4xl">
             <div className="flex justify-between items-center px-8 py-8">
                 <GrayLogo />
                 
-                {/* User Menu - Right Side - Always show for debugging */}
                 {loggedIn ? (
                   <div className="flex items-center gap-4">
                     <span className="text-gray-100 text-sm font-medium">

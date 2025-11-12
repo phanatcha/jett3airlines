@@ -7,6 +7,7 @@ import 'react-phone-input-2/lib/style.css'
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
 import userIcon from "/icons/user-icon.svg";
+import { logDebug, logInfo, logError } from "../utils/errorLogger";
 
 const PassengerInfo = () => {
   const navigate = useNavigate();
@@ -21,15 +22,25 @@ const PassengerInfo = () => {
   });
 
   const [passengers, setPassengers] = useState(() => {
-    // Initialize passengers on mount only
-    const passengerCount = searchCriteria.passengers || 1;
+    const passengerCount = parseInt(searchCriteria.passengers) || 1;
     
-    // If context already has passengers, use them
-    if (contextPassengers.length > 0) {
-      return contextPassengers;
+    console.log('=== PassengerInfo Initialization ===');
+    console.log('Search criteria passengers:', searchCriteria.passengers);
+    console.log('Parsed passenger count:', passengerCount);
+    console.log('Context passengers length:', contextPassengers.length);
+    console.log('Context passengers:', contextPassengers);
+    
+    if (contextPassengers.length === passengerCount && 
+        contextPassengers.some(p => p.firstname || p.firstName)) {
+      console.log('Using existing context passengers');
+      return contextPassengers.map(p => ({
+        firstName: p.firstname || p.firstName || "",
+        lastName: p.lastname || p.lastName || "",
+        gender: p.gender || "",
+      }));
     }
     
-    // Initialize empty passenger array based on count
+    console.log('Initializing new passenger array with count:', passengerCount);
     return Array.from({ length: passengerCount }, () => ({
       firstName: "",
       lastName: "",
@@ -39,11 +50,36 @@ const PassengerInfo = () => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
+  useEffect(() => {
+    const expectedCount = parseInt(searchCriteria.passengers) || 1;
+    
+    console.log('=== PassengerInfo Count Sync ===');
+    console.log('Expected count from search criteria:', expectedCount);
+    console.log('Current passenger array length:', passengers.length);
+    console.log('Context passengers length:', contextPassengers.length);
+    
+    const hasFilledContextPassengers = contextPassengers.length > 0 && 
+                                       contextPassengers.some(p => p.firstname || p.firstName);
+    
+    if (!hasFilledContextPassengers && passengers.length !== expectedCount) {
+      console.log('Adjusting passenger count from', passengers.length, 'to', expectedCount);
+      setPassengers(Array.from({ length: expectedCount }, (_, index) => {
+        if (passengers[index]) {
+          return passengers[index];
+        }
+        return {
+          firstName: "",
+          lastName: "",
+          gender: "",
+        };
+      }));
+    }
+  }, [searchCriteria.passengers]);
+
   const handleContactChange = (e) => {
     const { name, value } = e.target;
     setContactData((prev) => ({ ...prev, [name]: value }));
     
-    // Clear error for this field when user starts typing
     if (errors[`contact_${name}`]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -57,7 +93,6 @@ const PassengerInfo = () => {
     const { name, value } = e.target;
     setPassengers((prev) => {
       const newData = [...prev];
-      // Ensure the passenger object exists
       if (!newData[index]) {
         newData[index] = {};
       }
@@ -65,7 +100,6 @@ const PassengerInfo = () => {
       return newData;
     });
     
-    // Clear error for this field when user starts typing
     const errorKey = `passenger_${index}_${name}`;
     if (errors[errorKey]) {
       setErrors((prev) => {
@@ -80,19 +114,16 @@ const PassengerInfo = () => {
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
-  // Validation functions
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
   const validatePhoneNumber = (phone) => {
-    // Phone number should be at least 10 digits (excluding country code)
     return phone && phone.length >= 10;
   };
 
   const validateName = (name) => {
-    // Name should be at least 2 characters and contain only letters, spaces, hyphens, and apostrophes
     const nameRegex = /^[a-zA-Z\s\-']{2,}$/;
     return nameRegex.test(name);
   };
@@ -100,7 +131,6 @@ const PassengerInfo = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Validate contact details
     if (!contactData.firstName.trim()) {
       newErrors.contact_firstName = "First name is required";
     } else if (!validateName(contactData.firstName)) {
@@ -129,7 +159,6 @@ const PassengerInfo = () => {
       newErrors.contact_phoneNumber = "Please enter a valid phone number (at least 10 digits)";
     }
 
-    // Validate passenger details
     passengers.forEach((passenger, index) => {
       if (!passenger.firstName.trim()) {
         newErrors[`passenger_${index}_firstName`] = `Passenger ${index + 1} first name is required`;
@@ -152,63 +181,91 @@ const PassengerInfo = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Mark all fields as touched
-    const allTouched = {};
-    Object.keys(contactData).forEach(key => {
-      allTouched[`contact_${key}`] = true;
+    logInfo('PassengerInfo form submission started', {
+      passengerCount: passengers.length,
+      contextPassengerCount: contextPassengers.length,
     });
-    passengers.forEach((_, index) => {
-      allTouched[`passenger_${index}_firstName`] = true;
-      allTouched[`passenger_${index}_lastName`] = true;
-      allTouched[`passenger_${index}_gender`] = true;
-    });
-    setTouched(allTouched);
+    
+    try {
+      const allTouched = {};
+      Object.keys(contactData).forEach(key => {
+        allTouched[`contact_${key}`] = true;
+      });
+      passengers.forEach((_, index) => {
+        allTouched[`passenger_${index}_firstName`] = true;
+        allTouched[`passenger_${index}_lastName`] = true;
+        allTouched[`passenger_${index}_gender`] = true;
+      });
+      setTouched(allTouched);
 
-    // Validate form
-    if (!validateForm()) {
-      // Scroll to first error
-      const firstErrorElement = document.querySelector('.border-red-500');
-      if (firstErrorElement) {
-        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
-
-    // Store passenger data in context
-    // Clear existing passengers first
-    while (contextPassengers.length > 0) {
-      removePassenger(0);
-    }
-
-    // Add all passengers with contact info
-    passengers.forEach((passenger, index) => {
-      // Generate a valid temporary passport number (6-20 chars, uppercase + numbers only)
-      const timestamp = Date.now().toString().slice(-8); // Last 8 digits
-      const tempPassport = `TEMP${timestamp}${index}`.toUpperCase().slice(0, 20);
+      logDebug('Validating passenger form');
       
-      const passengerData = {
-        firstname: passenger.firstName.trim(), // Changed from first_name
-        lastname: passenger.lastName.trim(), // Changed from last_name
-        gender: passenger.gender,
-        // Required fields with default values (TODO: Add form fields for these)
-        passport_no: tempPassport, // Temporary passport number (6-20 chars, uppercase+numbers)
-        nationality: contactData.country.trim() || 'Unknown', // Use contact country as nationality
-        dob: '1990-01-01', // Default DOB (TODO: Add DOB field to form)
-        // Add contact info to first passenger
-        ...(index === 0 && {
-          email: contactData.email.trim(),
-          phone: contactData.phoneNumber,
-          country: contactData.country.trim(),
-        }),
-      };
-      addPassenger(passengerData);
-    });
+      if (!validateForm()) {
+        logError('Passenger form validation failed', null, { errors });
+        const firstErrorElement = document.querySelector('.border-red-500');
+        if (firstErrorElement) {
+          firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
 
-    // Navigate to seat selection
-    navigate("/seat");
+      logInfo('Validation passed, processing passengers', {
+        existingPassengers: contextPassengers.length,
+        newPassengers: passengers.length,
+      });
+
+      const existingCount = contextPassengers.length;
+      logDebug('Clearing existing passengers', { count: existingCount });
+      
+      for (let i = existingCount - 1; i >= 0; i--) {
+        logDebug(`Removing passenger at index ${i}`);
+        removePassenger(i);
+      }
+
+      logDebug('Adding new passengers to context');
+      
+      passengers.forEach((passenger, index) => {
+        logDebug(`Processing passenger ${index + 1}`, {
+          firstName: passenger.firstName,
+          lastName: passenger.lastName,
+          gender: passenger.gender,
+        });
+        
+        const timestamp = Date.now().toString().slice(-8);
+        const tempPassport = `TEMP${timestamp}${index}`.toUpperCase().slice(0, 20);
+        
+        const passengerData = {
+          firstname: passenger.firstName.trim(),
+          lastname: passenger.lastName.trim(),
+          gender: passenger.gender,
+          passport_no: tempPassport,
+          nationality: contactData.country.trim() || 'Unknown',
+          dob: '1990-01-01',
+          ...(index === 0 && {
+            email: contactData.email.trim(),
+            phone: contactData.phoneNumber,
+            country: contactData.country.trim(),
+          }),
+        };
+        
+        logDebug(`Adding passenger ${index + 1} to context`, { passengerData });
+        addPassenger(passengerData);
+      });
+
+      logInfo('All passengers added successfully, navigating to seat selection');
+      
+      navigate("/seat");
+      
+    } catch (error) {
+      logError('Error during passenger form submission', error, {
+        passengerCount: passengers.length,
+        contactData,
+      });
+      alert('An error occurred while processing passenger information. Please try again. Check the debug panel (Ctrl+Shift+D) for details.');
+    }
   };
 
   return (
@@ -219,7 +276,7 @@ const PassengerInfo = () => {
       </div>
 
       <div className="flex flex-col w-5/7 px-20 pt-8 gap-2">
-        <Back />
+        <Back to="/fare" />
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8 mt-4">
           {/* Contact Details */}

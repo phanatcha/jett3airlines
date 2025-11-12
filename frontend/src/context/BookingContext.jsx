@@ -4,7 +4,6 @@ import { bookingsAPI, paymentsAPI } from '../services/api';
 const BookingContext = createContext(null);
 
 export const BookingProvider = ({ children }) => {
-  // Initialize state from localStorage or defaults
   const getInitialState = (key, defaultValue) => {
     try {
       const stored = localStorage.getItem(key);
@@ -14,7 +13,6 @@ export const BookingProvider = ({ children }) => {
     }
   };
 
-  // Booking flow state
   const [searchCriteria, setSearchCriteria] = useState(() => 
     getInitialState('searchCriteria', {
       tripType: 'round-trip',
@@ -56,7 +54,6 @@ export const BookingProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Persist state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('searchCriteria', JSON.stringify(searchCriteria));
   }, [searchCriteria]);
@@ -77,27 +74,22 @@ export const BookingProvider = ({ children }) => {
     localStorage.setItem('fareOptions', JSON.stringify(fareOptions));
   }, [fareOptions]);
 
-  // Update search criteria
   const updateSearchCriteria = (criteria) => {
     setSearchCriteria((prev) => ({ ...prev, ...criteria }));
   };
 
-  // Select departure flight
   const selectDepartureFlight = (flight) => {
     setSelectedFlights((prev) => ({ ...prev, departure: flight }));
   };
 
-  // Select return flight
   const selectReturnFlight = (flight) => {
     setSelectedFlights((prev) => ({ ...prev, return: flight }));
   };
 
-  // Add passenger
   const addPassenger = (passenger) => {
     setPassengers((prev) => [...prev, passenger]);
   };
 
-  // Update passenger
   const updatePassenger = (index, passengerData) => {
     setPassengers((prev) => {
       const updated = [...prev];
@@ -106,12 +98,17 @@ export const BookingProvider = ({ children }) => {
     });
   };
 
-  // Remove passenger
   const removePassenger = (index) => {
-    setPassengers((prev) => prev.filter((_, i) => i !== index));
+    console.log(`[BookingContext] Removing passenger at index ${index}`);
+    console.log('[BookingContext] Current passengers count:', passengers.length);
+    
+    setPassengers((prev) => {
+      const filtered = prev.filter((_, i) => i !== index);
+      console.log('[BookingContext] New passengers count:', filtered.length);
+      return filtered;
+    });
   };
 
-  // Select seat for passenger
   const selectSeat = (passengerId, seatId, price = 0) => {
     setSelectedSeats((prev) => {
       const existing = prev.find((s) => s.passengerId === passengerId);
@@ -124,17 +121,14 @@ export const BookingProvider = ({ children }) => {
     });
   };
 
-  // Update fare options
   const updateFareOptions = (options) => {
     setFareOptions((prev) => ({ ...prev, ...options }));
   };
 
-  // Update payment info
   const updatePaymentInfo = (info) => {
     setPaymentInfo(info);
   };
 
-  // Create booking
   const createBooking = async () => {
     try {
       setError(null);
@@ -148,31 +142,32 @@ export const BookingProvider = ({ children }) => {
         throw new Error('Please add at least one passenger');
       }
 
-      // Prepare booking data
       const bookingData = {
         flight_id: selectedFlights.departure.flight_id,
         support: fareOptions.support,
         fasttrack: fareOptions.fasttrack,
         passengers: passengers.map((passenger, index) => {
-          // Transform passenger data to match backend expectations
+          const seatData = selectedSeats.find((s) => s.passengerId === index);
+          
           const transformedPassenger = {
-            // Handle both old format (first_name) and new format (firstname)
             firstname: passenger.firstname || passenger.first_name || '',
             lastname: passenger.lastname || passenger.last_name || '',
-            // Capitalize gender (Male, Female, Other)
             gender: passenger.gender 
               ? passenger.gender.charAt(0).toUpperCase() + passenger.gender.slice(1).toLowerCase()
               : 'Other',
             passport_no: passenger.passport_no || `TEMP${Date.now().toString().slice(-8)}${index}`.toUpperCase().slice(0, 20),
             nationality: passenger.nationality || passenger.country || 'Unknown',
             dob: passenger.dob || '1990-01-01',
-            seat_id: selectedSeats.find((s) => s.passengerId === index)?.seatId || null,
-            // Optional fields
-            ...(passenger.email && { email: passenger.email }),
-            ...(passenger.phone && { phone_no: passenger.phone }), // Changed to phone_no
-            ...(passenger.country && { country: passenger.country }),
-            ...(passenger.weight_limit && { weight_limit: passenger.weight_limit }),
+            seat_id: seatData?.seatId ?? null,
+            weight_limit: passenger.weight_limit || 20,
           };
+          
+          const phoneNumber = passenger.phone_no || passenger.phone;
+          if (phoneNumber) {
+            transformedPassenger.phone_no = phoneNumber;
+          }
+          if (passenger.email) transformedPassenger.email = passenger.email;
+          if (passenger.country) transformedPassenger.country = passenger.country;
           
           return transformedPassenger;
         }),
@@ -199,7 +194,6 @@ export const BookingProvider = ({ children }) => {
         return { success: true, data: response.data };
       }
 
-      // Log full error response for debugging
       console.error('=== BOOKING CREATION FAILED ===');
       console.error('Full Response:', JSON.stringify(response, null, 2));
       console.error('================================');
@@ -219,13 +213,11 @@ export const BookingProvider = ({ children }) => {
     }
   };
 
-  // Process payment
   const processPayment = async (paymentData, bookingIdOverride = null) => {
     try {
       setError(null);
       setLoading(true);
 
-      // Use provided booking ID or fall back to currentBooking
       const bookingId = bookingIdOverride || currentBooking?.booking?.booking_id || currentBooking?.booking_id;
       
       if (!bookingId) {
@@ -251,7 +243,6 @@ export const BookingProvider = ({ children }) => {
     }
   };
 
-  // Get user bookings
   const getUserBookings = async () => {
     try {
       setError(null);
@@ -273,7 +264,6 @@ export const BookingProvider = ({ children }) => {
     }
   };
 
-  // Get booking by ID
   const getBookingById = async (bookingId) => {
     try {
       setError(null);
@@ -295,7 +285,6 @@ export const BookingProvider = ({ children }) => {
     }
   };
 
-  // Cancel booking
   const cancelBooking = async (bookingId) => {
     try {
       setError(null);
@@ -317,7 +306,6 @@ export const BookingProvider = ({ children }) => {
     }
   };
 
-  // Reset booking flow
   const resetBooking = () => {
     setSearchCriteria({
       tripType: 'round-trip',
@@ -338,7 +326,6 @@ export const BookingProvider = ({ children }) => {
     setCurrentBooking(null);
     setError(null);
     
-    // Clear localStorage
     localStorage.removeItem('searchCriteria');
     localStorage.removeItem('selectedFlights');
     localStorage.removeItem('passengers');
@@ -347,7 +334,6 @@ export const BookingProvider = ({ children }) => {
   };
 
   const value = {
-    // State
     searchCriteria,
     selectedFlights,
     passengers,
@@ -358,7 +344,6 @@ export const BookingProvider = ({ children }) => {
     loading,
     error,
     
-    // Actions
     updateSearchCriteria,
     selectDepartureFlight,
     selectReturnFlight,
@@ -379,7 +364,6 @@ export const BookingProvider = ({ children }) => {
   return <BookingContext.Provider value={value}>{children}</BookingContext.Provider>;
 };
 
-// Custom hook to use booking context
 export const useBooking = () => {
   const context = useContext(BookingContext);
   if (!context) {

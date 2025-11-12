@@ -10,14 +10,10 @@ export class AuthController {
     this.clientModel = new ClientModel();
   }
 
-  /**
-   * Register a new client
-   */
   register = async (req: Request, res: Response): Promise<void> => {
     try {
       const registrationData: ClientRegistrationRequest = req.body;
 
-      // Check if username already exists
       const existingUsername = await this.clientModel.usernameExists(registrationData.username);
       if (existingUsername) {
         res.status(409).json({
@@ -30,7 +26,6 @@ export class AuthController {
         return;
       }
 
-      // Check if email already exists
       const existingEmail = await this.clientModel.emailExists(registrationData.email);
       if (existingEmail) {
         res.status(409).json({
@@ -43,10 +38,8 @@ export class AuthController {
         return;
       }
 
-      // Create new client
       const clientId = await this.clientModel.createClient(registrationData);
 
-      // Get the created client (without sensitive data)
       const clientProfile = await this.clientModel.getClientProfile(clientId);
       
       if (!clientProfile) {
@@ -60,12 +53,11 @@ export class AuthController {
         return;
       }
 
-      // Generate tokens
       const tokenPayload: JWTPayload = {
         client_id: clientProfile.client_id,
         username: clientProfile.username,
         email: clientProfile.email,
-        role: 'user' // New registrations are always regular users
+        role: 'user'
       };
 
       const tokens = generateTokenPair(tokenPayload);
@@ -94,14 +86,10 @@ export class AuthController {
     }
   };
 
-  /**
-   * Login client
-   */
   login = async (req: Request, res: Response): Promise<void> => {
     try {
       const loginData: ClientLoginRequest = req.body;
 
-      // Validate login credentials
       const client = await this.clientModel.validateLogin(loginData);
       
       if (!client) {
@@ -115,7 +103,6 @@ export class AuthController {
         return;
       }
 
-      // Generate tokens with role
       const tokenPayload: JWTPayload = {
         client_id: client.client_id,
         username: client.username,
@@ -125,7 +112,6 @@ export class AuthController {
 
       const tokens = generateTokenPair(tokenPayload);
 
-      // Get client profile (without sensitive data)
       const clientProfile = await this.clientModel.getClientProfile(client.client_id);
 
       res.status(200).json({
@@ -153,9 +139,6 @@ export class AuthController {
     }
   };
 
-  /**
-   * Get current client profile
-   */
   getProfile = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.user) {
@@ -202,9 +185,6 @@ export class AuthController {
     }
   };
 
-  /**
-   * Update client profile
-   */
   updateProfile = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.user) {
@@ -221,7 +201,6 @@ export class AuthController {
       const updateData = req.body;
       const clientId = req.user.client_id;
 
-      // Remove fields that shouldn't be updated via this endpoint
       delete updateData.client_id;
       delete updateData.username;
       delete updateData.password;
@@ -229,7 +208,6 @@ export class AuthController {
       delete updateData.four_digit;
       delete updateData.payment_type;
 
-      // Check if email is being updated and if it already exists
       if (updateData.email) {
         const existingClient = await this.clientModel.findByEmail(updateData.email);
         if (existingClient && existingClient.client_id !== clientId) {
@@ -244,7 +222,6 @@ export class AuthController {
         }
       }
 
-      // Update client profile
       const updateSuccess = await this.clientModel.updateClient(clientId, updateData);
       
       if (!updateSuccess) {
@@ -258,7 +235,6 @@ export class AuthController {
         return;
       }
 
-      // Get updated profile
       const updatedProfile = await this.clientModel.getClientProfile(clientId);
 
       res.status(200).json({
@@ -281,9 +257,6 @@ export class AuthController {
     }
   };
 
-  /**
-   * Change password
-   */
   changePassword = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.user) {
@@ -300,7 +273,6 @@ export class AuthController {
       const { currentPassword, newPassword } = req.body;
       const clientId = req.user.client_id;
 
-      // Get current client data
       const client = await this.clientModel.findClientById(clientId);
       if (!client) {
         res.status(404).json({
@@ -313,7 +285,6 @@ export class AuthController {
         return;
       }
 
-      // Verify current password
       const storedPassword = client.password.toString('utf8');
       const isCurrentPasswordValid = await comparePassword(currentPassword, storedPassword);
       
@@ -328,10 +299,8 @@ export class AuthController {
         return;
       }
 
-      // Hash new password
       const hashedNewPassword = await hashPassword(newPassword);
 
-      // Update password
       const updateSuccess = await this.clientModel.updateClient(clientId, {
         password: Buffer.from(hashedNewPassword, 'utf8')
       });
@@ -364,13 +333,7 @@ export class AuthController {
     }
   };
 
-  /**
-   * Logout (client-side token invalidation)
-   */
   logout = async (req: Request, res: Response): Promise<void> => {
-    // Since we're using stateless JWT tokens, logout is handled client-side
-    // by removing the token from storage. This endpoint exists for consistency
-    // and could be extended to implement token blacklisting if needed.
     
     res.status(200).json({
       success: true,
@@ -378,9 +341,6 @@ export class AuthController {
     });
   };
 
-  /**
-   * Refresh access token
-   */
   refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.user) {
@@ -394,7 +354,6 @@ export class AuthController {
         return;
       }
 
-      // Verify client still exists
       const client = await this.clientModel.findClientById(req.user.client_id);
       if (!client) {
         res.status(401).json({
@@ -407,7 +366,6 @@ export class AuthController {
         return;
       }
 
-      // Generate new tokens
       const tokenPayload: JWTPayload = {
         client_id: client.client_id,
         username: client.username,

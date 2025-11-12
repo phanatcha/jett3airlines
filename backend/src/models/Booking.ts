@@ -1,7 +1,6 @@
 import { BaseModel } from './BaseModel';
 import { Booking, CreateBooking, UpdateBooking, BookingRequest, BookingStatus } from '../types/database';
 
-// Type declaration for Buffer (fallback if @types/node is not available)
 declare const Buffer: {
   from(str: string, encoding?: string): any;
 };
@@ -11,12 +10,10 @@ export class BookingModel extends BaseModel {
     super('booking');
   }
 
-  // Find booking by ID
   async findBookingById(bookingId: number): Promise<Booking | null> {
     return await super.findById<Booking>(bookingId, 'booking_id');
   }
 
-  // Get booking with detailed information
   async getBookingDetails(bookingId: number) {
     try {
       const query = `
@@ -54,7 +51,6 @@ export class BookingModel extends BaseModel {
     }
   }
 
-  // Get bookings by client ID
   async getBookingsByClient(clientId: number, limit?: number, offset?: number) {
     try {
       let query = `
@@ -99,7 +95,6 @@ export class BookingModel extends BaseModel {
     }
   }
 
-  // Get passengers for a booking
   async getBookingPassengers(bookingId: number) {
     try {
       const query = `
@@ -121,11 +116,9 @@ export class BookingModel extends BaseModel {
     }
   }
 
-  // Create new booking with passengers
   async createBookingWithPassengers(bookingData: BookingRequest, clientId: number): Promise<number> {
     try {
       return await this.executeTransaction(async (connection) => {
-        // Create booking
         const bookingCreateData: CreateBooking = {
           support: bookingData.support || 'no',
           fasttrack: bookingData.fasttrack || 'no',
@@ -149,29 +142,30 @@ export class BookingModel extends BaseModel {
 
         const bookingId = (bookingResult as any)[0].insertId;
 
-        // Create passengers
         for (const passengerData of bookingData.passengers) {
           const passengerQuery = `
             INSERT INTO passenger (firstname, lastname, passport_no, nationality, phone_no, gender, dob, weight_limit, seat_id, booking_id, flight_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `;
 
-          // Encrypt passport number
-          const encryptedPassport = Buffer.from(passengerData.passport_no, 'utf8');
+          const passportValue = passengerData.passport_no || 'UNKNOWN';
+          const encryptedPassport = Buffer.from(passportValue, 'utf8');
 
-          await connection.execute(passengerQuery, [
-            passengerData.firstname,
-            passengerData.lastname,
+          const params = [
+            passengerData.firstname || null,
+            passengerData.lastname || null,
             encryptedPassport,
-            passengerData.nationality,
-            passengerData.phone_no,
-            passengerData.gender,
-            new Date(passengerData.dob),
+            passengerData.nationality || null,
+            passengerData.phone_no || null,
+            passengerData.gender || 'Other',
+            passengerData.dob ? new Date(passengerData.dob) : null,
             passengerData.weight_limit || 20,
-            passengerData.seat_id,
+            passengerData.seat_id ?? null,
             bookingId,
             bookingData.flight_id
-          ]);
+          ];
+
+          await connection.execute(passengerQuery, params);
         }
 
         return bookingId;
@@ -182,7 +176,6 @@ export class BookingModel extends BaseModel {
     }
   }
 
-  // Update booking status
   async updateBookingStatus(bookingId: number, status: BookingStatus): Promise<boolean> {
     try {
       return await this.update<Booking>(bookingId, { status }, 'booking_id');
@@ -192,15 +185,12 @@ export class BookingModel extends BaseModel {
     }
   }
 
-  // Cancel booking
   async cancelBooking(bookingId: number): Promise<boolean> {
     try {
       return await this.executeTransaction(async (connection) => {
-        // Update booking status
         const updateBookingQuery = 'UPDATE booking SET status = ? WHERE booking_id = ?';
         await connection.execute(updateBookingQuery, [BookingStatus.CANCELLED, bookingId]);
 
-        // You might want to add logic here to handle refunds, seat releases, etc.
         
         return true;
       });
@@ -210,25 +200,43 @@ export class BookingModel extends BaseModel {
     }
   }
 
-  // Calculate booking total cost
   async calculateBookingCost(bookingId: number): Promise<number> {
     try {
       const query = `
-        SELECT SUM(s.price) as total_cost
+        SELECT 
+          SUM(s.price) as seat_cost,
+          b.support,
+          b.fasttrack
         FROM passenger p
         LEFT JOIN seat s ON p.seat_id = s.seat_id
+        JOIN booking b ON p.booking_id = b.booking_id
         WHERE p.booking_id = ?
+        GROUP BY b.booking_id, b.support, b.fasttrack
       `;
 
-      const result = await this.executeQuery<{ total_cost: number }>(query, [bookingId]);
-      return result[0]?.total_cost || 0;
+      const result = await this.executeQuery<{ seat_cost: number; support: string; fasttrack: string }>(query, [bookingId]);
+      
+      if (result.length === 0) {
+        return 0;
+      }
+
+      let totalCost = result[0]?.seat_cost || 0;
+      
+      if (result[0]?.support === 'yes' || result[0]?.support === 'Yes') {
+        totalCost += 50;
+      }
+      
+      if (result[0]?.fasttrack === 'yes' || result[0]?.fasttrack === 'Yes') {
+        totalCost += 30;
+      }
+
+      return totalCost;
     } catch (error) {
       console.error('Error calculating booking cost:', error);
       throw error;
     }
   }
 
-  // Get booking payment status
   async getBookingPaymentStatus(bookingId: number) {
     try {
       const query = `
@@ -252,7 +260,6 @@ export class BookingModel extends BaseModel {
     }
   }
 
-  // Get bookings by flight
   async getBookingsByFlight(flightId: number) {
     try {
       const query = `
@@ -277,7 +284,6 @@ export class BookingModel extends BaseModel {
     }
   }
 
-  // Get booking statistics
   async getBookingStats() {
     try {
       const query = `
@@ -304,21 +310,17 @@ export class BookingModel extends BaseModel {
     }
   }
 
-  // Check if client can modify booking
   async canModifyBooking(bookingId: number, clientId: number): Promise<boolean> {
     try {
       const booking = await this.findBookingById(bookingId);
       if (!booking) return false;
 
-      // Check if booking belongs to client
       if (booking.client_id !== clientId) return false;
 
-      // Check if booking is in a modifiable state
       if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.COMPLETED) {
         return false;
       }
 
-      // Check if flight hasn't departed yet
       const query = 'SELECT depart_when FROM flight WHERE flight_id = ?';
       const flightResult = await this.executeQuery<{ depart_when: Date }>(query, [booking.flight_id]);
       
@@ -326,7 +328,6 @@ export class BookingModel extends BaseModel {
         const departureTime = new Date(flightResult[0].depart_when);
         const now = new Date();
         
-        // Allow modifications up to 24 hours before departure
         const hoursUntilDeparture = (departureTime.getTime() - now.getTime()) / (1000 * 60 * 60);
         return hoursUntilDeparture > 24;
       }
@@ -338,7 +339,6 @@ export class BookingModel extends BaseModel {
     }
   }
 
-  // Validate booking data
   validateBookingData(bookingData: BookingRequest): string[] {
     const errors: string[] = [];
 
@@ -385,7 +385,6 @@ export class BookingModel extends BaseModel {
     return errors;
   }
 
-  // Helper method to validate date format
   private isValidDate(dateString: string): boolean {
     const date = new Date(dateString);
     return date instanceof Date && !isNaN(date.getTime());

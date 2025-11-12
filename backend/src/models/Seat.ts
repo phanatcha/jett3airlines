@@ -6,12 +6,10 @@ export class SeatModel extends BaseModel {
     super('seat');
   }
 
-  // Find seat by ID
   async findSeatById(seatId: number): Promise<Seat | null> {
     return await super.findById<Seat>(seatId, 'seat_id');
   }
 
-  // Get seats by airplane ID
   async getSeatsByAirplane(airplaneId: number) {
     try {
       const query = `
@@ -37,7 +35,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Get available seats for a flight
   async getAvailableSeatsForFlight(flightId: number, seatClass?: string) {
     try {
       let query = `
@@ -77,7 +74,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Get seat availability summary for a flight
   async getSeatAvailabilitySummary(flightId: number) {
     try {
       const query = `
@@ -112,7 +108,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Check if specific seats are available for a flight
   async checkSeatsAvailability(flightId: number, seatIds: number[]): Promise<{ seatId: number; available: boolean }[]> {
     try {
       if (seatIds.length === 0) return [];
@@ -121,9 +116,14 @@ export class SeatModel extends BaseModel {
       const query = `
         SELECT 
           s.seat_id,
-          CASE WHEN p.seat_id IS NULL THEN 1 ELSE 0 END as available
+          CASE 
+            WHEN p.seat_id IS NULL THEN 1
+            WHEN b.status = 'cancelled' THEN 1
+            ELSE 0 
+          END as available
         FROM seat s
         LEFT JOIN passenger p ON s.seat_id = p.seat_id AND p.flight_id = ?
+        LEFT JOIN booking b ON p.booking_id = b.booking_id
         WHERE s.seat_id IN (${placeholders})
       `;
 
@@ -140,7 +140,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Get seat details with passenger information
   async getSeatWithPassenger(seatId: number, flightId: number) {
     try {
       const query = `
@@ -168,7 +167,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Get seats by class
   async getSeatsByClass(airplaneId: number, seatClass: string) {
     try {
       const query = `
@@ -184,7 +182,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Get seat pricing for an airplane
   async getSeatPricing(airplaneId: number) {
     try {
       const query = `
@@ -216,7 +213,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Create new seat (admin function)
   async createSeat(seatData: Omit<Seat, 'seat_id'>): Promise<number> {
     try {
       return await this.create(seatData as any);
@@ -226,7 +222,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Update seat information (admin function)
   async updateSeat(seatId: number, updateData: Partial<Seat>): Promise<boolean> {
     try {
       return await this.update<Seat>(seatId, updateData, 'seat_id');
@@ -236,10 +231,8 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Delete seat (admin function)
   async deleteSeat(seatId: number): Promise<boolean> {
     try {
-      // Check if seat has any bookings
       const bookingCount = await this.executeQuery(
         'SELECT COUNT(*) as count FROM passenger WHERE seat_id = ?',
         [seatId]
@@ -256,7 +249,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Get seat map for an airplane
   async getSeatMap(airplaneId: number, flightId?: number) {
     try {
       let query = `
@@ -289,7 +281,6 @@ export class SeatModel extends BaseModel {
           s.seat_no
       `;
 
-      // Rearrange params for the final query
       const finalParams = flightId ? [flightId, airplaneId] : [airplaneId];
       
       return await this.executeQuery(query, finalParams);
@@ -299,7 +290,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Get seat statistics
   async getSeatStats() {
     try {
       const query = `
@@ -323,7 +313,6 @@ export class SeatModel extends BaseModel {
     }
   }
 
-  // Validate seat data
   validateSeatData(seatData: any): string[] {
     const errors: string[] = [];
 
@@ -348,7 +337,6 @@ export class SeatModel extends BaseModel {
       errors.push('Valid airplane ID is required');
     }
 
-    // Validate seat number format (e.g., 1A, 12F, etc.)
     if (seatData.seat_no && !/^\d+[A-J]$/.test(seatData.seat_no)) {
       errors.push('Seat number must be in format like 1A, 12F, etc.');
     }

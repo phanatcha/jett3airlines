@@ -2,7 +2,7 @@
 
 A complete airline booking system with React frontend and Express backend, featuring flight search, booking management, payment processing, and admin operations.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -58,7 +58,7 @@ A complete airline booking system with React frontend and Express backend, featu
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:8080
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 jett3airlines/
@@ -87,7 +87,7 @@ jett3airlines/
 └── check-integration.ps1       # Health check script
 ```
 
-## 🔧 Technology Stack
+## Technology Stack
 
 ### Backend
 - **Framework**: Express.js
@@ -106,30 +106,30 @@ jett3airlines/
 - **State Management**: Context API
 - **Build Tool**: Vite
 
-## 🎯 Features
+## Features
 
 ### User Features
-- ✅ User registration and authentication
-- ✅ Flight search and filtering
-- ✅ Multi-passenger booking
-- ✅ Seat selection
-- ✅ Payment processing
-- ✅ Booking management
-- ✅ Baggage tracking
-- ✅ Profile management
+- User registration and authentication
+- Flight search and filtering
+- Multi-passenger booking
+- Seat selection
+- Payment processing
+- Booking management
+- Baggage tracking
+- Profile management
 
 ### Admin Features
-- ✅ Flight management (CRUD)
-- ✅ Booking management
-- ✅ Client management
-- ✅ Payment tracking
-- ✅ Airport management
-- ✅ Airplane management
-- ✅ Revenue reports
-- ✅ Booking statistics
-- ✅ Flight occupancy reports
+- Flight management (CRUD)
+- Booking management
+- Client management
+- Payment tracking
+- Airport management
+- Airplane management
+- Revenue reports
+- Booking statistics
+- Flight occupancy reports
 
-## 📚 Documentation
+## Documentation
 
 - **[Integration Summary](INTEGRATION_SUMMARY.md)** - Overview of the integration
 - **[Quick Start Guide](INTEGRATION_QUICKSTART.md)** - Step-by-step setup
@@ -137,7 +137,7 @@ jett3airlines/
 - **[Backend README](backend/README.md)** - Backend-specific documentation
 - **[Code Examples](frontend/src/components/ExampleAPIUsage.jsx)** - Usage examples
 
-## 🔐 Default Credentials
+## Default Credentials
 
 ### Admin Account
 - Username: `admin`
@@ -146,7 +146,7 @@ jett3airlines/
 ### Test User
 Create a new account through the registration flow at `/signup`
 
-## 🧪 Testing
+## Testing
 
 ### Backend Tests
 
@@ -170,7 +170,7 @@ cd frontend
 npm test
 ```
 
-## 🔍 Health Check
+## Health Check
 
 Run the integration health check script:
 
@@ -186,7 +186,7 @@ This will verify:
 - Port availability
 - Server status
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### Authentication
 - `POST /api/v1/auth/register` - Register new user
@@ -219,7 +219,7 @@ This will verify:
 
 See [API Integration Guide](frontend/API_INTEGRATION.md) for complete API documentation.
 
-## 🛠️ Development
+## Development
 
 ### Backend Development
 
@@ -251,7 +251,7 @@ npm run build
 npm run preview
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### CORS Errors
 - Ensure `CORS_ORIGIN=http://localhost:5173` in `backend/.env`
@@ -273,7 +273,7 @@ npm run preview
 
 See [Quick Start Guide](INTEGRATION_QUICKSTART.md) for more troubleshooting tips.
 
-## 🔒 Security Features
+## Security Features
 
 - JWT-based authentication
 - Password hashing with bcrypt
@@ -284,7 +284,7 @@ See [Quick Start Guide](INTEGRATION_QUICKSTART.md) for more troubleshooting tips
 - XSS protection with helmet
 - Secure HTTP headers
 
-## 📈 Performance
+## Performance
 
 - Request/response interceptors for efficient API calls
 - Automatic token management
@@ -292,7 +292,7 @@ See [Quick Start Guide](INTEGRATION_QUICKSTART.md) for more troubleshooting tips
 - Optimized database queries
 - Connection pooling
 
-## 🚧 Future Enhancements
+## Future Enhancements
 
 - [ ] Real-time flight updates with WebSockets
 - [ ] Email notifications
@@ -305,15 +305,15 @@ See [Quick Start Guide](INTEGRATION_QUICKSTART.md) for more troubleshooting tips
 - [ ] Payment gateway integration
 - [ ] Automated testing (E2E)
 
-## 📝 License
+## License
 
 This project is licensed under the ISC License.
 
-## 👥 Contributors
+## Contributors
 
 - Development Team
 
-## 📞 Support
+## Support
 
 For issues and questions:
 1. Check the [Quick Start Guide](INTEGRATION_QUICKSTART.md)
@@ -322,7 +322,7 @@ For issues and questions:
 4. Check backend console for errors
 5. Check browser console for errors
 
-## 🎉 Acknowledgments
+## Acknowledgments
 
 - Express.js team
 - React team
@@ -331,4 +331,3 @@ For issues and questions:
 
 ---
 
-**Happy Coding! ✈️**

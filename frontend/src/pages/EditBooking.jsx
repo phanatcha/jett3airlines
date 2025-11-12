@@ -24,7 +24,6 @@ const EditBooking = () => {
         status: bookingData.status || ''
       });
     } else {
-      // If no booking data, redirect back to admin
       navigate('/admin');
     }
   }, [bookingData, navigate]);
@@ -39,14 +38,12 @@ const EditBooking = () => {
 
   const handleConfirm = async () => {
     try {
-      // Validate that we have a booking ID
       if (!bookingData || !bookingData.id) {
         alert('Error: No booking data available');
         navigate('/admin');
         return;
       }
 
-      // Validate required fields
       if (!formData.status) {
         alert('Please select a status');
         return;
@@ -62,7 +59,6 @@ const EditBooking = () => {
         return;
       }
 
-      // Get token from localStorage
       const token = localStorage.getItem('token');
       if (!token) {
         alert('Authentication required. Please log in again.');
@@ -72,14 +68,12 @@ const EditBooking = () => {
 
       const bookingId = bookingData.id;
 
-      // Prepare update data with status, support, and fasttrack
       const updateData = {
         status: formData.status,
         support: formData.support,
         fasttrack: formData.fastTrack
       };
 
-      // Update booking via PATCH endpoint
       const response = await fetch(`http://localhost:8080/api/v1/admin/bookings/${bookingId}/status`, {
         method: 'PATCH',
         headers: {
@@ -92,7 +86,6 @@ const EditBooking = () => {
       const result = await response.json();
 
       if (!response.ok) {
-        // Handle specific error cases
         if (response.status === 401) {
           alert('Authentication failed. Please log in again.');
           navigate('/login');
@@ -106,7 +99,6 @@ const EditBooking = () => {
           navigate('/admin');
           return;
         } else if (response.status === 400) {
-          // Validation error - show specific message
           alert(`Validation error: ${result.message || 'Invalid data provided'}`);
           return;
         } else {
@@ -115,7 +107,6 @@ const EditBooking = () => {
         }
       }
 
-      // If update was successful, show success message
       if (result.success) {
         alert('Booking updated successfully!');
         navigate('/admin');
@@ -126,7 +117,6 @@ const EditBooking = () => {
     } catch (error) {
       console.error('Error updating booking:', error);
       
-      // Check if it's a network error
       if (error instanceof TypeError && error.message.includes('fetch')) {
         alert('Network error: Unable to connect to the server. Please check your connection and try again.');
       } else {

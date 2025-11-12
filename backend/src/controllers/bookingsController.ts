@@ -14,7 +14,6 @@ const passengerModel = new PassengerModel();
 const paymentModel = new PaymentModel();
 
 export class BookingsController {
-  // Create new booking with passenger validation and seat conflict prevention
   async createBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -31,7 +30,6 @@ export class BookingsController {
 
       const bookingData: BookingRequest = req.body;
 
-      // Validate booking data
       const validationErrors = bookingModel.validateBookingData(bookingData);
       if (validationErrors.length > 0) {
         res.status(400).json({
@@ -45,7 +43,6 @@ export class BookingsController {
         return;
       }
 
-      // Validate flight exists and is available
       const flight = await flightModel.findFlightById(bookingData.flight_id);
       if (!flight) {
         res.status(404).json({
@@ -58,7 +55,6 @@ export class BookingsController {
         return;
       }
 
-      // Check if flight is still accepting bookings
       if (flight.status !== 'Scheduled') {
         res.status(400).json({
           success: false,
@@ -70,7 +66,6 @@ export class BookingsController {
         return;
       }
 
-      // Check if flight departure is in the future
       const departureTime = new Date(flight.depart_when);
       const now = new Date();
       if (departureTime <= now) {
@@ -84,7 +79,6 @@ export class BookingsController {
         return;
       }
 
-      // Validate passengers and check seat availability
       const seatIds = bookingData.passengers.map(p => p.seat_id);
       const seatAvailability = await seatModel.checkSeatsAvailability(bookingData.flight_id, seatIds);
       
@@ -103,12 +97,11 @@ export class BookingsController {
         return;
       }
 
-      // Validate each passenger
       for (let i = 0; i < bookingData.passengers.length; i++) {
         const passenger = bookingData.passengers[i];
         const passengerErrors = passengerModel.validatePassengerData({
           ...passenger,
-          booking_id: 0, // Will be set after booking creation
+          booking_id: 0,
           flight_id: bookingData.flight_id
         });
 
@@ -125,13 +118,10 @@ export class BookingsController {
         }
       }
 
-      // Calculate total booking cost
       const totalCost = await this.calculateBookingCost(seatIds);
 
-      // Create booking with passengers
       const bookingId = await bookingModel.createBookingWithPassengers(bookingData, clientId);
 
-      // Get created booking details
       const bookingDetails = await bookingModel.getBookingDetails(bookingId);
       const passengers = await bookingModel.getBookingPassengers(bookingId);
 
@@ -163,7 +153,6 @@ export class BookingsController {
     }
   }
 
-  // Get booking history for authenticated client
   async getBookingHistory(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -184,7 +173,6 @@ export class BookingsController {
 
       const bookings = await bookingModel.getBookingsByClient(clientId, limit, offset);
 
-      // Get total count for pagination
       const totalBookings = await bookingModel.findAll<Booking>({ client_id: clientId });
       const total = totalBookings.length;
 
@@ -212,7 +200,6 @@ export class BookingsController {
     }
   }
 
-  // Get specific booking details
   async getBookingDetails(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -252,7 +239,6 @@ export class BookingsController {
         return;
       }
 
-      // Check if booking belongs to the authenticated client
       if ((booking as any).client_id !== clientId) {
         res.status(403).json({
           success: false,
@@ -291,7 +277,6 @@ export class BookingsController {
     }
   }
 
-  // Update booking (modify passengers, seats, etc.)
   async updateBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -319,7 +304,6 @@ export class BookingsController {
         return;
       }
 
-      // Check if client can modify this booking
       const canModify = await bookingModel.canModifyBooking(bookingId, clientId);
       if (!canModify) {
         res.status(403).json({
@@ -334,7 +318,6 @@ export class BookingsController {
 
       const updateData = req.body;
 
-      // If passengers are being updated, validate seat availability
       if (updateData.passengers) {
         const seatIds = updateData.passengers.map((p: any) => p.seat_id);
         const booking = await bookingModel.findBookingById(bookingId);
@@ -359,7 +342,6 @@ export class BookingsController {
         }
       }
 
-      // Update booking support and fasttrack options
       if (updateData.support !== undefined || updateData.fasttrack !== undefined) {
         const bookingUpdateData: any = {};
         if (updateData.support !== undefined) bookingUpdateData.support = updateData.support;
@@ -368,7 +350,6 @@ export class BookingsController {
         await bookingModel.update(bookingId, bookingUpdateData, 'booking_id');
       }
 
-      // Get updated booking details
       const updatedBooking = await bookingModel.getBookingDetails(bookingId);
       const passengers = await bookingModel.getBookingPassengers(bookingId);
       const totalCost = await bookingModel.calculateBookingCost(bookingId);
@@ -395,7 +376,6 @@ export class BookingsController {
     }
   }
 
-  // Cancel booking with automatic refund processing
   async cancelBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -423,7 +403,6 @@ export class BookingsController {
         return;
       }
 
-      // Get booking details
       const booking = await bookingModel.findBookingById(bookingId);
       if (!booking) {
         res.status(404).json({
@@ -436,7 +415,6 @@ export class BookingsController {
         return;
       }
 
-      // Check if booking belongs to client
       if (booking.client_id !== clientId) {
         res.status(403).json({
           success: false,
@@ -448,7 +426,6 @@ export class BookingsController {
         return;
       }
 
-      // Check if booking is already cancelled
       if (booking.status === 'cancelled') {
         res.status(400).json({
           success: false,
@@ -460,7 +437,6 @@ export class BookingsController {
         return;
       }
 
-      // Check if client can modify this booking
       const canModify = await bookingModel.canModifyBooking(bookingId, clientId);
       if (!canModify) {
         res.status(403).json({
@@ -473,12 +449,10 @@ export class BookingsController {
         return;
       }
 
-      // Check if payment exists and needs refund
       const payment = await paymentModel.findPaymentByBookingId(bookingId);
       let refundInfo = null;
 
       if (payment && payment.status === PaymentStatus.COMPLETED) {
-        // Process refund automatically
         try {
           const refundId = await paymentModel.processRefund(bookingId);
           const refundReceipt = await paymentModel.getPaymentReceipt(refundId);
@@ -490,11 +464,8 @@ export class BookingsController {
           };
         } catch (refundError) {
           console.error('Error processing refund:', refundError);
-          // Continue with cancellation even if refund fails
-          // The refund can be processed manually later
         }
       } else {
-        // No payment or payment not completed, just cancel the booking
         await bookingModel.cancelBooking(bookingId);
       }
 
@@ -522,7 +493,6 @@ export class BookingsController {
     }
   }
 
-  // Update booking status (admin only)
   async updateBookingStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const bookingId = parseInt(req.params.id);
@@ -539,7 +509,6 @@ export class BookingsController {
         return;
       }
 
-      // Validate status value
       const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
       if (!validStatuses.includes(status)) {
         res.status(400).json({
@@ -552,7 +521,6 @@ export class BookingsController {
         return;
       }
 
-      // Check if booking exists
       const booking = await bookingModel.findBookingById(bookingId);
       if (!booking) {
         res.status(404).json({
@@ -565,7 +533,6 @@ export class BookingsController {
         return;
       }
 
-      // Update booking status
       const updateSuccess = await bookingModel.updateBookingStatus(bookingId, status);
 
       if (!updateSuccess) {
@@ -579,7 +546,6 @@ export class BookingsController {
         return;
       }
 
-      // Get updated booking
       const updatedBooking = await bookingModel.getBookingDetails(bookingId);
 
       res.status(200).json({
@@ -601,7 +567,6 @@ export class BookingsController {
     }
   }
 
-  // Helper method to calculate booking cost
   private async calculateBookingCost(seatIds: number[]): Promise<number> {
     try {
       if (seatIds.length === 0) return 0;

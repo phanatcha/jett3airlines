@@ -19,11 +19,9 @@ const Flights = () => {
         directFlightsOnly: false,
     });
 
-    // State for country selection
     const [departureCountry, setDepartureCountry] = useState("");
     const [arrivalCountry, setArrivalCountry] = useState("");
     
-    // Loading and error states
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -33,12 +31,10 @@ const Flights = () => {
       ...prev,
       [id || name]: type === "checkbox" ? checked : value,
     }));
-    // Clear error when user makes changes
     if (error) setError("");
   };
 
   const validateForm = () => {
-    // Validate required fields
     if (!formData.fromWhere) {
       setError("Please select a departure airport");
       return false;
@@ -59,7 +55,6 @@ const Flights = () => {
       return false;
     }
     
-    // Validate departure date is not in the past
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const departDate = new Date(formData.departureDate);
@@ -69,7 +64,6 @@ const Flights = () => {
       return false;
     }
     
-    // Validate return date for round-trip
     if (formData.tripType === "round-trip") {
       if (!formData.returnDate) {
         setError("Please select a return date for round-trip");
@@ -89,10 +83,8 @@ const Flights = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Clear previous error
     setError("");
     
-    // Validate form
     if (!validateForm()) {
       return;
     }
@@ -100,20 +92,18 @@ const Flights = () => {
     try {
       setLoading(true);
       
-      // Prepare search parameters for API
       const searchParams = {
         depart_airport_id: parseInt(formData.fromWhere),
         arrive_airport_id: parseInt(formData.toWhere),
         depart_date: formData.departureDate,
         passengers: parseInt(formData.passengers),
-        class: formData.cabinClass
+        class: formData.cabinClass,
+        cabin_class: formData.cabinClass
       };
       
-      // Call flight search API
       const response = await flightsAPI.search(searchParams);
       
       if (response.success) {
-        // Store search criteria in BookingContext
         updateSearchCriteria({
           tripType: formData.tripType,
           fromWhere: formData.fromWhere,
@@ -123,11 +113,9 @@ const Flights = () => {
           passengers: formData.passengers,
           cabinClass: formData.cabinClass,
           directFlightsOnly: formData.directFlightsOnly,
-          // Store search results
           searchResults: response.data
         });
         
-        // Navigate to departure flight selection page
         navigate("/flights/departure", { 
           state: { 
             flights: response.data,
@@ -140,7 +128,6 @@ const Flights = () => {
     } catch (err) {
       console.error("Flight search error:", err);
       
-      // Handle specific error messages
       if (err.error) {
         setError(err.error.message || err.message || "Failed to search flights");
       } else if (err.message) {
@@ -179,11 +166,11 @@ const Flights = () => {
           className="bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md"
         >
           
-          <div className="flex justify-between mb-6 bg-white/10 rounded-full px-3 py-2">
-            {["round-trip", "one-way", "multi-city"].map((type) => (
+          <div className="flex mb-6 bg-white/10 rounded-full px-3 py-2">
+            {["round-trip", "one-way"].map((type) => (
               <label
                 key={type}
-                className={`cursor-pointer px-4 py-1 rounded-full text-sm ${
+                className={`cursor-pointer flex-1 text-center px-4 py-1 rounded-full text-sm ${
                   formData.tripType === type
                     ? "bg-primary-500 text-white"
                     : "text-gray-300 hover:text-white"
@@ -197,11 +184,7 @@ const Flights = () => {
                   onChange={handleChange}
                   className="hidden"
                 />
-                {type === "round-trip"
-                  ? "Round trip"
-                  : type === "one-way"
-                  ? "One way"
-                  : "Multi-city"}
+                {type === "round-trip" ? "Round trip" : "One way"}
               </label>
             ))}
           </div>

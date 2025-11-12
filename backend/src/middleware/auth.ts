@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyToken, extractTokenFromHeader, JWTPayload } from '../utils/auth';
 import { AuthenticationError, AuthorizationError } from '../utils/errors';
 
-// Extend Express Request interface to include user
 declare global {
   namespace Express {
     interface Request {
@@ -11,14 +10,10 @@ declare global {
   }
 }
 
-// Type for authenticated requests
 export interface AuthenticatedRequest extends Request {
   user?: JWTPayload & { clientId?: number };
 }
 
-/**
- * Authentication middleware to verify JWT tokens
- */
 export const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
   try {
     const token = extractTokenFromHeader(req.headers.authorization);
@@ -48,9 +43,6 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
   }
 };
 
-/**
- * Optional authentication middleware - doesn't fail if no token provided
- */
 export const optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
   try {
     const token = extractTokenFromHeader(req.headers.authorization);
@@ -62,14 +54,10 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
     
     next();
   } catch (error) {
-    // For optional auth, we continue even if token verification fails
     next();
   }
 };
 
-/**
- * Middleware to check if user is authenticated (has valid user in request)
- */
 export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
     next(new AuthenticationError('Authentication is required to access this resource'));
@@ -79,9 +67,6 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
   next();
 };
 
-/**
- * Middleware to check if the authenticated user matches the requested client_id
- */
 export const requireOwnership = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
     next(new AuthenticationError('Authentication is required'));

@@ -54,7 +54,7 @@ const Book = () => {
           </div>
 
         {flightResults.map((flight) => {
-          const [isOpen, setIsOpen] = useState(true); // toggle for route visibility
+          const [isOpen, setIsOpen] = useState(true);
 
           return (
             <div

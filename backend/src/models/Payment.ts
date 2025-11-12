@@ -6,12 +6,10 @@ export class PaymentModel extends BaseModel {
     super('payment');
   }
 
-  // Find payment by ID
   async findPaymentById(paymentId: number): Promise<Payment | null> {
     return await super.findById<Payment>(paymentId, 'payment_id');
   }
 
-  // Find payment by booking ID
   async findPaymentByBookingId(bookingId: number): Promise<Payment | null> {
     try {
       const query = `
@@ -28,7 +26,6 @@ export class PaymentModel extends BaseModel {
     }
   }
 
-  // Get all payments for a booking
   async getPaymentsByBookingId(bookingId: number): Promise<Payment[]> {
     try {
       const query = `
@@ -43,7 +40,6 @@ export class PaymentModel extends BaseModel {
     }
   }
 
-  // Create payment record
   async createPayment(paymentData: CreatePayment): Promise<number> {
     try {
       const query = `
@@ -65,11 +61,9 @@ export class PaymentModel extends BaseModel {
     }
   }
 
-  // Process payment and update booking status
   async processPayment(bookingId: number, amount: number, currency: string = 'USD'): Promise<number> {
     try {
       return await this.executeTransaction(async (connection) => {
-        // Create payment record
         const paymentQuery = `
           INSERT INTO payment (amount, currency, status, booking_id, payment_timestamp)
           VALUES (?, ?, ?, ?, NOW())
@@ -84,7 +78,6 @@ export class PaymentModel extends BaseModel {
 
         const paymentId = paymentResult[0].insertId;
 
-        // Update booking status to confirmed
         const bookingQuery = `
           UPDATE booking 
           SET status = ?, updated_date = NOW() 
@@ -104,7 +97,6 @@ export class PaymentModel extends BaseModel {
     }
   }
 
-  // Update payment status
   async updatePaymentStatus(paymentId: number, status: PaymentStatus): Promise<boolean> {
     try {
       return await this.update<Payment>(paymentId, { status }, 'payment_id');
@@ -114,11 +106,9 @@ export class PaymentModel extends BaseModel {
     }
   }
 
-  // Process refund
   async processRefund(bookingId: number): Promise<number> {
     try {
       return await this.executeTransaction(async (connection) => {
-        // Get original payment
         const originalPaymentQuery = `
           SELECT * FROM payment 
           WHERE booking_id = ? AND status = ? 
@@ -137,14 +127,13 @@ export class PaymentModel extends BaseModel {
 
         const originalPayment = originalPayments[0][0];
 
-        // Create refund payment record
         const refundQuery = `
           INSERT INTO payment (amount, currency, status, booking_id, payment_timestamp)
           VALUES (?, ?, ?, ?, NOW())
         `;
         
         const refundResult = await connection.execute(refundQuery, [
-          -originalPayment.amount, // Negative amount for refund
+          -originalPayment.amount,
           originalPayment.currency,
           PaymentStatus.REFUNDED,
           bookingId
@@ -152,7 +141,6 @@ export class PaymentModel extends BaseModel {
 
         const refundId = refundResult[0].insertId;
 
-        // Update booking status to cancelled
         const bookingQuery = `
           UPDATE booking 
           SET status = ?, updated_date = NOW() 
@@ -172,7 +160,6 @@ export class PaymentModel extends BaseModel {
     }
   }
 
-  // Get payment receipt data
   async getPaymentReceipt(paymentId: number) {
     try {
       const query = `
@@ -215,20 +202,36 @@ export class PaymentModel extends BaseModel {
     }
   }
 
-  // Validate payment amount matches booking cost
   async validatePaymentAmount(bookingId: number, paymentAmount: number): Promise<boolean> {
     try {
       const query = `
-        SELECT SUM(s.price) as total_cost
+        SELECT 
+          SUM(s.price) as seat_cost,
+          b.support,
+          b.fasttrack
         FROM passenger p
         LEFT JOIN seat s ON p.seat_id = s.seat_id
+        JOIN booking b ON p.booking_id = b.booking_id
         WHERE p.booking_id = ?
+        GROUP BY b.booking_id, b.support, b.fasttrack
       `;
       
-      const result = await this.executeQuery<{ total_cost: number }>(query, [bookingId]);
-      const expectedAmount = result[0]?.total_cost || 0;
+      const result = await this.executeQuery<{ seat_cost: number; support: string; fasttrack: string }>(query, [bookingId]);
       
-      // Allow small floating point differences (within 0.01)
+      if (result.length === 0) {
+        return false;
+      }
+
+      let expectedAmount = result[0]?.seat_cost || 0;
+      
+      if (result[0]?.support === 'yes' || result[0]?.support === 'Yes') {
+        expectedAmount += 50;
+      }
+      
+      if (result[0]?.fasttrack === 'yes' || result[0]?.fasttrack === 'Yes') {
+        expectedAmount += 30;
+      }
+      
       return Math.abs(expectedAmount - paymentAmount) < 0.01;
     } catch (error) {
       console.error('Error validating payment amount:', error);
@@ -236,7 +239,6 @@ export class PaymentModel extends BaseModel {
     }
   }
 
-  // Get payment statistics
   async getPaymentStats() {
     try {
       const query = `
@@ -260,7 +262,6 @@ export class PaymentModel extends BaseModel {
     }
   }
 
-  // Validate payment data
   validatePaymentData(amount: number, currency: string, bookingId: number): string[] {
     const errors: string[] = [];
 

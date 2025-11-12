@@ -9,7 +9,6 @@ describe('Flights Integration Tests', () => {
   let testFlightId: number;
 
   beforeAll(async () => {
-    // Login as admin to get token for protected routes
     const adminLogin = await request(app)
       .post('/api/v1/auth/login')
       .send({

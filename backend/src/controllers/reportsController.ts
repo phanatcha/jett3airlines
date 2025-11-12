@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { BookingModel } from '../models/Booking';
 import PDFDocument from 'pdfkit';
 
-// Helper class for reports queries
 class ReportsModel extends BookingModel {
   async executeReportQuery<T = any>(query: string, params?: any[]): Promise<T[]> {
     return await this.executeQuery<T>(query, params);
@@ -16,9 +15,6 @@ export class ReportsController {
     this.reportsModel = new ReportsModel();
   }
 
-  /**
-   * Get summary metrics for admin dashboard
-   */
   getMetrics = async (req: Request, res: Response): Promise<void> => {
     try {
       const metricsQuery = `
@@ -53,9 +49,6 @@ export class ReportsController {
     }
   };
 
-  /**
-   * Get bookings per day data for charts
-   */
   getBookingsPerDay = async (req: Request, res: Response): Promise<void> => {
     try {
       const { startDate, endDate, days = 30 } = req.query;
@@ -73,7 +66,6 @@ export class ReportsController {
         query += ' WHERE created_date BETWEEN ? AND ?';
         params.push(startDate, endDate);
       } else {
-        // Default to last N days
         query += ' WHERE created_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)';
         params.push(parseInt(days as string) || 30);
       }
@@ -102,9 +94,6 @@ export class ReportsController {
     }
   };
 
-  /**
-   * Get revenue per day data for charts
-   */
   getRevenuePerDay = async (req: Request, res: Response): Promise<void> => {
     try {
       const { startDate, endDate, days = 30 } = req.query;
@@ -151,9 +140,6 @@ export class ReportsController {
     }
   };
 
-  /**
-   * Get flight statistics
-   */
   getFlightStats = async (req: Request, res: Response): Promise<void> => {
     try {
       const statsQuery = `
@@ -185,9 +171,6 @@ export class ReportsController {
     }
   };
 
-  /**
-   * Get booking statistics
-   */
   getBookingStats = async (req: Request, res: Response): Promise<void> => {
     try {
       const statsQuery = `
@@ -220,9 +203,6 @@ export class ReportsController {
     }
   };
 
-  /**
-   * Export reports as CSV
-   */
   exportCSV = async (req: Request, res: Response): Promise<void> => {
     try {
       const { type = 'metrics', startDate, endDate, days = 30 } = req.query;
@@ -339,11 +319,9 @@ export class ReportsController {
         headers = ['Flight ID', 'Flight No', 'Status', 'Departure Time', 'Arrival Time', 'Departure Airport', 'Departure IATA', 'Arrival Airport', 'Arrival IATA', 'Airplane Type', 'Booking Count', 'Passenger Count'];
       }
 
-      // Generate CSV with proper escaping
       const escapeCSV = (value: any): string => {
         if (value === null || value === undefined) return '';
         const str = String(value);
-        // Escape quotes and wrap in quotes if contains comma, quote, or newline
         if (str.includes(',') || str.includes('"') || str.includes('\n')) {
           return `"${str.replace(/"/g, '""')}"`;
         }
@@ -370,9 +348,6 @@ export class ReportsController {
     }
   };
 
-  /**
-   * Export reports as PDF
-   */
   exportPDF = async (req: Request, res: Response): Promise<void> => {
     try {
       const { type = 'metrics', startDate, endDate, days = 30 } = req.query;
@@ -380,14 +355,11 @@ export class ReportsController {
       const doc = new PDFDocument({ margin: 50 });
       const filename = `report-${type}-${Date.now()}.pdf`;
 
-      // Set response headers
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
-      // Pipe PDF to response
       doc.pipe(res);
 
-      // Add header
       doc.fontSize(20).text('Jett3 Airlines Report', { align: 'center' });
       doc.moveDown();
       doc.fontSize(12).text(`Report Type: ${type}`, { align: 'center' });
@@ -447,7 +419,6 @@ export class ReportsController {
         doc.moveDown();
         doc.fontSize(10);
 
-        // Table headers
         const tableTop = doc.y;
         const colWidths = [60, 80, 80, 100, 80, 80];
         const headers = ['Booking ID', 'Booking No', 'Status', 'Client', 'Route', 'Passengers'];
@@ -461,7 +432,6 @@ export class ReportsController {
         doc.moveDown();
         let y = doc.y;
 
-        // Table rows
         bookings.slice(0, 30).forEach((booking: any) => {
           if (y > 700) {
             doc.addPage();
@@ -518,7 +488,6 @@ export class ReportsController {
         doc.moveDown();
         doc.fontSize(10);
 
-        // Calculate totals
         const totalRevenue = revenue.reduce((sum: number, row: any) => sum + parseFloat(row.total_revenue), 0);
         const totalTransactions = revenue.reduce((sum: number, row: any) => sum + parseInt(row.transaction_count), 0);
 
@@ -528,7 +497,6 @@ export class ReportsController {
         doc.text(`Average Transaction: $${(totalRevenue / totalTransactions).toFixed(2)}`);
         doc.moveDown(2);
 
-        // Daily breakdown
         doc.fontSize(10);
         const tableTop = doc.y;
         const colWidths = [150, 150, 150];
@@ -636,7 +604,6 @@ export class ReportsController {
           doc.y = y;
         });
       } else if (type === 'chart') {
-        // For chart exports, we'll create a simple visualization
         const chartQuery = `
           SELECT 
             DATE(created_date) as date,
@@ -651,18 +618,15 @@ export class ReportsController {
         doc.fontSize(16).text('Bookings Trend Chart', { underline: true });
         doc.moveDown(2);
 
-        // Simple bar chart
         const chartHeight = 200;
         const chartWidth = 400;
         const chartX = 100;
         const chartY = doc.y;
         const maxBookings = Math.max(...chartData.map((d: any) => parseInt(d.bookings)));
 
-        // Draw axes
         doc.moveTo(chartX, chartY).lineTo(chartX, chartY + chartHeight).stroke();
         doc.moveTo(chartX, chartY + chartHeight).lineTo(chartX + chartWidth, chartY + chartHeight).stroke();
 
-        // Draw bars
         const barWidth = chartWidth / chartData.length;
         chartData.forEach((data: any, index: number) => {
           const barHeight = (parseInt(data.bookings) / maxBookings) * chartHeight;
@@ -672,18 +636,15 @@ export class ReportsController {
           doc.rect(x + 2, y, barWidth - 4, barHeight).fill('#4A90E2');
         });
 
-        // Add legend
         doc.fillColor('black');
         doc.moveDown(15);
         doc.fontSize(10);
         doc.text('Daily Bookings Over Time', chartX, doc.y, { width: chartWidth, align: 'center' });
       }
 
-      // Finalize PDF
       doc.end();
     } catch (error) {
       console.error('Export PDF error:', error);
-      // If headers haven't been sent yet, send error response
       if (!res.headersSent) {
         res.status(500).json({
           success: false,

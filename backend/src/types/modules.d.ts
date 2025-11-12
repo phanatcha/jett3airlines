@@ -1,4 +1,3 @@
-// Type declarations for external modules
 
 declare module 'mysql2/promise' {
   export interface Pool {

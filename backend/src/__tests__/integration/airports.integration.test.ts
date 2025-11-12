@@ -15,21 +15,17 @@ describe('Airports API - Public Endpoints', () => {
       expect(response.body.count).toBeDefined();
       expect(response.body.count).toBeGreaterThan(0);
       
-      // Verify sorting by country, city, name
       if (response.body.data.length > 1) {
         const airports = response.body.data;
         for (let i = 0; i < airports.length - 1; i++) {
           const current = airports[i];
           const next = airports[i + 1];
           
-          // Check country sorting
           expect(current.country_name <= next.country_name).toBe(true);
           
-          // If same country, check city sorting
           if (current.country_name === next.country_name) {
             expect(current.city_name <= next.city_name).toBe(true);
             
-            // If same city, check airport name sorting
             if (current.city_name === next.city_name) {
               expect(current.airport_name <= next.airport_name).toBe(true);
             }
@@ -48,7 +44,6 @@ describe('Airports API - Public Endpoints', () => {
       expect(response.body.data).toBeDefined();
       expect(Array.isArray(response.body.data)).toBe(true);
       
-      // Verify all returned airports are from the specified country
       response.body.data.forEach((airport: any) => {
         expect(airport.country_name).toBe('United States');
       });
@@ -64,7 +59,6 @@ describe('Airports API - Public Endpoints', () => {
       expect(response.body.data).toBeDefined();
       expect(Array.isArray(response.body.data)).toBe(true);
       
-      // Verify search results contain the search term
       response.body.data.forEach((airport: any) => {
         const searchTerm = 'London'.toLowerCase();
         const matchesSearch = 
@@ -88,7 +82,6 @@ describe('Airports API - Public Endpoints', () => {
       expect(Array.isArray(response.body.data)).toBe(true);
       expect(response.body.data.length).toBeGreaterThan(0);
       
-      // Verify at least one result has the IATA code
       const hasJFK = response.body.data.some((airport: any) => 
         airport.iata_code === 'JFK'
       );
@@ -109,7 +102,6 @@ describe('Airports API - Public Endpoints', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      // Test with invalid query parameters (edge case)
       const response = await request(app)
         .get('/api/v1/airports?search=')
         .expect('Content-Type', /json/);

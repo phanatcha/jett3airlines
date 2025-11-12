@@ -6,12 +6,10 @@ export class BaggageModel extends BaseModel {
     super('baggage');
   }
 
-  // Find baggage by ID
   async findBaggageById(baggageId: number): Promise<Baggage | null> {
     return await super.findById<Baggage>(baggageId, 'baggage_id');
   }
 
-  // Find baggage by tracking number
   async findByTrackingNumber(trackingNo: string): Promise<Baggage | null> {
     try {
       const query = 'SELECT * FROM baggage WHERE tracking_no = ? LIMIT 1';
@@ -23,7 +21,6 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Get baggage with detailed information
   async getBaggageDetails(baggageId: number) {
     try {
       const query = `
@@ -63,7 +60,6 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Get baggage by passenger ID
   async getBaggageByPassenger(passengerId: number) {
     try {
       const query = `
@@ -84,7 +80,6 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Get baggage by flight ID
   async getBaggageByFlight(flightId: number) {
     try {
       const query = `
@@ -108,10 +103,8 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Create new baggage record
   async createBaggage(baggageData: CreateBaggage): Promise<number> {
     try {
-      // Generate tracking number if not provided
       if (!baggageData.tracking_no) {
         baggageData.tracking_no = this.generateTrackingNumber();
       }
@@ -123,7 +116,6 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Update baggage status
   async updateBaggageStatus(baggageId: number, status: BaggageStatus): Promise<boolean> {
     try {
       return await this.update<Baggage>(baggageId, { status }, 'baggage_id');
@@ -133,7 +125,6 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Update baggage status by tracking number
   async updateBaggageStatusByTracking(trackingNo: string, status: BaggageStatus): Promise<boolean> {
     try {
       const query = 'UPDATE baggage SET status = ? WHERE tracking_no = ?';
@@ -145,7 +136,6 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Track baggage by tracking number
   async trackBaggage(trackingNo: string) {
     try {
       const query = `
@@ -179,7 +169,6 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Get baggage statistics
   async getBaggageStats() {
     try {
       const query = `
@@ -202,7 +191,6 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Get baggage by status
   async getBaggageByStatus(status: BaggageStatus, limit?: number, offset?: number) {
     try {
       let query = `
@@ -242,7 +230,6 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Search baggage by passenger name or tracking number
   async searchBaggage(searchTerm: string, limit: number = 50) {
     try {
       const query = `
@@ -273,7 +260,6 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Get lost baggage report
   async getLostBaggageReport(days: number = 30) {
     try {
       const query = `
@@ -311,12 +297,10 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Delete baggage record (admin function)
   async deleteBaggage(baggageId: number): Promise<boolean> {
     return await this.delete(baggageId, 'baggage_id');
   }
 
-  // Check if tracking number exists
   async trackingNumberExists(trackingNo: string, excludeBaggageId?: number): Promise<boolean> {
     try {
       let query = 'SELECT COUNT(*) as count FROM baggage WHERE tracking_no = ?';
@@ -335,15 +319,13 @@ export class BaggageModel extends BaseModel {
     }
   }
 
-  // Generate unique tracking number
   private generateTrackingNumber(): string {
-    const prefix = 'JT3'; // Airline code
-    const timestamp = Date.now().toString().slice(-8); // Last 8 digits of timestamp
+    const prefix = 'JT3';
+    const timestamp = Date.now().toString().slice(-8);
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     return `${prefix}${timestamp}${random}`;
   }
 
-  // Validate baggage data
   validateBaggageData(baggageData: any): string[] {
     const errors: string[] = [];
 

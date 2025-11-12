@@ -6,12 +6,10 @@ export class FlightModel extends BaseModel {
     super('flight');
   }
 
-  // Find flight by ID
   async findFlightById(flightId: number): Promise<Flight | null> {
     return await super.findById<Flight>(flightId, 'flight_id');
   }
 
-  // Get flight with detailed information (including airport and airplane details)
   async getFlightDetails(flightId: number) {
     try {
       const query = `
@@ -41,9 +39,10 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Search flights based on criteria
   async searchFlights(searchParams: FlightSearchRequest) {
     try {
+      const cabinClass = searchParams.cabin_class || 'Economy';
+      
       let query = `
         SELECT 
           f.*,
@@ -55,19 +54,27 @@ export class FlightModel extends BaseModel {
           arr_airport.iata_code as arrival_iata,
           a.type as airplane_type,
           a.capacity as airplane_capacity,
-          a.min_price as base_price,
-          COUNT(DISTINCT p.passenger_id) as booked_seats
+          COALESCE(f.base_price, a.min_price, 100.00) as base_price,
+          COALESCE(f.premium_economy_multiplier, 1.50) as premium_economy_multiplier,
+          COALESCE(f.business_multiplier, 2.50) as business_multiplier,
+          CASE 
+            WHEN ? = 'Business' THEN COALESCE(f.base_price, a.min_price, 100.00) * COALESCE(f.business_multiplier, 2.50)
+            WHEN ? = 'Premium Economy' THEN COALESCE(f.base_price, a.min_price, 100.00) * COALESCE(f.premium_economy_multiplier, 1.50)
+            ELSE COALESCE(f.base_price, a.min_price, 100.00)
+          END as price,
+          COUNT(DISTINCT CASE WHEN s.class = ? THEN p.passenger_id END) as booked_seats_in_class,
+          COUNT(DISTINCT CASE WHEN s.class = ? THEN s.seat_id END) as total_seats_in_class
         FROM flight f
         LEFT JOIN airport dep_airport ON f.depart_airport_id = dep_airport.airport_id
         LEFT JOIN airport arr_airport ON f.arrive_airport_id = arr_airport.airport_id
         LEFT JOIN airplane a ON f.airplane_id = a.airplane_id
-        LEFT JOIN passenger p ON f.flight_id = p.flight_id
+        LEFT JOIN seat s ON a.airplane_id = s.airplane_id
+        LEFT JOIN passenger p ON f.flight_id = p.flight_id AND s.seat_id = p.seat_id
         WHERE f.status = 'Scheduled'
       `;
 
-      const params: any[] = [];
+      const params: any[] = [cabinClass, cabinClass, cabinClass, cabinClass];
 
-      // Add search filters
       if (searchParams.depart_airport_id) {
         query += ' AND f.depart_airport_id = ?';
         params.push(searchParams.depart_airport_id);
@@ -83,14 +90,14 @@ export class FlightModel extends BaseModel {
         params.push(searchParams.depart_date);
       }
 
-      query += ' GROUP BY f.flight_id ORDER BY f.depart_when ASC';
+      query += ' GROUP BY f.flight_id HAVING total_seats_in_class > 0 ORDER BY f.depart_when ASC';
 
       const results = await this.executeQuery(query, params);
       
-      // Calculate available seats for each flight
       return results.map((flight: any) => ({
         ...flight,
-        available_seats: flight.airplane_capacity - flight.booked_seats,
+        cabin_class: cabinClass,
+        available_seats: flight.total_seats_in_class - flight.booked_seats_in_class,
         duration: this.calculateFlightDuration(flight.depart_when, flight.arrive_when)
       }));
     } catch (error) {
@@ -99,15 +106,19 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Get available seats for a flight
   async getAvailableSeats(flightId: number, seatClass?: string) {
     try {
       let query = `
         SELECT 
           s.*,
-          CASE WHEN p.seat_id IS NULL THEN 'available' ELSE 'booked' END as availability
+          CASE 
+            WHEN p.seat_id IS NULL THEN 'available'
+            WHEN b.status = 'cancelled' THEN 'available'
+            ELSE 'booked' 
+          END as availability
         FROM seat s
         LEFT JOIN passenger p ON s.seat_id = p.seat_id AND p.flight_id = ?
+        LEFT JOIN booking b ON p.booking_id = b.booking_id
         WHERE s.airplane_id = (SELECT airplane_id FROM flight WHERE flight_id = ?)
       `;
 
@@ -127,7 +138,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Check seat availability for specific seats
   async checkSeatAvailability(flightId: number, seatIds: number[]): Promise<boolean> {
     try {
       if (seatIds.length === 0) return true;
@@ -135,8 +145,11 @@ export class FlightModel extends BaseModel {
       const placeholders = seatIds.map(() => '?').join(',');
       const query = `
         SELECT COUNT(*) as booked_count
-        FROM passenger 
-        WHERE flight_id = ? AND seat_id IN (${placeholders})
+        FROM passenger p
+        INNER JOIN booking b ON p.booking_id = b.booking_id
+        WHERE p.flight_id = ? 
+          AND p.seat_id IN (${placeholders})
+          AND b.status != 'cancelled'
       `;
 
       const params = [flightId, ...seatIds];
@@ -149,7 +162,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Get flights by airport
   async getFlightsByAirport(airportId: number, isDeparture: boolean = true) {
     try {
       const airportColumn = isDeparture ? 'depart_airport_id' : 'arrive_airport_id';
@@ -176,7 +188,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Get flights by date range
   async getFlightsByDateRange(startDate: string, endDate: string) {
     try {
       const query = `
@@ -200,7 +211,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Update flight status
   async updateFlightStatus(flightId: number, status: FlightStatus): Promise<boolean> {
     try {
       return await this.update<Flight>(flightId, { status }, 'flight_id');
@@ -210,7 +220,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Create new flight (admin function)
   async createFlight(flightData: Omit<Flight, 'flight_id'>): Promise<number> {
     try {
       return await this.create(flightData as any);
@@ -220,7 +229,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Update flight information (admin function)
   async updateFlight(flightId: number, updateData: Partial<Flight>): Promise<boolean> {
     try {
       return await this.update<Flight>(flightId, updateData, 'flight_id');
@@ -230,10 +238,8 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Delete flight (admin function)
   async deleteFlight(flightId: number): Promise<boolean> {
     try {
-      // Check if flight has bookings
       const bookingCount = await this.count({ flight_id: flightId });
       if (bookingCount > 0) {
         throw new Error('Cannot delete flight with existing bookings');
@@ -246,7 +252,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Get flight statistics
   async getFlightStats() {
     try {
       const query = `
@@ -267,7 +272,6 @@ export class FlightModel extends BaseModel {
     }
   }
 
-  // Private helper method to calculate flight duration
   private calculateFlightDuration(departTime: Date, arriveTime: Date): string {
     const depart = new Date(departTime);
     const arrive = new Date(arriveTime);
@@ -279,7 +283,6 @@ export class FlightModel extends BaseModel {
     return `${hours}h ${minutes}m`;
   }
 
-  // Validate flight data
   validateFlightData(flightData: any): string[] {
     const errors: string[] = [];
 
@@ -319,7 +322,6 @@ export class FlightModel extends BaseModel {
     return errors;
   }
 
-  // Helper method to validate date format
   private isValidDate(dateString: string): boolean {
     const date = new Date(dateString);
     return date instanceof Date && !isNaN(date.getTime());

@@ -17,14 +17,12 @@ const Confirmation = () => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch booking details on component mount
   useEffect(() => {
     const fetchBookingDetails = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // Get booking ID from location state or localStorage
         const bookingId = location.state?.bookingId || 
                          JSON.parse(localStorage.getItem('paymentConfirmation') || '{}').booking_id;
 
@@ -34,7 +32,6 @@ const Confirmation = () => {
           return;
         }
 
-        // Fetch booking details from backend
         const result = await getBookingById(bookingId);
 
         if (result.success) {
@@ -51,9 +48,8 @@ const Confirmation = () => {
     };
 
     fetchBookingDetails();
-  }, [location.state]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
-  // Helper function to format date
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -64,7 +60,6 @@ const Confirmation = () => {
     });
   };
 
-  // Helper function to format time
   const formatTime = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -75,7 +70,6 @@ const Confirmation = () => {
     });
   };
 
-  // Helper function to calculate boarding time (30 minutes before departure)
   const getBoardingTime = (departureTime) => {
     if (!departureTime) return '';
     const date = new Date(departureTime);
@@ -95,15 +89,12 @@ const Confirmation = () => {
         return;
       }
 
-      // Temporarily make the element visible for capture
       element.style.display = 'block';
       element.style.position = 'absolute';
       element.style.left = '-9999px';
       
-      // Wait for render
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Capture the element
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
@@ -111,24 +102,20 @@ const Confirmation = () => {
         logging: false
       });
 
-      // Hide it again
       element.style.display = 'none';
       element.style.position = '';
       element.style.left = '';
 
-      // Convert to image
       const imgData = canvas.toDataURL('image/png');
 
-      // Create PDF
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
 
-      // Calculate dimensions
-      const imgWidth = canvas.width * 0.264583; // px to mm
+      const imgWidth = canvas.width * 0.264583;
       const imgHeight = canvas.height * 0.264583;
 
-      const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight) * 0.9; // 90% of page
+      const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight) * 0.9;
       const newWidth = imgWidth * ratio;
       const newHeight = imgHeight * ratio;
 
@@ -146,7 +133,6 @@ const Confirmation = () => {
 
 
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="bg-gray-50 min-h-screen">
@@ -161,7 +147,6 @@ const Confirmation = () => {
     );
   }
 
-  // Show error state
   if (error || !bookingData) {
     return (
       <div className="bg-gray-50 min-h-screen">

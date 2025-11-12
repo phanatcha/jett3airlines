@@ -6,12 +6,10 @@ export class AirportModel extends BaseModel {
     super('airport');
   }
 
-  // Find airport by ID
   async findAirportById(airportId: number): Promise<Airport | null> {
     return await super.findById<Airport>(airportId, 'airport_id');
   }
 
-  // Find airport by IATA code
   async findByIataCode(iataCode: string): Promise<Airport | null> {
     try {
       const query = 'SELECT * FROM airport WHERE iata_code = ? LIMIT 1';
@@ -23,7 +21,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Get all airports
   async getAllAirports(limit?: number, offset?: number) {
     try {
       return await this.findAll<Airport>({}, limit, offset, 'country_name, city_name, airport_name');
@@ -33,7 +30,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Search airports by city or airport name
   async searchAirports(searchTerm: string, limit: number = 20) {
     try {
       const query = `
@@ -60,7 +56,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Get airports by country
   async getAirportsByCountry(countryName: string) {
     try {
       const query = `
@@ -76,7 +71,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Get airports by city
   async getAirportsByCity(cityName: string) {
     try {
       const query = `
@@ -92,7 +86,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Get airport with flight statistics
   async getAirportWithStats(airportId: number) {
     try {
       const query = `
@@ -116,7 +109,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Get popular routes from an airport
   async getPopularRoutesFromAirport(airportId: number, limit: number = 10) {
     try {
       const query = `
@@ -144,7 +136,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Get popular routes to an airport
   async getPopularRoutesToAirport(airportId: number, limit: number = 10) {
     try {
       const query = `
@@ -172,7 +163,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Get unique countries
   async getUniqueCountries() {
     try {
       const query = `
@@ -188,7 +178,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Get unique cities
   async getUniqueCities() {
     try {
       const query = `
@@ -204,10 +193,8 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Create new airport (admin function)
   async createAirport(airportData: Omit<Airport, 'airport_id'>): Promise<number> {
     try {
-      // Ensure IATA code is uppercase
       const createData = {
         ...airportData,
         iata_code: airportData.iata_code.toUpperCase()
@@ -220,10 +207,8 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Update airport information (admin function)
   async updateAirport(airportId: number, updateData: Partial<Airport>): Promise<boolean> {
     try {
-      // Ensure IATA code is uppercase if being updated
       if (updateData.iata_code) {
         updateData.iata_code = updateData.iata_code.toUpperCase();
       }
@@ -235,10 +220,8 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Delete airport (admin function)
   async deleteAirport(airportId: number): Promise<boolean> {
     try {
-      // Check if airport has any flights
       const flightCount = await this.executeQuery(
         'SELECT COUNT(*) as count FROM flight WHERE depart_airport_id = ? OR arrive_airport_id = ?',
         [airportId, airportId]
@@ -255,7 +238,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Check if IATA code exists
   async iataCodeExists(iataCode: string, excludeAirportId?: number): Promise<boolean> {
     try {
       let query = 'SELECT COUNT(*) as count FROM airport WHERE iata_code = ?';
@@ -274,7 +256,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Get airport statistics
   async getAirportStats() {
     try {
       const query = `
@@ -295,7 +276,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Get busiest airports by flight count
   async getBusiestAirports(limit: number = 10) {
     try {
       const query = `
@@ -319,7 +299,6 @@ export class AirportModel extends BaseModel {
     }
   }
 
-  // Validate airport data
   validateAirportData(airportData: any): string[] {
     const errors: string[] = [];
 

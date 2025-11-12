@@ -1,12 +1,10 @@
-// Database entity interfaces based on the MySQL schema
 
-// Type declaration for Buffer (fallback if @types/node is not available)
 type BufferLike = any;
 
 export interface Client {
   client_id: number;
   username: string;
-  password: string | BufferLike; // varchar(255) in database, stored as argon2 hash
+  password: string | BufferLike;
   email: string;
   phone_no: string;
   firstname: string;
@@ -15,12 +13,12 @@ export interface Client {
   street: string;
   city: string;
   province: string;
-  Country: string; // Note: Capital C in database
+  Country: string;
   postalcode: string;
-  card_no: BufferLike; // varbinary in database
+  card_no: BufferLike;
   four_digit: string;
   payment_type: string;
-  role?: string; // 'user' or 'admin', defaults to 'user'
+  role?: string;
 }
 
 export interface Flight {
@@ -31,7 +29,7 @@ export interface Flight {
   airplane_id: number;
   depart_airport_id: number;
   arrive_airport_id: number;
-  flight_no?: string; // Flight number (e.g., "JT301")
+  flight_no?: string;
 }
 
 export interface Booking {
@@ -43,14 +41,14 @@ export interface Booking {
   updated_date?: Date;
   client_id: number;
   flight_id: number;
-  booking_no?: string; // Booking reference number
+  booking_no?: string;
 }
 
 export interface Passenger {
   passenger_id: number;
   firstname: string;
   lastname: string;
-  passport_no: BufferLike; // varbinary in database
+  passport_no: BufferLike;
   nationality: string;
   phone_no: string;
   gender: string;
@@ -104,7 +102,6 @@ export interface Baggage {
   passenger_id: number;
 }
 
-// API Response interfaces
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -122,7 +119,6 @@ export interface PaginatedResponse<T = any> extends ApiResponse<T[]> {
   };
 }
 
-// Request interfaces for API endpoints
 export interface ClientRegistrationRequest {
   username: string;
   password: string;
@@ -130,7 +126,7 @@ export interface ClientRegistrationRequest {
   phone_no: string;
   firstname: string;
   lastname: string;
-  dob: string; // ISO date string
+  dob: string;
   street: string;
   city: string;
   province: string;
@@ -153,6 +149,7 @@ export interface FlightSearchRequest {
   return_date?: string;
   passengers?: number;
   class?: string;
+  cabin_class?: 'Economy' | 'Premium Economy' | 'Business';
 }
 
 export interface BookingRequest {
@@ -167,9 +164,9 @@ export interface PassengerRequest {
   lastname: string;
   passport_no: string;
   nationality: string;
-  phone_no: string;
+  phone_no?: string;
   gender: string;
-  dob: string; // ISO date string
+  dob: string;
   weight_limit?: number;
   seat_id: number;
 }
@@ -181,7 +178,6 @@ export interface PaymentRequest {
   payment_method?: string;
 }
 
-// Utility types for database operations
 export type CreateClient = Omit<Client, 'client_id'>;
 export type UpdateClient = Partial<Omit<Client, 'client_id'>>;
 export type CreateBooking = Omit<Booking, 'booking_id' | 'created_date' | 'updated_date'>;
@@ -191,7 +187,6 @@ export type UpdatePassenger = Partial<Omit<Passenger, 'passenger_id'>>;
 export type CreatePayment = Omit<Payment, 'payment_id' | 'payment_timestamp'>;
 export type CreateBaggage = Omit<Baggage, 'baggage_id'>;
 
-// Enums for common values
 export enum BookingStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',

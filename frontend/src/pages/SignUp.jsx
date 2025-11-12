@@ -22,7 +22,7 @@ const SignUp = () => {
       ...prev,
       [id]: type === "checkbox" ? checked : value,
     }));
-    setError(""); // Clear error on input change
+    setError("");
   };
 
 const handleSubmit = (e) => {
@@ -64,8 +64,18 @@ const handleSubmit = (e) => {
     return;
   }
 
-  if (normalizedData.password.length < 6) {
-    setError("Password must be at least 6 characters long.");
+  if (normalizedData.password.length < 8) {
+    setError("Password must be at least 8 characters long.");
+    return;
+  }
+
+  const hasUpperCase = /[A-Z]/.test(normalizedData.password);
+  const hasLowerCase = /[a-z]/.test(normalizedData.password);
+  const hasNumber = /\d/.test(normalizedData.password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(normalizedData.password);
+
+  if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+    setError("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
     return;
   }
 
@@ -74,7 +84,6 @@ const handleSubmit = (e) => {
     return;
   }
 
-  // Store basic info in sessionStorage and navigate to Info page
   sessionStorage.setItem('signupBasicInfo', JSON.stringify({
     firstname: normalizedData.firstName,
     lastname: normalizedData.lastName,

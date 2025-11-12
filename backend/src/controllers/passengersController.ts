@@ -10,7 +10,6 @@ const seatModel = new SeatModel();
 const bookingModel = new BookingModel();
 
 export class PassengersController {
-  // Get passenger details
   async getPassengerDetails(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -50,7 +49,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if passenger belongs to a booking owned by the authenticated client
       const booking = await bookingModel.findBookingById((passenger as any).booking_id);
       if (!booking || booking.client_id !== clientId) {
         res.status(403).json({
@@ -63,7 +61,6 @@ export class PassengersController {
         return;
       }
 
-      // Get passenger baggage
       const baggage = await passengerModel.getPassengerBaggage(passengerId);
 
       res.json({
@@ -87,7 +84,6 @@ export class PassengersController {
     }
   }
 
-  // Update passenger information
   async updatePassenger(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -115,7 +111,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if passenger can be modified
       const canModify = await passengerModel.canModifyPassenger(passengerId);
       if (!canModify) {
         res.status(403).json({
@@ -128,7 +123,6 @@ export class PassengersController {
         return;
       }
 
-      // Get current passenger to verify ownership
       const currentPassenger = await passengerModel.findPassengerById(passengerId);
       if (!currentPassenger) {
         res.status(404).json({
@@ -141,7 +135,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if passenger belongs to a booking owned by the authenticated client
       const booking = await bookingModel.findBookingById(currentPassenger.booking_id);
       if (!booking || booking.client_id !== clientId) {
         res.status(403).json({
@@ -156,7 +149,6 @@ export class PassengersController {
 
       const updateData: UpdatePassenger = req.body;
 
-      // If seat is being changed, check availability
       if (updateData.seat_id && updateData.seat_id !== currentPassenger.seat_id) {
         const seatAvailability = await seatModel.checkSeatsAvailability(
           currentPassenger.flight_id, 
@@ -175,7 +167,6 @@ export class PassengersController {
         }
       }
 
-      // Update passenger
       const success = await passengerModel.updatePassenger(passengerId, updateData);
       if (!success) {
         res.status(500).json({
@@ -188,7 +179,6 @@ export class PassengersController {
         return;
       }
 
-      // Get updated passenger details
       const updatedPassenger = await passengerModel.getPassengerDetails(passengerId);
 
       res.json({
@@ -209,7 +199,6 @@ export class PassengersController {
     }
   }
 
-  // Change passenger seat
   async changeSeat(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -249,7 +238,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if passenger can be modified
       const canModify = await passengerModel.canModifyPassenger(passengerId);
       if (!canModify) {
         res.status(403).json({
@@ -262,7 +250,6 @@ export class PassengersController {
         return;
       }
 
-      // Get current passenger to verify ownership
       const currentPassenger = await passengerModel.findPassengerById(passengerId);
       if (!currentPassenger) {
         res.status(404).json({
@@ -275,7 +262,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if passenger belongs to a booking owned by the authenticated client
       const booking = await bookingModel.findBookingById(currentPassenger.booking_id);
       if (!booking || booking.client_id !== clientId) {
         res.status(403).json({
@@ -288,7 +274,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if new seat is available
       const seatAvailability = await seatModel.checkSeatsAvailability(
         currentPassenger.flight_id, 
         [seat_id]
@@ -305,7 +290,6 @@ export class PassengersController {
         return;
       }
 
-      // Change seat
       const success = await passengerModel.changeSeat(passengerId, seat_id);
       if (!success) {
         res.status(500).json({
@@ -318,7 +302,6 @@ export class PassengersController {
         return;
       }
 
-      // Get updated passenger details
       const updatedPassenger = await passengerModel.getPassengerDetails(passengerId);
 
       res.json({
@@ -339,7 +322,6 @@ export class PassengersController {
     }
   }
 
-  // Add passenger to existing booking
   async addPassengerToBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -367,7 +349,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if client can modify this booking
       const canModify = await bookingModel.canModifyBooking(bookingId, clientId);
       if (!canModify) {
         res.status(403).json({
@@ -382,7 +363,6 @@ export class PassengersController {
 
       const passengerData: CreatePassenger = req.body;
 
-      // Validate passenger data
       const validationErrors = passengerModel.validatePassengerData({
         ...passengerData,
         booking_id: bookingId,
@@ -401,7 +381,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if seat is available
       const booking = await bookingModel.findBookingById(bookingId);
       if (!booking) {
         res.status(404).json({
@@ -430,17 +409,14 @@ export class PassengersController {
         return;
       }
 
-      // Add flight_id and booking_id to passenger data
       const completePassengerData: CreatePassenger = {
         ...passengerData,
         booking_id: bookingId,
         flight_id: booking.flight_id
       };
 
-      // Create passenger
       const passengerId = await passengerModel.createPassenger(completePassengerData);
 
-      // Get created passenger details
       const createdPassenger = await passengerModel.getPassengerDetails(passengerId);
 
       res.status(201).json({
@@ -461,7 +437,6 @@ export class PassengersController {
     }
   }
 
-  // Remove passenger from booking
   async removePassengerFromBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -489,7 +464,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if passenger can be modified
       const canModify = await passengerModel.canModifyPassenger(passengerId);
       if (!canModify) {
         res.status(403).json({
@@ -502,7 +476,6 @@ export class PassengersController {
         return;
       }
 
-      // Get current passenger to verify ownership
       const currentPassenger = await passengerModel.findPassengerById(passengerId);
       if (!currentPassenger) {
         res.status(404).json({
@@ -515,7 +488,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if passenger belongs to a booking owned by the authenticated client
       const booking = await bookingModel.findBookingById(currentPassenger.booking_id);
       if (!booking || booking.client_id !== clientId) {
         res.status(403).json({
@@ -528,7 +500,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if this is the last passenger in the booking
       const bookingPassengers = await passengerModel.getPassengersByBooking(currentPassenger.booking_id);
       if (bookingPassengers.length <= 1) {
         res.status(400).json({
@@ -541,7 +512,6 @@ export class PassengersController {
         return;
       }
 
-      // Remove passenger
       const success = await passengerModel.deletePassenger(passengerId);
       if (!success) {
         res.status(500).json({
@@ -571,7 +541,6 @@ export class PassengersController {
     }
   }
 
-  // Get passengers by booking (for booking management)
   async getPassengersByBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -599,7 +568,6 @@ export class PassengersController {
         return;
       }
 
-      // Check if booking belongs to the authenticated client
       const booking = await bookingModel.findBookingById(bookingId);
       if (!booking) {
         res.status(404).json({

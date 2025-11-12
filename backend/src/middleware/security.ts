@@ -3,9 +3,6 @@ import helmet from 'helmet';
 import { Request, Response, NextFunction } from 'express';
 import config from '../config/config';
 
-/**
- * Rate limiting middleware
- */
 export const createRateLimiter = (windowMs?: number, max?: number) => {
   return rateLimit({
     windowMs: windowMs || config.rateLimit.windowMs,
@@ -22,24 +19,14 @@ export const createRateLimiter = (windowMs?: number, max?: number) => {
   });
 };
 
-/**
- * General rate limiter for most endpoints
- */
 export const generalRateLimit = createRateLimiter();
 
-/**
- * Stricter rate limiter for authentication endpoints
- * More lenient in development for testing
- */
 const isDevelopment = process.env.NODE_ENV === 'development';
 export const authRateLimit = createRateLimiter(
-  15 * 60 * 1000, // 15 minutes
-  isDevelopment ? 50 : 5 // 50 requests in dev, 5 in production
+  15 * 60 * 1000,
+  isDevelopment ? 50 : 5
 );
 
-/**
- * Security headers middleware
- */
 export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
@@ -56,9 +43,6 @@ export const securityHeaders = helmet({
   }
 });
 
-/**
- * CORS configuration middleware
- */
 export const corsOptions = {
   origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true,
@@ -67,11 +51,7 @@ export const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
-/**
- * Error handling middleware for security-related errors
- */
 export const securityErrorHandler = (error: any, req: Request, res: Response, next: NextFunction): void => {
-  // Log security-related errors
   if (error.type === 'entity.too.large') {
     res.status(413).json({
       success: false,

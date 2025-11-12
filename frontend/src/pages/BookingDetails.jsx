@@ -14,14 +14,12 @@ const BookingDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated()) {
       navigate('/login', { state: { from: `/booking-details/${bookingId}` } });
     }
   }, [isAuthenticated, navigate, bookingId]);
 
-  // Fetch booking details
   useEffect(() => {
     if (isAuthenticated() && bookingId) {
       fetchBookingDetails();
@@ -58,7 +56,6 @@ const BookingDetails = () => {
 
       if (response.success) {
         alert(response.message || 'Booking cancelled successfully');
-        // Refresh booking details
         fetchBookingDetails();
       } else {
         alert(response.error?.message || 'Failed to cancel booking');

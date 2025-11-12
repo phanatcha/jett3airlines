@@ -1,9 +1,6 @@
 import { jest } from '@jest/globals';
 import { ClientRegistrationRequest, BookingRequest, PassengerRequest } from '../../types/database';
 
-/**
- * Mock data generators for testing
- */
 
 export const mockClientData: ClientRegistrationRequest = {
   username: 'testuser',
@@ -42,9 +39,6 @@ export const mockBookingData: BookingRequest = {
   passengers: [mockPassengerData]
 };
 
-/**
- * Helper to create a mock Express request
- */
 export const mockRequest = (body: any = {}, params: any = {}, query: any = {}) => ({
   body,
   params,
@@ -53,9 +47,6 @@ export const mockRequest = (body: any = {}, params: any = {}, query: any = {}) =
   user: undefined
 });
 
-/**
- * Helper to create a mock Express response
- */
 export const mockResponse = () => {
   const res: any = {};
   res.status = jest.fn().mockReturnValue(res);
@@ -64,9 +55,6 @@ export const mockResponse = () => {
   return res;
 };
 
-/**
- * Helper to generate random test data
- */
 export const generateRandomString = (length: number = 10): string => {
   return Math.random().toString(36).substring(2, length + 2);
 };

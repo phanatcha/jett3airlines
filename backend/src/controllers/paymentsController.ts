@@ -8,7 +8,6 @@ const paymentModel = new PaymentModel();
 const bookingModel = new BookingModel();
 
 export class PaymentsController {
-  // Process payment for a booking
   async processPayment(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -25,7 +24,6 @@ export class PaymentsController {
 
       const paymentData: PaymentRequest = req.body;
 
-      // Validate payment data
       const validationErrors = paymentModel.validatePaymentData(
         paymentData.amount,
         paymentData.currency || 'USD',
@@ -44,7 +42,6 @@ export class PaymentsController {
         return;
       }
 
-      // Check if booking exists
       const booking = await bookingModel.findBookingById(paymentData.booking_id);
       if (!booking) {
         res.status(404).json({
@@ -57,7 +54,6 @@ export class PaymentsController {
         return;
       }
 
-      // Verify booking belongs to the authenticated client
       if (booking.client_id !== clientId) {
         res.status(403).json({
           success: false,
@@ -69,7 +65,6 @@ export class PaymentsController {
         return;
       }
 
-      // Check if booking is in pending status
       if (booking.status !== 'pending') {
         res.status(400).json({
           success: false,
@@ -81,7 +76,6 @@ export class PaymentsController {
         return;
       }
 
-      // Check if payment already exists for this booking
       const existingPayment = await paymentModel.findPaymentByBookingId(paymentData.booking_id);
       if (existingPayment && existingPayment.status === PaymentStatus.COMPLETED) {
         res.status(409).json({
@@ -94,7 +88,6 @@ export class PaymentsController {
         return;
       }
 
-      // Validate payment amount matches booking cost
       const isValidAmount = await paymentModel.validatePaymentAmount(
         paymentData.booking_id,
         paymentData.amount
@@ -116,14 +109,12 @@ export class PaymentsController {
         return;
       }
 
-      // Process the payment
       const paymentId = await paymentModel.processPayment(
         paymentData.booking_id,
         paymentData.amount,
         paymentData.currency || 'USD'
       );
 
-      // Get payment receipt
       const receipt = await paymentModel.getPaymentReceipt(paymentId);
 
       res.status(201).json({
@@ -147,7 +138,6 @@ export class PaymentsController {
     }
   }
 
-  // Get payment status for a booking
   async getPaymentStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -175,7 +165,6 @@ export class PaymentsController {
         return;
       }
 
-      // Check if booking exists and belongs to client
       const booking = await bookingModel.findBookingById(bookingId);
       if (!booking) {
         res.status(404).json({
@@ -199,7 +188,6 @@ export class PaymentsController {
         return;
       }
 
-      // Get payment information
       const payment = await paymentModel.findPaymentByBookingId(bookingId);
 
       if (!payment) {
@@ -236,7 +224,6 @@ export class PaymentsController {
     }
   }
 
-  // Get payment receipt
   async getPaymentReceipt(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -264,7 +251,6 @@ export class PaymentsController {
         return;
       }
 
-      // Get payment receipt
       const receipt = await paymentModel.getPaymentReceipt(paymentId);
 
       if (!receipt) {
@@ -278,7 +264,6 @@ export class PaymentsController {
         return;
       }
 
-      // Verify payment belongs to the authenticated client (through booking)
       const booking = await bookingModel.findBookingById((receipt as any).booking_id);
       if (!booking || booking.client_id !== clientId) {
         res.status(403).json({
@@ -309,7 +294,6 @@ export class PaymentsController {
     }
   }
 
-  // Process refund for cancelled booking
   async processRefund(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -337,7 +321,6 @@ export class PaymentsController {
         return;
       }
 
-      // Check if booking exists and belongs to client
       const booking = await bookingModel.findBookingById(bookingId);
       if (!booking) {
         res.status(404).json({
@@ -361,7 +344,6 @@ export class PaymentsController {
         return;
       }
 
-      // Check if booking is eligible for refund
       if (booking.status === 'cancelled') {
         res.status(400).json({
           success: false,
@@ -384,7 +366,6 @@ export class PaymentsController {
         return;
       }
 
-      // Check if payment exists
       const payment = await paymentModel.findPaymentByBookingId(bookingId);
       if (!payment || payment.status !== PaymentStatus.COMPLETED) {
         res.status(400).json({
@@ -397,7 +378,6 @@ export class PaymentsController {
         return;
       }
 
-      // Check if booking can be modified (within cancellation window)
       const canModify = await bookingModel.canModifyBooking(bookingId, clientId);
       if (!canModify) {
         res.status(403).json({
@@ -410,10 +390,8 @@ export class PaymentsController {
         return;
       }
 
-      // Process refund
       const refundId = await paymentModel.processRefund(bookingId);
 
-      // Get refund details
       const refundReceipt = await paymentModel.getPaymentReceipt(refundId);
 
       res.json({
@@ -437,7 +415,6 @@ export class PaymentsController {
     }
   }
 
-  // Get payment history for client (admin only)
   async getPaymentHistory(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const clientId = req.user?.client_id;
@@ -453,10 +430,8 @@ export class PaymentsController {
         return;
       }
 
-      // Get all bookings for the client
       const bookings = await bookingModel.getBookingsByClient(clientId);
       
-      // Get payments for each booking
       const paymentsPromises = bookings.map(async (booking: any) => {
         const payments = await paymentModel.getPaymentsByBookingId(booking.booking_id);
         return {

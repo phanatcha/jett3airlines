@@ -10,7 +10,6 @@ describe('Admin Integration Tests', () => {
   let userToken: string;
 
   beforeAll(async () => {
-    // Login as admin
     const adminLogin = await request(app)
       .post('/api/v1/auth/login')
       .send({
@@ -22,7 +21,6 @@ describe('Admin Integration Tests', () => {
       adminToken = adminLogin.body.data.token;
     }
 
-    // Create regular user for testing authorization
     const testUser = {
       username: generateRandomUsername(),
       password: 'TestPassword123!',

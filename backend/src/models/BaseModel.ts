@@ -8,7 +8,6 @@ export abstract class BaseModel {
     this.tableName = tableName;
   }
 
-  // Generic find by ID method
   async findById<T>(id: number, idColumn: string = 'id'): Promise<T | null> {
     try {
       const query = `SELECT * FROM ${this.tableName} WHERE ${idColumn} = ? LIMIT 1`;
@@ -20,7 +19,6 @@ export abstract class BaseModel {
     }
   }
 
-  // Generic find all method with optional conditions
   async findAll<T>(
     conditions?: Record<string, any>,
     limit?: number,
@@ -31,7 +29,6 @@ export abstract class BaseModel {
       let query = `SELECT * FROM ${this.tableName}`;
       const params: any[] = [];
 
-      // Add WHERE conditions
       if (conditions && Object.keys(conditions).length > 0) {
         const whereClause = Object.keys(conditions)
           .map(key => `${key} = ?`)
@@ -40,12 +37,10 @@ export abstract class BaseModel {
         params.push(...Object.values(conditions));
       }
 
-      // Add ORDER BY
       if (orderBy) {
         query += ` ORDER BY ${orderBy}`;
       }
 
-      // Add LIMIT and OFFSET
       if (limit) {
         query += ` LIMIT ?`;
         params.push(limit);
@@ -63,7 +58,6 @@ export abstract class BaseModel {
     }
   }
 
-  // Generic create method
   async create<T>(data: Omit<T, 'id'>): Promise<number> {
     try {
       const columns = Object.keys(data as any).join(', ');
@@ -80,7 +74,6 @@ export abstract class BaseModel {
     }
   }
 
-  // Generic update method
   async update<T>(
     id: number,
     data: Partial<T>,
@@ -105,7 +98,6 @@ export abstract class BaseModel {
     }
   }
 
-  // Generic delete method
   async delete(id: number, idColumn: string = 'id'): Promise<boolean> {
     try {
       const query = `DELETE FROM ${this.tableName} WHERE ${idColumn} = ?`;
@@ -118,7 +110,6 @@ export abstract class BaseModel {
     }
   }
 
-  // Count records with optional conditions
   async count(conditions?: Record<string, any>): Promise<number> {
     try {
       let query = `SELECT COUNT(*) as count FROM ${this.tableName}`;
@@ -140,7 +131,6 @@ export abstract class BaseModel {
     }
   }
 
-  // Check if record exists
   async exists(id: number, idColumn: string = 'id'): Promise<boolean> {
     try {
       const query = `SELECT 1 FROM ${this.tableName} WHERE ${idColumn} = ? LIMIT 1`;
@@ -152,7 +142,6 @@ export abstract class BaseModel {
     }
   }
 
-  // Execute custom query
   protected async executeQuery<T>(query: string, params?: any[]): Promise<T[]> {
     try {
       return await database.query<T>(query, params);
@@ -162,14 +151,12 @@ export abstract class BaseModel {
     }
   }
 
-  // Execute transaction
   protected async executeTransaction<T>(
     callback: (connection: any) => Promise<T>
   ): Promise<T> {
     return await database.transaction(callback);
   }
 
-  // Format API response
   protected formatResponse<T>(
     success: boolean,
     data?: T,

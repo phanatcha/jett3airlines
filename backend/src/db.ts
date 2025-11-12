@@ -1,31 +1,28 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
-// Type declarations for Node.js globals (fallback if @types/node is not available)
 declare const process: {
   env: { [key: string]: string | undefined };
 };
 
 dotenv.config();
 
-// Database configuration
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'jett3_airline',
   port: Number(process.env.DB_PORT) || 3306,
-  // Connection pool configuration
   connectionLimit: 10,
-  // Additional security and performance settings
+  connectTimeout: 5000,
+  acquireTimeout: 5000,
+  timeout: 5000,
   charset: 'utf8mb4',
   timezone: '+00:00',
 };
 
-// Create connection pool
 const pool = mysql.createPool(dbConfig);
 
-// Database connection class with enhanced functionality
 class Database {
   private pool: mysql.Pool;
 
@@ -34,7 +31,6 @@ class Database {
     this.testConnection();
   }
 
-  // Test initial connection
   private async testConnection(): Promise<void> {
     try {
       const connection = await this.pool.getConnection();
@@ -44,11 +40,9 @@ class Database {
       console.error('❌ Database connection failed:', error);
       console.log('⚠️  Server will continue running without database connection');
       console.log('💡 To fix this, create a .env file with your database credentials');
-      // Don't throw error - let the server continue running
     }
   }
 
-  // Execute query with error handling and logging
   async query<T = any>(sql: string, params?: any[]): Promise<T[]> {
     const startTime = Date.now();
     
@@ -74,7 +68,6 @@ class Database {
     }
   }
 
-  // Execute transaction with rollback support
   async transaction<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
     const connection = await this.pool.getConnection();
     
@@ -108,17 +101,15 @@ class Database {
     }
   }
 
-  // Get connection pool statistics
   getPoolStats() {
     return {
       totalConnections: (this.pool as any).pool?.config?.connectionLimit || 10,
-      activeConnections: 'N/A', // Not accessible in newer mysql2 versions
-      freeConnections: 'N/A',   // Not accessible in newer mysql2 versions
-      queuedRequests: 'N/A',    // Not accessible in newer mysql2 versions
+      activeConnections: 'N/A',
+      freeConnections: 'N/A',
+      queuedRequests: 'N/A',
     };
   }
 
-  // Close all connections (for graceful shutdown)
   async close(): Promise<void> {
     try {
       await this.pool.end();
@@ -129,13 +120,11 @@ class Database {
     }
   }
 
-  // Get the pool instance for advanced usage
   getPool(): mysql.Pool {
     return this.pool;
   }
 }
 
-// Create and export database instance
 const database = new Database();
 
 export default database;

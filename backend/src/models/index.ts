@@ -1,4 +1,3 @@
-// Import all models
 import { BaseModel } from './BaseModel';
 import { ClientModel } from './Client';
 import { FlightModel } from './Flight';
@@ -10,7 +9,6 @@ import { AirportModel } from './Airport';
 import { AirplaneModel } from './Airplane';
 import { BaggageModel } from './Baggage';
 
-// Export all models for easy importing
 export { BaseModel };
 export { ClientModel };
 export { FlightModel };
@@ -22,7 +20,6 @@ export { AirportModel };
 export { AirplaneModel };
 export { BaggageModel };
 
-// Create model instances for easy access
 export const clientModel = new ClientModel();
 export const flightModel = new FlightModel();
 export const bookingModel = new BookingModel();

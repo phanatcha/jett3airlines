@@ -11,7 +11,6 @@ describe('Bookings Integration Tests', () => {
   let bookingId: number;
 
   beforeAll(async () => {
-    // Register and login a test user
     const testUser = {
       username: generateRandomUsername(),
       password: 'TestPassword123!',
