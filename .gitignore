@@ -84,3 +84,5 @@ brief component code from figma.txt
 # Example files
 frontend/src/components/*Example*.jsx
 frontend/src/components/*.example.jsx
+
+backend/.env.example
