@@ -2,7 +2,6 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { BookingProvider } from './context/BookingContext'
-import DebugPanel from './components/DebugPanel'
 import Home from './pages/Home'
 import Flights from './pages/Flights'
 import Admin from './pages/Admin'
@@ -68,7 +67,6 @@ const App = () => {
           </div>
         </BookingProvider>
       </AuthProvider>
-      <DebugPanel />
     </Router>
   )
 }
