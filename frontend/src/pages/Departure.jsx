@@ -102,7 +102,7 @@ const Departure = () => {
 
   // Format price for display
   const formatPrice = (price) => {
-    return `$${price.toLocaleString()}`;
+    return `$${parseFloat(price).toFixed(2)}`;
   };
 
   // Format stops for display

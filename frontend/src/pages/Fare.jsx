@@ -88,8 +88,8 @@ const Fare = () => {
       total += flightPrice;
     }
 
-    // Add return flight price ONLY if it's actually selected
-    if (selectedFlights.return) {
+    // Add return flight price ONLY if it's a round-trip AND return flight is selected
+    if (searchCriteria.tripType === 'round-trip' && selectedFlights.return) {
       const basePrice = parseFloat(
         selectedFlights.return.base_price || 
         selectedFlights.return.min_price || 
@@ -106,6 +106,8 @@ const Fare = () => {
       total += flightPrice;
     } else if (searchCriteria.tripType === 'round-trip') {
       console.log('Round-trip but no return flight selected yet - showing departure price only');
+    } else {
+      console.log('One-way trip - no return flight price added');
     }
 
     console.log('Total base price:', total);

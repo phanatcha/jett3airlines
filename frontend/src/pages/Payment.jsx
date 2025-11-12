@@ -270,7 +270,7 @@ const Payment = () => {
         {/* Left Section - Payment Form */}
         <div className="bg-white rounded-2xl shadow-md flex-1 p-6">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/fare')}
             className="flex items-center gap-2 text-gray-600 mb-4 hover:text-black"
           >
             <img src="/icons/black-back-icon.svg" alt="back" className="w-4 h-4" />

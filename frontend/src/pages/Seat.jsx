@@ -72,12 +72,22 @@ const Seat = () => {
 
   // Initialize local selected seats from context (only once on mount)
   useEffect(() => {
-    const seatsObj = {};
-    selectedSeats.forEach(seat => {
-      seatsObj[seat.passengerId] = seat.seatId;
-    });
-    setLocalSelectedSeats(seatsObj);
-  }, []); // Empty dependency array - only run once on mount
+    if (selectedSeats.length > 0 && Object.keys(seatIdMapping).length > 0) {
+      // Create reverse mapping: seat_id -> seat_no
+      const reverseSeatIdMapping = {};
+      Object.entries(seatIdMapping).forEach(([seatNo, seatId]) => {
+        reverseSeatIdMapping[seatId] = seatNo;
+      });
+      
+      const seatsObj = {};
+      selectedSeats.forEach(seat => {
+        // Convert database seat_id back to seat number (e.g., 241 -> "1A")
+        const seatNo = reverseSeatIdMapping[seat.seatId] || seat.seatId;
+        seatsObj[seat.passengerId] = seatNo;
+      });
+      setLocalSelectedSeats(seatsObj);
+    }
+  }, [selectedSeats, seatIdMapping]); // Re-run when seatIdMapping is loaded
 
   // Transform backend seat data to display format
   const transformSeatsToMap = (seats) => {
@@ -336,7 +346,7 @@ const Seat = () => {
       <div className="flex flex-col lg:flex-row justify-center items-start gap-8 mt-10 mx-auto w-11/12 max-w-6xl bg-white rounded-2xl shadow-md p-6">
         {/* Left side info */}
         <div className="flex-1 space-y-6">
-          <Back />
+          <Back to="/passenger-info" />
 
           <div>
             <p className="text-gray-500 text-sm">Passenger {currentPassengerIndex + 1} of {passengers.length}</p>

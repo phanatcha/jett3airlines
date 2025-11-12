@@ -180,11 +180,11 @@ const Flights = () => {
           className="bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md"
         >
           
-          <div className="flex justify-between mb-6 bg-white/10 rounded-full px-3 py-2">
-            {["round-trip", "one-way", "multi-city"].map((type) => (
+          <div className="flex mb-6 bg-white/10 rounded-full px-3 py-2">
+            {["round-trip", "one-way"].map((type) => (
               <label
                 key={type}
-                className={`cursor-pointer px-4 py-1 rounded-full text-sm ${
+                className={`cursor-pointer flex-1 text-center px-4 py-1 rounded-full text-sm ${
                   formData.tripType === type
                     ? "bg-primary-500 text-white"
                     : "text-gray-300 hover:text-white"
@@ -198,11 +198,7 @@ const Flights = () => {
                   onChange={handleChange}
                   className="hidden"
                 />
-                {type === "round-trip"
-                  ? "Round trip"
-                  : type === "one-way"
-                  ? "One way"
-                  : "Multi-city"}
+                {type === "round-trip" ? "Round trip" : "One way"}
               </label>
             ))}
           </div>

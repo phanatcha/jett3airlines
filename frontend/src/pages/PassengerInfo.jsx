@@ -22,15 +22,29 @@ const PassengerInfo = () => {
   });
 
   const [passengers, setPassengers] = useState(() => {
-    // Initialize passengers on mount only
-    const passengerCount = searchCriteria.passengers || 1;
+    // Get the expected passenger count from search criteria
+    const passengerCount = parseInt(searchCriteria.passengers) || 1;
     
-    // If context already has passengers, use them
-    if (contextPassengers.length > 0) {
-      return contextPassengers;
+    console.log('=== PassengerInfo Initialization ===');
+    console.log('Search criteria passengers:', searchCriteria.passengers);
+    console.log('Parsed passenger count:', passengerCount);
+    console.log('Context passengers length:', contextPassengers.length);
+    console.log('Context passengers:', contextPassengers);
+    
+    // If context already has the correct number of passengers with data, use them
+    if (contextPassengers.length === passengerCount && 
+        contextPassengers.some(p => p.firstname || p.firstName)) {
+      console.log('Using existing context passengers');
+      // Map context passengers to local format
+      return contextPassengers.map(p => ({
+        firstName: p.firstname || p.firstName || "",
+        lastName: p.lastname || p.lastName || "",
+        gender: p.gender || "",
+      }));
     }
     
     // Initialize empty passenger array based on count
+    console.log('Initializing new passenger array with count:', passengerCount);
     return Array.from({ length: passengerCount }, () => ({
       firstName: "",
       lastName: "",
@@ -39,6 +53,35 @@ const PassengerInfo = () => {
   });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+
+  // Sync passenger count with search criteria when it changes
+  useEffect(() => {
+    const expectedCount = parseInt(searchCriteria.passengers) || 1;
+    
+    console.log('=== PassengerInfo Count Sync ===');
+    console.log('Expected count from search criteria:', expectedCount);
+    console.log('Current passenger array length:', passengers.length);
+    console.log('Context passengers length:', contextPassengers.length);
+    
+    // Only adjust if the count doesn't match and we don't have filled context passengers
+    const hasFilledContextPassengers = contextPassengers.length > 0 && 
+                                       contextPassengers.some(p => p.firstname || p.firstName);
+    
+    if (!hasFilledContextPassengers && passengers.length !== expectedCount) {
+      console.log('Adjusting passenger count from', passengers.length, 'to', expectedCount);
+      setPassengers(Array.from({ length: expectedCount }, (_, index) => {
+        // Preserve existing data if available
+        if (passengers[index]) {
+          return passengers[index];
+        }
+        return {
+          firstName: "",
+          lastName: "",
+          gender: "",
+        };
+      }));
+    }
+  }, [searchCriteria.passengers]);
 
   const handleContactChange = (e) => {
     const { name, value } = e.target;
@@ -259,7 +302,7 @@ const PassengerInfo = () => {
       </div>
 
       <div className="flex flex-col w-5/7 px-20 pt-8 gap-2">
-        <Back />
+        <Back to="/fare" />
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8 mt-4">
           {/* Contact Details */}
