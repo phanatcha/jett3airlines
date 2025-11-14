@@ -779,12 +779,11 @@ const Admin = () => {
             <div className="bg-primary-500/50 rounded-3xl overflow-hidden shadow-xl">
               {/* Table Header */}
               <div className="bg-primary-500 px-8 py-4">
-                <div className="grid grid-cols-7 gap-4 text-white font-semibold text-lg items-center">
+                <div className="grid grid-cols-6 gap-4 text-white font-semibold text-lg items-center">
                   <div></div>
                   <div>Actions</div>
                   <div>Booking no</div>
                   <div>Flight no</div>
-                  <div>Fast track</div>
                   <div>Capacity</div>
                   <div>Status</div>
                 </div>
@@ -805,7 +804,7 @@ const Admin = () => {
                   bookings.map((booking) => (
                   <div
                     key={booking.id}
-                    className="grid grid-cols-7 gap-4 px-8 py-4 text-black font-medium text-lg hover:bg-primary-500/30 transition-colors"
+                    className="grid grid-cols-6 gap-4 px-8 py-4 text-black font-medium text-lg hover:bg-primary-500/30 transition-colors"
                   >
                     <div className="flex items-center justify-center">
                       <button
@@ -834,7 +833,6 @@ const Admin = () => {
                     </div>
                     <div>{booking.bookingNo}</div>
                     <div>{booking.flightNo}</div>
-                    <div>{booking.fastTrack}</div>
                     <div>{booking.capacity}</div>
                     <div>{booking.status}</div>
                   </div>
