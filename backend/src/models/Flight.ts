@@ -1,5 +1,6 @@
 import { BaseModel } from './BaseModel';
 import { Flight, FlightSearchRequest, FlightStatus } from '../types/database';
+import database from '../db';
 
 export class FlightModel extends BaseModel {
   constructor() {
@@ -240,9 +241,16 @@ export class FlightModel extends BaseModel {
 
   async deleteFlight(flightId: number): Promise<boolean> {
     try {
-      const bookingCount = await this.count({ flight_id: flightId });
+      // Check for active bookings (not cancelled)
+      const rows = await database.query(
+        `SELECT COUNT(*) as count FROM booking 
+         WHERE flight_id = ? AND status != 'Cancelled'`,
+        [flightId]
+      );
+      
+      const bookingCount = (rows as any)[0].count;
       if (bookingCount > 0) {
-        throw new Error('Cannot delete flight with existing bookings');
+        throw new Error('Cannot delete flight with existing active bookings');
       }
 
       return await this.delete(flightId, 'flight_id');

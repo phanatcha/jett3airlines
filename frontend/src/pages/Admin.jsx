@@ -419,6 +419,63 @@ const Admin = () => {
     navigate('/admin/edit-booking', { state: { booking: selectedBooking } });
   };
 
+  const handleDeleteFlight = async (flightId) => {
+    if (!window.confirm('Are you sure you want to delete this flight? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/v1/admin/flights/${flightId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Flight deleted successfully!');
+        await fetchFlights();
+      } else {
+        alert(`Failed to delete flight: ${result.error?.message || result.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting flight:', error);
+      alert('Failed to delete flight. Please try again.');
+    }
+  };
+
+  const handleDeleteBooking = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to cancel this booking? This will change its status to Cancelled.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/v1/admin/bookings/${bookingId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Booking cancelled successfully!');
+        await fetchBookings();
+      } else {
+        const errorMsg = result.error?.message || result.message || 'Unknown error';
+        alert(`Failed to cancel booking: ${errorMsg}`);
+      }
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      alert(`Failed to cancel booking: ${error.message}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with Sky Background */}
@@ -655,7 +712,8 @@ const Admin = () => {
               <div className="bg-primary-500/50 rounded-3xl overflow-hidden shadow-xl">
                 {/* Table Header */}
                 <div className="bg-primary-500 px-8 py-4">
-                  <div className="grid grid-cols-7 gap-4 text-white font-semibold text-lg items-center">
+                  <div className="grid grid-cols-8 gap-4 text-white font-semibold text-lg items-center">
+                    <div></div>
                     <div>Actions</div>
                     <div>Flight no</div>
                     <div>Route</div>
@@ -671,8 +729,22 @@ const Admin = () => {
                   {flights.map((flight) => (
                     <div
                       key={flight.id}
-                      className="grid grid-cols-7 gap-4 px-8 py-4 text-black font-medium text-lg hover:bg-primary-500/30 transition-colors"
+                      className="grid grid-cols-8 gap-4 px-8 py-4 text-black font-medium text-lg hover:bg-primary-500/30 transition-colors"
                     >
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteFlight(flight.id);
+                          }}
+                          className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-md"
+                          title="Delete flight"
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 12H19" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                          </svg>
+                        </button>
+                      </div>
                       <div className="flex items-center">
                         <button
                           onClick={(e) => {
@@ -707,7 +779,8 @@ const Admin = () => {
             <div className="bg-primary-500/50 rounded-3xl overflow-hidden shadow-xl">
               {/* Table Header */}
               <div className="bg-primary-500 px-8 py-4">
-                <div className="grid grid-cols-6 gap-4 text-white font-semibold text-lg items-center">
+                <div className="grid grid-cols-7 gap-4 text-white font-semibold text-lg items-center">
+                  <div></div>
                   <div>Actions</div>
                   <div>Booking no</div>
                   <div>Flight no</div>
@@ -719,11 +792,35 @@ const Admin = () => {
 
               {/* Table Body */}
               <div className="divide-y divide-gray-300">
-                {bookings.map((booking) => (
+                {isLoadingBookings ? (
+                  <div className="px-8 py-12 text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+                    <p className="mt-4 text-gray-600 font-medium">Loading bookings...</p>
+                  </div>
+                ) : bookings.length === 0 ? (
+                  <div className="px-8 py-12 text-center">
+                    <p className="text-gray-600 font-medium text-lg">No bookings found</p>
+                  </div>
+                ) : (
+                  bookings.map((booking) => (
                   <div
                     key={booking.id}
-                    className="grid grid-cols-6 gap-4 px-8 py-4 text-black font-medium text-lg hover:bg-primary-500/30 transition-colors"
+                    className="grid grid-cols-7 gap-4 px-8 py-4 text-black font-medium text-lg hover:bg-primary-500/30 transition-colors"
                   >
+                    <div className="flex items-center justify-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteBooking(booking.id);
+                        }}
+                        className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-md"
+                        title="Delete booking"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M5 12H19" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                        </svg>
+                      </button>
+                    </div>
                     <div className="flex items-center">
                       <button
                         onClick={(e) => {
@@ -741,7 +838,8 @@ const Admin = () => {
                     <div>{booking.capacity}</div>
                     <div>{booking.status}</div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
