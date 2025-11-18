@@ -244,7 +244,7 @@ const Admin = () => {
       const type = reportView === 'table' ? 'metrics' : 'bookings';
       
       const response = await fetch(`${API_BASE_URL}/admin/reports/export/csv?type=${type}&days=30`, {
-        headers: { `Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       
       if (response.ok) {
@@ -273,7 +273,7 @@ const Admin = () => {
       const type = reportView === 'table' ? 'metrics' : 'chart';
       
       const response = await fetch(`${API_BASE_URL}/admin/reports/export/pdf?type=${type}&days=30`, {
-        headers: { `Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       
       if (response.ok) {
@@ -429,7 +429,7 @@ const Admin = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/admin/flights/${flightId}`, {
-        method: `DELETE',
+        method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -457,7 +457,7 @@ const Admin = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/admin/bookings/${bookingId}`, {
-        method: `DELETE',
+        method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -998,4 +998,3 @@ const Admin = () => {
 };
 
 export default Admin;
-
