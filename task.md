@@ -6,42 +6,43 @@
 - [x] **1.3** Store selected cabin class (Economy Saver/Standard/Plus) in booking context
 - [x] **1.4** Pass calculated fare price to checkout/payment page
 
-## Phase 2: Seat Filtering Logic
-- [ ] **2.1** Fetch seat data with class information from backend
-- [ ] **2.2** Filter seats based on selected fare class:
-  - Economy Saver → Only Economy seats
-  - Economy Standard → Only Economy seats  
-  - Economy Plus → Only Economy seats
-  - Premium Economy → Only Premium Economy seats
-  - Business → Only Business seats
-- [ ] **2.3** Mark non-selectable seats (different class) as disabled
+## Phase 2: Seat Filtering Logic ✅
+- [x] **2.1** Fetch seat data with class information from backend
+- [x] **2.2** Filter seats based on selected fare class:
+  - Economy Saver → Only Economy seats (exclude $600 Premium Economy)
+  - Economy Standard → Only Economy seats (exclude $600 Premium Economy)
+  - Economy Plus → Only Economy seats (exclude $600 Premium Economy)
+  - Premium Economy → Only Premium Economy seats ($600)
+  - Business → Only Business seats ($1200)
+- [x] **2.3** Mark non-selectable seats (different class) as disabled
 
-## Phase 3: Visual Indicators
-- [ ] **3.1** Add cross (X) icon/overlay on non-selectable seats
-- [ ] **3.2** Gray out or dim non-selectable seats
-- [ ] **3.3** Show tooltip explaining why seat is not selectable
-- [ ] **3.4** Update seat legend to show "Not Available for Your Fare"
+## Phase 3: Visual Indicators ✅
+- [x] **3.1** Add cross (X) icon/overlay on non-selectable seats
+- [x] **3.2** Gray out or dim non-selectable seats
+- [x] **3.3** Show tooltip explaining why seat is not selectable
+- [x] **3.4** Update seat legend to show "Not Available for Your Fare"
 
-## Phase 4: Pricing Display
-- [ ] **4.1** Display base fare price from Fare page on Seat page
-- [ ] **4.2** Show seat-specific upcharges (if any) for premium economy/business
-- [ ] **4.3** Calculate and display total price per passenger
-- [ ] **4.4** Update price dynamically when seat is selected
+## Phase 4: Pricing Display ✅
+- [x] **4.1** Display base fare price from Fare page on Seat page
+- [x] **4.2** Show seat-specific upcharges (if any) for premium economy/business
+- [x] **4.3** Calculate and display total price per passenger
+- [x] **4.4** Update price dynamically when seat is selected
 
-## Phase 5: Checkout Integration
-- [ ] **5.1** Pass final calculated price (fare + seat) to Payment page
-- [ ] **5.2** Display fare breakdown in checkout:
+## Phase 5: Checkout Integration ✅
+- [x] **5.1** Pass final calculated price (fare + seat) to Payment page
+- [x] **5.2** Display fare breakdown in checkout:
   - Base fare (from Fare page)
   - Seat selection fee (if applicable)
-  - Baggage fees
+  - Support service
+  - Fast track service
   - Taxes & fees
   - Total amount
-- [ ] **5.3** Ensure price consistency across all pages
+- [x] **5.3** Ensure price consistency across all pages
 
-## Phase 6: Backend Validation
-- [ ] **6.1** Validate seat class matches booked fare class on backend
-- [ ] **6.2** Return error if user tries to book incompatible seat
-- [ ] **6.3** Store fare class and pricing in booking record
+## Phase 6: Backend Validation ✅
+- [x] **6.1** Validate seat class matches booked fare class on backend
+- [x] **6.2** Return error if user tries to book incompatible seat
+- [x] **6.3** Store fare class and pricing in booking record
 
 ## Phase 7: Testing
 - [ ] **7.1** Test Economy Saver → only economy seats selectable

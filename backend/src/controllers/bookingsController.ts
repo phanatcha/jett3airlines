@@ -104,14 +104,18 @@ export class BookingsController {
         
         const incompatibleSeats = seats.filter(seat => {
           const seatClass = seat.class?.toUpperCase() || '';
+          const seatPrice = seat.price || 0;
           
           if (cabinClass === 'Business') {
             return !seatClass.includes('BUSINESS');
           } else if (cabinClass === 'Premium Economy') {
-            return !seatClass.includes('PREMIUM');
+            // Premium Economy fare - only allow Premium Economy seats ($600)
+            return !seatClass.includes('PREMIUM') && seatPrice !== 600;
           } else {
-            // Economy fare - only allow Economy seats
-            return !seatClass.includes('ECONOMY') || seatClass.includes('PREMIUM');
+            // Economy fare - only allow basic Economy seats (exclude Premium Economy $600 seats)
+            const isEconomy = seatClass.includes('ECONOMY') && !seatClass.includes('PREMIUM');
+            const isPremiumPrice = seatPrice >= 600;
+            return !isEconomy || isPremiumPrice;
           }
         });
 
