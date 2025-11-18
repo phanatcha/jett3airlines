@@ -59,19 +59,15 @@ const Payment = () => {
     };
 
     const calculateCostFromSeats = () => {
-      console.log('Payment - Calculating cost from seats...');
+      console.log('Payment - Calculating cost from fare package...');
       console.log('Selected Seats:', selectedSeats);
       console.log('Fare Options:', fareOptions);
       
-      let cost = 0;
+      // Start with fare package price (seat is included)
+      let cost = fareOptions.farePrice || 0;
+      console.log('Fare Package Price (includes seat):', cost);
     
-    if (selectedSeats && selectedSeats.length > 0) {
-      selectedSeats.forEach(seat => {
-        const seatPrice = seat.price || seat.seat_price || 0;
-        console.log(`Seat ${seat.seatId}: price = ${seatPrice}`);
-        cost += parseFloat(seatPrice) || 0;
-      });
-    }
+
 
     if (cost === 0 && selectedSeats && selectedSeats.length > 0) {
       cost = selectedSeats.length * 200;
@@ -582,19 +578,19 @@ const Payment = () => {
           <div className="border-t pt-4">
             <h3 className="text-xl font-bold mb-3">Price Summary</h3>
             
-            {/* Base Fare */}
+            {/* Fare Package (includes seat) */}
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-600">
-                Base Fare ({fareOptions.fareClass || 'Economy Saver'})
+                Fare Package ({fareOptions.fareClass || 'Economy Saver'})
               </span>
               <span className="font-semibold">${(fareOptions.farePrice || 0).toFixed(2)}</span>
             </div>
             
-            {/* Seat Selection */}
-            {fareOptions.totalSeatPrice > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Seat Selection</span>
-                <span className="font-semibold">${(fareOptions.totalSeatPrice || 0).toFixed(2)}</span>
+            {/* Seat included note */}
+            {selectedSeats && selectedSeats.length > 0 && (
+              <div className="flex justify-between text-sm mb-2 text-gray-500">
+                <span className="text-gray-500">• Seat selection included</span>
+                <span className="text-gray-500">$0.00</span>
               </div>
             )}
             

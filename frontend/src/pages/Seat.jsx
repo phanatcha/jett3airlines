@@ -309,11 +309,10 @@ const Seat = () => {
       return;
     }
 
-    let totalSeatPrice = 0;
+    // Store seat selections (seat IDs only, no price calculation)
     passengers.forEach((passenger, index) => {
       if (localSelectedSeats[index]) {
         const seatNo = localSelectedSeats[index];
-        const price = seatPricing[seatNo] || 200;
         const seatId = seatIdMapping[seatNo];
         
         if (!seatId) {
@@ -322,23 +321,22 @@ const Seat = () => {
           return;
         }
         
-        totalSeatPrice += price;
-        selectSeat(index, seatId, price);
+        // Store seat ID without price - fare package already includes seat
+        selectSeat(index, seatId, 0);
       }
     });
 
-    // Update fare options with total pricing
-    const totalPrice = (fareOptions.farePrice || 0) + totalSeatPrice;
+    // Total price is just the fare package price (already includes seat)
+    const totalPrice = fareOptions.farePrice || 0;
     updateFareOptions({
       ...fareOptions,
-      totalSeatPrice: totalSeatPrice,
+      totalSeatPrice: 0, // Seat is included in fare package
       totalPrice: totalPrice
     });
 
     console.log('=== SEAT SELECTION COMPLETE ===');
-    console.log('Base Fare Price:', fareOptions.farePrice);
-    console.log('Total Seat Price:', totalSeatPrice);
-    console.log('Grand Total:', totalPrice);
+    console.log('Fare Package Price (includes seat):', fareOptions.farePrice);
+    console.log('Total Price:', totalPrice);
     console.log('===============================');
 
     navigate("/payment");
@@ -447,8 +445,8 @@ const Seat = () => {
             </p>
             <p className="text-gray-600">Selected Seat</p>
             {currentSeat && (
-              <p className="text-lg font-semibold text-blue-900 mt-2">
-                ${seatPrice.toFixed(2)}
+              <p className="text-sm text-green-600 mt-2">
+                ✓ Included in fare package
               </p>
             )}
           </div>
@@ -457,19 +455,19 @@ const Seat = () => {
           <div className="mt-6 border-t pt-4 space-y-2">
             <p className="text-sm font-semibold text-gray-700">Price Summary (Per Passenger)</p>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Base Fare ({fareOptions.fareClass || 'Economy Saver'})</span>
+              <span className="text-gray-600">Fare Package ({fareOptions.fareClass || 'Economy Saver'})</span>
               <span className="font-semibold">${((fareOptions.farePrice || 0) / (passengers.length || 1)).toFixed(2)}</span>
             </div>
             {currentSeat && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Seat Selection</span>
-                <span className="font-semibold">${seatPrice.toFixed(2)}</span>
+              <div className="flex justify-between text-sm text-gray-500">
+                <span className="text-gray-500">• Seat {currentSeat}</span>
+                <span className="text-gray-500">Included</span>
               </div>
             )}
             <div className="flex justify-between text-sm pt-2 border-t">
-              <span className="font-semibold">Subtotal</span>
+              <span className="font-semibold">Total Per Passenger</span>
               <span className="font-bold text-blue-900">
-                ${(((fareOptions.farePrice || 0) / (passengers.length || 1)) + seatPrice).toFixed(2)}
+                ${((fareOptions.farePrice || 0) / (passengers.length || 1)).toFixed(2)}
               </span>
             </div>
           </div>
@@ -490,17 +488,17 @@ const Seat = () => {
               ))}
               <div className="border-t mt-2 pt-2 space-y-1">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">Total Base Fare ({passengers.length}x)</span>
+                  <span className="text-gray-600">Fare Package ({passengers.length}x passengers)</span>
                   <span className="font-semibold">${(fareOptions.farePrice || 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">Total Seat Price</span>
-                  <span className="font-semibold">${calculateTotalSeatPrice().toFixed(2)}</span>
+                <div className="flex justify-between items-center text-sm text-gray-500">
+                  <span className="text-gray-500">• Seats included in package</span>
+                  <span className="text-gray-500">$0.00</span>
                 </div>
                 <div className="flex justify-between items-center pt-1 border-t">
                   <span className="font-bold">Grand Total</span>
                   <span className="font-bold text-blue-900 text-lg">
-                    ${((fareOptions.farePrice || 0) + calculateTotalSeatPrice()).toFixed(2)}
+                    ${(fareOptions.farePrice || 0).toFixed(2)}
                   </span>
                 </div>
               </div>
