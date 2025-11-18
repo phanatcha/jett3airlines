@@ -384,7 +384,11 @@ const BookingDetails = () => {
             <div>
               <p className="text-sm text-gray-500">Total Amount</p>
               <p className="font-semibold text-lg">
-                ${totalCost ? totalCost.toFixed(2) : '0.00'}
+                ${(() => {
+                  if (!totalCost) return '0.00';
+                  const cost = typeof totalCost === 'string' ? parseFloat(totalCost) : totalCost;
+                  return isNaN(cost) ? '0.00' : cost.toFixed(2);
+                })()}
               </p>
             </div>
           </div>
