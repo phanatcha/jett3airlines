@@ -103,8 +103,7 @@ export const getAllBookings = async (req: Request, res: Response) => {
       params.push(parseInt(flightId));
     }
 
-    query += ' GROUP BY b.booking_id ORDER BY b.created_date DESC LIMIT ? OFFSET ?';
-    params.push(limit, offset);
+    query += ` GROUP BY b.booking_id ORDER BY b.created_date DESC LIMIT ${limit} OFFSET ${offset}`;
 
     const bookings = await bookingModel.query(query, params);
 
