@@ -1,6 +1,9 @@
 # Database Migration Instructions
 
-## Migration: Add Fare Columns to Booking Table
+## Migration: Add Fare Columns to Booking Table ✅ COMPLETED
+
+**Status**: Successfully applied on November 19, 2025
+**Database**: Railway MySQL (jett3_airline)
 
 ### What This Does
 Adds three new columns to the `booking` table to store fare package information:
