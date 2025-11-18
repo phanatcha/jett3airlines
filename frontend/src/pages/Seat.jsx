@@ -8,7 +8,7 @@ import { flightsAPI } from "../services/api";
 
 const Seat = () => {
   const navigate = useNavigate();
-  const { selectedFlights, passengers, selectedSeats, selectSeat, fareOptions } = useBooking();
+  const { selectedFlights, passengers, selectedSeats, selectSeat, fareOptions, updateFareOptions } = useBooking();
   
   const [seatMap, setSeatMap] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -292,6 +292,7 @@ const Seat = () => {
       return;
     }
 
+    let totalSeatPrice = 0;
     passengers.forEach((passenger, index) => {
       if (localSelectedSeats[index]) {
         const seatNo = localSelectedSeats[index];
@@ -304,9 +305,24 @@ const Seat = () => {
           return;
         }
         
+        totalSeatPrice += price;
         selectSeat(index, seatId, price);
       }
     });
+
+    // Update fare options with total pricing
+    const totalPrice = (fareOptions.farePrice || 0) + totalSeatPrice;
+    updateFareOptions({
+      ...fareOptions,
+      totalSeatPrice: totalSeatPrice,
+      totalPrice: totalPrice
+    });
+
+    console.log('=== SEAT SELECTION COMPLETE ===');
+    console.log('Base Fare Price:', fareOptions.farePrice);
+    console.log('Total Seat Price:', totalSeatPrice);
+    console.log('Grand Total:', totalPrice);
+    console.log('===============================');
 
     navigate("/payment");
   };
@@ -420,6 +436,27 @@ const Seat = () => {
             )}
           </div>
 
+          {/* Pricing breakdown */}
+          <div className="mt-6 border-t pt-4 space-y-2">
+            <p className="text-sm font-semibold text-gray-700">Price Summary (Per Passenger)</p>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Base Fare ({fareOptions.fareClass || 'Economy Saver'})</span>
+              <span className="font-semibold">${((fareOptions.farePrice || 0) / (passengers.length || 1)).toFixed(2)}</span>
+            </div>
+            {currentSeat && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Seat Selection</span>
+                <span className="font-semibold">${seatPrice.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm pt-2 border-t">
+              <span className="font-semibold">Subtotal</span>
+              <span className="font-bold text-blue-900">
+                ${(((fareOptions.farePrice || 0) / (passengers.length || 1)) + seatPrice).toFixed(2)}
+              </span>
+            </div>
+          </div>
+
           {/* All passengers' seats */}
           {passengers.length > 1 && (
             <div className="border-t pt-4">
@@ -434,10 +471,20 @@ const Seat = () => {
                   </span>
                 </div>
               ))}
-              <div className="border-t mt-2 pt-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">Total Seat Price:</span>
-                  <span className="font-bold text-blue-900">${calculateTotalSeatPrice().toFixed(2)}</span>
+              <div className="border-t mt-2 pt-2 space-y-1">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Total Base Fare ({passengers.length}x)</span>
+                  <span className="font-semibold">${(fareOptions.farePrice || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Total Seat Price</span>
+                  <span className="font-semibold">${calculateTotalSeatPrice().toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t">
+                  <span className="font-bold">Grand Total</span>
+                  <span className="font-bold text-blue-900 text-lg">
+                    ${((fareOptions.farePrice || 0) + calculateTotalSeatPrice()).toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>

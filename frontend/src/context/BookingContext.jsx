@@ -49,6 +49,8 @@ export const BookingProvider = ({ children }) => {
       fareClass: null,
       farePrice: 0,
       cabinClass: 'Economy',
+      totalSeatPrice: 0,
+      totalPrice: 0,
     })
   );
 
