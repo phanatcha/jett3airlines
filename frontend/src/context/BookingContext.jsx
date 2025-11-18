@@ -153,6 +153,7 @@ export const BookingProvider = ({ children }) => {
         fasttrack: fareOptions.fasttrack,
         fare_class: fareOptions.fareClass,
         cabin_class: fareOptions.cabinClass,
+        fare_price: fareOptions.totalPrice || fareOptions.farePrice,
         passengers: passengers.map((passenger, index) => {
           const seatData = selectedSeats.find((s) => s.passengerId === index);
           

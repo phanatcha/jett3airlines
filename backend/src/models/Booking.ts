@@ -122,12 +122,15 @@ export class BookingModel extends BaseModel {
           fasttrack: bookingData.fasttrack || 'no',
           status: BookingStatus.PENDING,
           client_id: clientId,
-          flight_id: bookingData.flight_id
+          flight_id: bookingData.flight_id,
+          fare_class: bookingData.fare_class,
+          cabin_class: bookingData.cabin_class,
+          fare_price: bookingData.fare_price
         };
 
         const bookingQuery = `
-          INSERT INTO booking (support, fasttrack, status, created_date, client_id, flight_id)
-          VALUES (?, ?, ?, NOW(), ?, ?)
+          INSERT INTO booking (support, fasttrack, status, created_date, client_id, flight_id, fare_class, cabin_class, fare_price)
+          VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?)
         `;
 
         const bookingResult = await connection.execute(bookingQuery, [
@@ -135,7 +138,10 @@ export class BookingModel extends BaseModel {
           bookingCreateData.fasttrack,
           bookingCreateData.status,
           bookingCreateData.client_id,
-          bookingCreateData.flight_id
+          bookingCreateData.flight_id,
+          bookingCreateData.fare_class,
+          bookingCreateData.cabin_class,
+          bookingCreateData.fare_price
         ]);
 
         const bookingId = (bookingResult as any)[0].insertId;
@@ -202,23 +208,25 @@ export class BookingModel extends BaseModel {
     try {
       const query = `
         SELECT 
-          SUM(s.price) as seat_cost,
+          b.fare_price,
           b.support,
-          b.fasttrack
-        FROM passenger p
+          b.fasttrack,
+          SUM(s.price) as seat_cost
+        FROM booking b
+        LEFT JOIN passenger p ON p.booking_id = b.booking_id
         LEFT JOIN seat s ON p.seat_id = s.seat_id
-        JOIN booking b ON p.booking_id = b.booking_id
-        WHERE p.booking_id = ?
-        GROUP BY b.booking_id, b.support, b.fasttrack
+        WHERE b.booking_id = ?
+        GROUP BY b.booking_id, b.fare_price, b.support, b.fasttrack
       `;
 
-      const result = await this.executeQuery<{ seat_cost: number; support: string; fasttrack: string }>(query, [bookingId]);
+      const result = await this.executeQuery<{ fare_price: number | null; seat_cost: number; support: string; fasttrack: string }>(query, [bookingId]);
       
       if (result.length === 0) {
         return 0;
       }
 
-      let totalCost = result[0]?.seat_cost || 0;
+      // Use fare_price if available (new bookings), otherwise fall back to seat prices (old bookings)
+      let totalCost = result[0]?.fare_price || result[0]?.seat_cost || 0;
       
       if (result[0]?.support === 'yes' || result[0]?.support === 'Yes') {
         totalCost += 50;
