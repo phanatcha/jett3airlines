@@ -21,7 +21,12 @@ const port = process.env.PORT || 8080;
 
 app.use(securityHeaders);
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:5174',
+    'https://jett3airlines-h9qjglnfk-patters-projects-d55ba5ab.vercel.app',
+    /^https:\/\/.*\.vercel\.app$/
+  ],
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
