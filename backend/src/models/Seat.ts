@@ -10,6 +10,20 @@ export class SeatModel extends BaseModel {
     return await super.findById<Seat>(seatId, 'seat_id');
   }
 
+  async getSeatsByIds(seatIds: number[]): Promise<Seat[]> {
+    try {
+      if (seatIds.length === 0) return [];
+      
+      const placeholders = seatIds.map(() => '?').join(',');
+      const query = `SELECT * FROM seat WHERE seat_id IN (${placeholders})`;
+      
+      return await this.executeQuery<Seat>(query, seatIds);
+    } catch (error) {
+      console.error('Error getting seats by IDs:', error);
+      throw error;
+    }
+  }
+
   async getSeatsByAirplane(airplaneId: number) {
     try {
       const query = `

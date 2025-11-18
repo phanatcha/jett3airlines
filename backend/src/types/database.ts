@@ -157,6 +157,8 @@ export interface BookingRequest {
   passengers: PassengerRequest[];
   support?: string;
   fasttrack?: string;
+  fare_class?: string;
+  cabin_class?: string;
 }
 
 export interface PassengerRequest {
