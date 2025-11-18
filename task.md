@@ -1,10 +1,10 @@
 # Task List: Fare-Based Seat Selection & Pricing
 
-## Phase 1: Data Flow & State Management
-- [ ] **1.1** Pass selected fare class from Fare page to Seat page via BookingContext
-- [ ] **1.2** Pass base price and fare multipliers from Fare page to Seat page
-- [ ] **1.3** Store selected cabin class (Economy Saver/Standard/Plus) in booking context
-- [ ] **1.4** Pass calculated fare price to checkout/payment page
+## Phase 1: Data Flow & State Management ✅
+- [x] **1.1** Pass selected fare class from Fare page to Seat page via BookingContext
+- [x] **1.2** Pass base price and fare multipliers from Fare page to Seat page
+- [x] **1.3** Store selected cabin class (Economy Saver/Standard/Plus) in booking context
+- [x] **1.4** Pass calculated fare price to checkout/payment page
 
 ## Phase 2: Seat Filtering Logic
 - [ ] **2.1** Fetch seat data with class information from backend
