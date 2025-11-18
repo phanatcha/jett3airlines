@@ -53,6 +53,10 @@ ROUND_TRIP_EXAMPLE.md
 ADMIN_*.md
 test-registration-flow.md
 
+# Presentation scripts
+BACKEND_PRESENTATION_SCRIPT.md
+BACKEND_QUICK_REFERENCE.md
+
 # Test and helper scripts
 *.ps1
 check-*.ps1

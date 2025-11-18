@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import GrayLogo from "../components/GrayLogo";
 
@@ -15,6 +15,16 @@ const SignUp = () => {
     agreeTerms: false,
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Check for any error from Info page redirect
+  useEffect(() => {
+    const storedError = sessionStorage.getItem('signupError');
+    if (storedError) {
+      setError(storedError);
+      sessionStorage.removeItem('signupError');
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { id, value, type, checked } = e.target;
@@ -25,7 +35,7 @@ const SignUp = () => {
     setError("");
   };
 
-const handleSubmit = (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   setError("");
 
@@ -82,6 +92,42 @@ const handleSubmit = (e) => {
   if (normalizedData.password !== normalizedData.confirmPassword) {
     setError("Passwords do not match.");
     return;
+  }
+
+  // Check if username or email already exists before proceeding
+  setLoading(true);
+  try {
+    const response = await fetch('http://localhost:8080/api/v1/auth/check-availability', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: normalizedData.username,
+        email: normalizedData.email,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      if (result.error?.code === 'USERNAME_EXISTS') {
+        setError("Username already exists. Please choose a different username.");
+        return;
+      }
+      if (result.error?.code === 'EMAIL_EXISTS') {
+        setError("Email already exists. Please use a different email address.");
+        return;
+      }
+      setError(result.error?.message || "Unable to verify account details. Please try again.");
+      return;
+    }
+  } catch (err) {
+    console.error('Availability check error:', err);
+    setError("Unable to verify account details. Please check your connection and try again.");
+    return;
+  } finally {
+    setLoading(false);
   }
 
   sessionStorage.setItem('signupBasicInfo', JSON.stringify({
@@ -186,9 +232,10 @@ const handleSubmit = (e) => {
           <div className="w-full">
             <button
                 type="submit"
-                className="block w-full text-center bg-primary-500 text-white py-3 rounded-md font-medium hover:bg-primary-300 transition"
+                disabled={loading}
+                className="block w-full text-center bg-primary-500 text-white py-3 rounded-md font-medium hover:bg-primary-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                Continue
+                {loading ? "Checking..." : "Continue"}
             </button>
           </div>
 

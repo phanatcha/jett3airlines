@@ -100,6 +100,13 @@ const handleSubmit = async (e) => {
     navigate("/signup-success");
   } else {
     if (result.error) {
+      // Handle username/email errors by redirecting back to signup
+      if (result.error.code === 'USERNAME_EXISTS' || result.error.code === 'EMAIL_EXISTS') {
+        sessionStorage.setItem('signupError', result.error.message);
+        navigate('/signup');
+        return;
+      }
+      
       if (typeof result.error === 'object' && result.error.details) {
         const errorMessages = result.error.details.map(detail => 
           `${detail.field}: ${detail.message}`

@@ -10,6 +10,55 @@ export class AuthController {
     this.clientModel = new ClientModel();
   }
 
+  checkAvailability = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { username, email } = req.body;
+
+      if (username) {
+        const existingUsername = await this.clientModel.usernameExists(username);
+        if (existingUsername) {
+          res.status(409).json({
+            success: false,
+            error: {
+              code: 'USERNAME_EXISTS',
+              message: 'Username already exists'
+            }
+          });
+          return;
+        }
+      }
+
+      if (email) {
+        const existingEmail = await this.clientModel.emailExists(email);
+        if (existingEmail) {
+          res.status(409).json({
+            success: false,
+            error: {
+              code: 'EMAIL_EXISTS',
+              message: 'Email already exists'
+            }
+          });
+          return;
+        }
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Username and email are available'
+      });
+
+    } catch (error) {
+      console.error('Check availability error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Internal server error while checking availability'
+        }
+      });
+    }
+  };
+
   register = async (req: Request, res: Response): Promise<void> => {
     try {
       const registrationData: ClientRegistrationRequest = req.body;
