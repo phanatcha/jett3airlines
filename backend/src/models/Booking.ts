@@ -79,12 +79,10 @@ export class BookingModel extends BaseModel {
       const params = [clientId];
 
       if (limit) {
-        query += ' LIMIT ?';
-        params.push(limit);
+        query += ` LIMIT ${parseInt(limit.toString())}`;
         
         if (offset) {
-          query += ' OFFSET ?';
-          params.push(offset);
+          query += ` OFFSET ${parseInt(offset.toString())}`;
         }
       }
 
