@@ -21,10 +21,30 @@ const BookingDetails = () => {
   }, [isAuthenticated, navigate, bookingId]);
 
   useEffect(() => {
-    if (isAuthenticated() && bookingId) {
-      fetchBookingDetails();
-    }
-  }, [bookingId]);
+    const loadBookingDetails = async () => {
+      if (isAuthenticated() && bookingId) {
+        try {
+          setIsLoading(true);
+          setError(null);
+
+          const response = await bookingsAPI.getById(bookingId);
+
+          if (response.success) {
+            setBookingData(response.data);
+          } else {
+            setError(response.error?.message || 'Failed to load booking details');
+          }
+        } catch (err) {
+          console.error('Error fetching booking details:', err);
+          setError(err.message || 'Failed to load booking details');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadBookingDetails();
+  }, [bookingId, isAuthenticated]);
 
   const fetchBookingDetails = async () => {
     try {
