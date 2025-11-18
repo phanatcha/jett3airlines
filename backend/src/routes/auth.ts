@@ -17,6 +17,8 @@ router.use(authRateLimit);
 
 router.use(sanitizeInput);
 
+router.post('/check-availability', authController.checkAvailability);
+
 router.post('/register', validateRegistration, authController.register);
 
 router.post('/login', validateLogin, authController.login);
