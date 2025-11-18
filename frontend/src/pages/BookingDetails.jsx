@@ -16,9 +16,15 @@ const BookingDetails = () => {
 
   useEffect(() => {
     const loadBookingDetails = async () => {
+      console.log('=== BookingDetails Loading ===');
+      console.log('Booking ID:', bookingId);
+      
       // Check if user is authenticated
       const token = localStorage.getItem('token');
+      console.log('Token exists:', !!token);
+      
       if (!token) {
+        console.log('No token, redirecting to login');
         navigate('/login', { state: { from: `/booking-details/${bookingId}` } });
         return;
       }
@@ -28,27 +34,40 @@ const BookingDetails = () => {
           setIsLoading(true);
           setError(null);
 
+          console.log('Fetching booking details from API...');
           const response = await bookingsAPI.getById(bookingId);
+          console.log('API Response:', response);
 
           if (response.success) {
+            console.log('Booking data received:', response.data);
             setBookingData(response.data);
           } else {
+            console.error('API returned error:', response.error);
             setError(response.error?.message || 'Failed to load booking details');
           }
         } catch (err) {
-          console.error('Error fetching booking details:', err);
+          console.error('=== Error fetching booking details ===');
+          console.error('Error object:', err);
+          console.error('Error response:', err.response);
+          console.error('Error message:', err.message);
           
           // If 401 error, redirect to login
           if (err.response?.status === 401) {
+            console.log('401 error, removing token and redirecting');
             localStorage.removeItem('token');
             navigate('/login', { state: { from: `/booking-details/${bookingId}` } });
             return;
           }
           
-          setError(err.message || 'Failed to load booking details');
+          setError(err.response?.data?.error?.message || err.message || 'Failed to load booking details');
         } finally {
           setIsLoading(false);
+          console.log('=== BookingDetails Loading Complete ===');
         }
+      } else {
+        console.log('No booking ID provided');
+        setIsLoading(false);
+        setError('No booking ID provided');
       }
     };
 
