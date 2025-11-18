@@ -8,7 +8,7 @@ import { flightsAPI } from "../services/api";
 
 const Seat = () => {
   const navigate = useNavigate();
-  const { selectedFlights, passengers, selectedSeats, selectSeat } = useBooking();
+  const { selectedFlights, passengers, selectedSeats, selectSeat, fareOptions } = useBooking();
   
   const [seatMap, setSeatMap] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +17,41 @@ const Seat = () => {
   const [seatPricing, setSeatPricing] = useState({});
   const [seatIdMapping, setSeatIdMapping] = useState({});
   const [localSelectedSeats, setLocalSelectedSeats] = useState({});
+
+  // Determine allowed seat classes based on fare selection
+  const getAllowedSeatClasses = () => {
+    const cabinClass = fareOptions.cabinClass || 'Economy';
+    
+    console.log('=== SEAT FILTERING DEBUG ===');
+    console.log('Fare Options:', fareOptions);
+    console.log('Cabin Class:', cabinClass);
+    
+    if (cabinClass === 'Business') {
+      console.log('Allowed: Business seats only');
+      return ['Business', 'BUSINESS'];
+    }
+    if (cabinClass === 'Premium Economy') {
+      console.log('Allowed: Premium Economy seats only');
+      return ['Premium Economy', 'PREMIUM_ECONOMY', 'Premium_Economy'];
+    }
+    // Economy Saver, Standard, Plus all get Economy seats
+    console.log('Allowed: Economy seats only');
+    return ['Economy', 'ECONOMY'];
+  };
+
+  const allowedSeatClasses = getAllowedSeatClasses();
+
+  // Check if a seat is selectable based on fare class
+  const isSeatSelectable = (seat) => {
+    if (!seat || seat.isBooked) return false;
+    
+    const seatClass = seat.class?.toUpperCase() || '';
+    const isAllowed = allowedSeatClasses.some(allowed => 
+      seatClass.includes(allowed.toUpperCase())
+    );
+    
+    return isAllowed;
+  };
 
   useEffect(() => {
     const fetchSeats = async () => {
@@ -162,9 +197,17 @@ const Seat = () => {
     return rows;
   };
 
-  const handleSeatClick = (seatId, isBooked) => {
+  const handleSeatClick = (seat, isBooked) => {
     if (isBooked) return;
 
+    // Check if seat is selectable based on fare class
+    if (!isSeatSelectable(seat)) {
+      const cabinClass = fareOptions.cabinClass || 'Economy';
+      alert(`This seat is not available for your fare class (${cabinClass}). Please select a seat from your cabin class.`);
+      return;
+    }
+
+    const seatId = seat.id;
     const isSelectedByOther = Object.entries(localSelectedSeats).some(
       ([passengerId, selectedSeatId]) => 
         parseInt(passengerId) !== currentPassengerIndex && selectedSeatId === seatId
@@ -189,10 +232,15 @@ const Seat = () => {
   const getSeatClass = (seat) => {
     if (!seat) return "w-8 h-8 mx-1";
 
-    const baseClass = "w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold cursor-pointer m-0.5 transition-colors";
+    const baseClass = "w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold cursor-pointer m-0.5 transition-colors relative";
 
     if (seat.isBooked) {
       return `${baseClass} bg-gray-400 text-gray-700 cursor-not-allowed`;
+    }
+
+    // Check if seat is not selectable due to fare class
+    if (!isSeatSelectable(seat)) {
+      return `${baseClass} bg-gray-300 text-gray-500 cursor-not-allowed opacity-60`;
     }
     
     if (localSelectedSeats[currentPassengerIndex] === seat.id) {
@@ -209,6 +257,22 @@ const Seat = () => {
     }
     
     return `${baseClass} bg-blue-300 text-gray-800 hover:bg-blue-400`;
+  };
+
+  const renderSeatContent = (seat) => {
+    if (!seat) return null;
+    
+    // Show X for non-selectable seats
+    if (!seat.isBooked && !isSeatSelectable(seat)) {
+      return (
+        <div className="relative w-full h-full flex items-center justify-center">
+          <span className="text-gray-500 text-xs">{seat.number.slice(-1)}</span>
+          <span className="absolute text-red-500 font-bold text-lg">×</span>
+        </div>
+      );
+    }
+    
+    return seat.number.slice(-1);
   };
 
   const getRowNumber = (rowIndex) => rowIndex + 1;
@@ -385,6 +449,12 @@ const Seat = () => {
                 <span className="text-sm">Other Passenger</span>
               </div>
             )}
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-gray-300 rounded relative flex items-center justify-center">
+                <span className="text-red-500 font-bold text-xs">×</span>
+              </div>
+              <span className="text-sm">Not Available for Your Fare</span>
+            </div>
           </div>
 
           {/* Navigation buttons */}
@@ -450,9 +520,9 @@ const Seat = () => {
                         <div
                           key={seat.id}
                           className={getSeatClass(seat)}
-                          onClick={() => handleSeatClick(seat.id, seat.isBooked)}
+                          onClick={() => handleSeatClick(seat, seat.isBooked)}
                         >
-                          {seat.number.slice(-1)}
+                          {renderSeatContent(seat)}
                         </div>
                       );
                     })}
