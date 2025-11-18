@@ -64,8 +64,10 @@ const Payment = () => {
       console.log('Fare Options:', fareOptions);
       
       // Start with fare package price (seat is included)
-      let cost = fareOptions.farePrice || 0;
+      let cost = fareOptions.totalPrice || fareOptions.farePrice || 0;
       console.log('Fare Package Price (includes seat):', cost);
+      console.log('fareOptions.totalPrice:', fareOptions.totalPrice);
+      console.log('fareOptions.farePrice:', fareOptions.farePrice);
     
 
 
