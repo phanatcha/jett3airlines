@@ -144,7 +144,11 @@ const BookingDetails = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
+    if (!status || typeof status !== 'string') {
+      return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+    
+    switch (status.toLowerCase()) {
       case 'confirmed':
         return 'bg-green-100 text-green-800 border-green-300';
       case 'pending':
@@ -226,7 +230,7 @@ const BookingDetails = () => {
             <h1 className="text-3xl font-bold">Booking Details</h1>
           </div>
           <div className={`px-4 py-2 rounded-lg border-2 font-semibold ${getStatusColor(booking.status)}`}>
-            {booking.status?.toUpperCase()}
+            {booking.status ? booking.status.toUpperCase() : 'UNKNOWN'}
           </div>
         </div>
 
@@ -374,7 +378,7 @@ const BookingDetails = () => {
                 paymentStatus === 'refunded' ? 'text-blue-600' :
                 'text-gray-600'
               }`}>
-                {paymentStatus?.toUpperCase() || 'PENDING'}
+                {paymentStatus && typeof paymentStatus === 'string' ? paymentStatus.toUpperCase() : 'PENDING'}
               </p>
             </div>
             <div>
