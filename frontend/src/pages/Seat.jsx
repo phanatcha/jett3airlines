@@ -31,26 +31,43 @@ const Seat = () => {
       return ['Business', 'BUSINESS'];
     }
     if (cabinClass === 'Premium Economy') {
-      console.log('Allowed: Premium Economy seats only');
+      console.log('Allowed: Premium Economy seats only ($600)');
       return ['Premium Economy', 'PREMIUM_ECONOMY', 'Premium_Economy'];
     }
-    // Economy Saver, Standard, Plus all get Economy seats
-    console.log('Allowed: Economy seats only');
+    // Economy Saver, Standard, Plus all get basic Economy seats only (not Premium Economy)
+    console.log('Allowed: Economy seats only (excluding Premium Economy)');
     return ['Economy', 'ECONOMY'];
   };
 
   const allowedSeatClasses = getAllowedSeatClasses();
 
-  // Check if a seat is selectable based on fare class
+  // Check if a seat is selectable based on fare class and price
   const isSeatSelectable = (seat) => {
     if (!seat || seat.isBooked) return false;
     
     const seatClass = seat.class?.toUpperCase() || '';
-    const isAllowed = allowedSeatClasses.some(allowed => 
-      seatClass.includes(allowed.toUpperCase())
-    );
+    const seatPrice = seat.price || seatPricing[seat.id] || 0;
+    const cabinClass = fareOptions.cabinClass || 'Economy';
     
-    return isAllowed;
+    // Business fare - only Business class seats
+    if (cabinClass === 'Business') {
+      return seatClass.includes('BUSINESS');
+    }
+    
+    // Premium Economy fare - only Premium Economy seats ($600)
+    if (cabinClass === 'Premium Economy') {
+      return seatClass.includes('PREMIUM') || seatPrice === 600;
+    }
+    
+    // Economy fare - only basic Economy seats (exclude Premium Economy $600 seats)
+    // Economy seats should be lower price (not $600)
+    if (cabinClass === 'Economy') {
+      const isEconomy = seatClass.includes('ECONOMY') && !seatClass.includes('PREMIUM');
+      const isPremiumPrice = seatPrice >= 600;
+      return isEconomy && !isPremiumPrice;
+    }
+    
+    return false;
   };
 
   useEffect(() => {
