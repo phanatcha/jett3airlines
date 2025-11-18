@@ -240,7 +240,7 @@ const Seat = () => {
 
     // Check if seat is not selectable due to fare class
     if (!isSeatSelectable(seat)) {
-      return `${baseClass} bg-gray-300 text-gray-500 cursor-not-allowed opacity-60`;
+      return `${baseClass} bg-gray-200 text-gray-400 cursor-not-allowed opacity-50 border border-gray-300`;
     }
     
     if (localSelectedSeats[currentPassengerIndex] === seat.id) {
@@ -265,9 +265,16 @@ const Seat = () => {
     // Show X for non-selectable seats
     if (!seat.isBooked && !isSeatSelectable(seat)) {
       return (
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative w-full h-full flex items-center justify-center group">
           <span className="text-gray-500 text-xs">{seat.number.slice(-1)}</span>
-          <span className="absolute text-red-500 font-bold text-lg">×</span>
+          <span className="absolute text-red-600 font-bold text-lg leading-none">×</span>
+          {/* Tooltip */}
+          <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-max">
+            <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+              Not available for {fareOptions.cabinClass || 'Economy'} fare
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+            </div>
+          </div>
         </div>
       );
     }
@@ -391,6 +398,13 @@ const Seat = () => {
             </h2>
             <p className="text-gray-600 mt-1">
               {selectedFlights.departure?.flight_no || 'Flight'}, {selectedFlights.departure?.class || 'Economy'}
+            </p>
+            {/* Fare class indicator */}
+            <div className="mt-3 inline-block bg-blue-100 text-blue-900 px-3 py-1 rounded-full text-sm font-semibold">
+              {fareOptions.fareClass || 'Economy Saver'} • {fareOptions.cabinClass || 'Economy'} Class
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Only {fareOptions.cabinClass || 'Economy'} seats are available for your fare
             </p>
           </div>
 
@@ -519,8 +533,15 @@ const Seat = () => {
                       return (
                         <div
                           key={seat.id}
-                          className={getSeatClass(seat)}
+                          className={`${getSeatClass(seat)} group`}
                           onClick={() => handleSeatClick(seat, seat.isBooked)}
+                          title={
+                            seat.isBooked 
+                              ? 'Seat already booked' 
+                              : !isSeatSelectable(seat)
+                              ? `Not available for ${fareOptions.cabinClass || 'Economy'} fare`
+                              : `${seat.class} - $${seat.price || seatPricing[seat.id] || 0}`
+                          }
                         >
                           {renderSeatContent(seat)}
                         </div>
