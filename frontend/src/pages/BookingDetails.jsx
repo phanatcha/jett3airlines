@@ -15,14 +15,15 @@ const BookingDetails = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate('/login', { state: { from: `/booking-details/${bookingId}` } });
-    }
-  }, [isAuthenticated, navigate, bookingId]);
-
-  useEffect(() => {
     const loadBookingDetails = async () => {
-      if (isAuthenticated() && bookingId) {
+      // Check if user is authenticated
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login', { state: { from: `/booking-details/${bookingId}` } });
+        return;
+      }
+
+      if (bookingId) {
         try {
           setIsLoading(true);
           setError(null);
@@ -36,6 +37,14 @@ const BookingDetails = () => {
           }
         } catch (err) {
           console.error('Error fetching booking details:', err);
+          
+          // If 401 error, redirect to login
+          if (err.response?.status === 401) {
+            localStorage.removeItem('token');
+            navigate('/login', { state: { from: `/booking-details/${bookingId}` } });
+            return;
+          }
+          
           setError(err.message || 'Failed to load booking details');
         } finally {
           setIsLoading(false);
@@ -44,7 +53,7 @@ const BookingDetails = () => {
     };
 
     loadBookingDetails();
-  }, [bookingId, isAuthenticated]);
+  }, [bookingId, navigate]);
 
   const fetchBookingDetails = async () => {
     try {
