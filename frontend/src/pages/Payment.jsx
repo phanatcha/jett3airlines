@@ -580,18 +580,51 @@ const Payment = () => {
 
           {/* Price Summary */}
           <div className="border-t pt-4">
-            <h3 className="text-xl font-bold mb-2">Price Summary</h3>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Base Fare</span>
-              <span>${totalCost.toFixed(2)}</span>
+            <h3 className="text-xl font-bold mb-3">Price Summary</h3>
+            
+            {/* Base Fare */}
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-600">
+                Base Fare ({fareOptions.fareClass || 'Economy Saver'})
+              </span>
+              <span className="font-semibold">${(fareOptions.farePrice || 0).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Total Taxes</span>
-              <span>$0.00</span>
+            
+            {/* Seat Selection */}
+            {fareOptions.totalSeatPrice > 0 && (
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600">Seat Selection</span>
+                <span className="font-semibold">${(fareOptions.totalSeatPrice || 0).toFixed(2)}</span>
+              </div>
+            )}
+            
+            {/* Additional Services */}
+            {(fareOptions.support === 'yes' || fareOptions.support === 'Yes') && (
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600">Support Service</span>
+                <span className="font-semibold">$50.00</span>
+              </div>
+            )}
+            
+            {(fareOptions.fasttrack === 'yes' || fareOptions.fasttrack === 'Yes') && (
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600">Fast Track</span>
+                <span className="font-semibold">$30.00</span>
+              </div>
+            )}
+            
+            {/* Taxes */}
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-600">Taxes & Fees</span>
+              <span className="font-semibold">$0.00</span>
             </div>
-            <div className="flex justify-between font-semibold mt-2 text-lg">
-              <span>Total</span>
-              <span>${totalCost.toFixed(2)}</span>
+            
+            {/* Total */}
+            <div className="border-t mt-3 pt-3">
+              <div className="flex justify-between font-bold text-lg">
+                <span>Total Amount</span>
+                <span className="text-blue-900">${totalCost.toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>
