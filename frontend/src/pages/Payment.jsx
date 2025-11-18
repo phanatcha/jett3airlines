@@ -581,7 +581,7 @@ const Payment = () => {
             {/* Fare Package (includes seat) */}
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-600">
-                Fare Package ({fareOptions.fareClass || 'Economy Saver'})
+                {fareOptions.fareClass || 'Economy Saver'} Fare ({selectedSeats?.length || 0} passenger{selectedSeats?.length !== 1 ? 's' : ''})
               </span>
               <span className="font-semibold">${(fareOptions.farePrice || 0).toFixed(2)}</span>
             </div>
@@ -589,8 +589,8 @@ const Payment = () => {
             {/* Seat included note */}
             {selectedSeats && selectedSeats.length > 0 && (
               <div className="flex justify-between text-sm mb-2 text-gray-500">
-                <span className="text-gray-500">• Seat selection included</span>
-                <span className="text-gray-500">$0.00</span>
+                <span className="text-gray-500 text-xs">• Seat selection included in fare</span>
+                <span className="text-gray-500">—</span>
               </div>
             )}
             

@@ -455,13 +455,13 @@ const Seat = () => {
           <div className="mt-6 border-t pt-4 space-y-2">
             <p className="text-sm font-semibold text-gray-700">Price Summary (Per Passenger)</p>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Fare Package ({fareOptions.fareClass || 'Economy Saver'})</span>
+              <span className="text-gray-600">{fareOptions.fareClass || 'Economy Saver'} Fare</span>
               <span className="font-semibold">${((fareOptions.farePrice || 0) / (passengers.length || 1)).toFixed(2)}</span>
             </div>
             {currentSeat && (
               <div className="flex justify-between text-sm text-gray-500">
-                <span className="text-gray-500">• Seat {currentSeat}</span>
-                <span className="text-gray-500">Included</span>
+                <span className="text-gray-500">• Includes seat {currentSeat}</span>
+                <span className="text-gray-500">—</span>
               </div>
             )}
             <div className="flex justify-between text-sm pt-2 border-t">
