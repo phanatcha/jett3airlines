@@ -35,11 +35,22 @@ const Fare = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    const selectedFareData = fares.find(f => f.name === selectedFare);
+    const farePrice = parseFloat(selectedFareData?.price || 0);
+    
     updateFareOptions({
       fareClass: selectedFare,
+      farePrice: farePrice,
+      cabinClass: cabinClass,
       support: 'no',
       fasttrack: 'no',
     });
+
+    console.log('=== FARE SELECTION ===');
+    console.log('Selected Fare:', selectedFare);
+    console.log('Fare Price:', farePrice);
+    console.log('Cabin Class:', cabinClass);
+    console.log('=====================');
 
     navigate("/passenger-info");
   };

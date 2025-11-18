@@ -46,6 +46,9 @@ export const BookingProvider = ({ children }) => {
     getInitialState('fareOptions', {
       support: 'no',
       fasttrack: 'no',
+      fareClass: null,
+      farePrice: 0,
+      cabinClass: 'Economy',
     })
   );
 
