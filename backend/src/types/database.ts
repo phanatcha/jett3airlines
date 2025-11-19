@@ -42,6 +42,9 @@ export interface Booking {
   client_id: number;
   flight_id: number;
   booking_no?: string;
+  fare_class?: string;
+  cabin_class?: string;
+  fare_price?: number;
 }
 
 export interface Passenger {
@@ -157,6 +160,9 @@ export interface BookingRequest {
   passengers: PassengerRequest[];
   support?: string;
   fasttrack?: string;
+  fare_class?: string;
+  cabin_class?: string;
+  fare_price?: number;
 }
 
 export interface PassengerRequest {

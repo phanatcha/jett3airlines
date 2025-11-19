@@ -4,6 +4,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { adminAPI } from '../services/api';
 import CountryAirportSelector from '../components/CountryAirportSelector';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+
 const Admin = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('flights');
@@ -49,7 +51,7 @@ const Admin = () => {
     try {
       setIsLoadingFlights(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/v1/admin/flights?limit=1000', {
+      const response = await fetch(`${API_BASE_URL}/admin/flights?limit=1000`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -97,7 +99,7 @@ const Admin = () => {
   const fetchAirports = async () => {
     try {
       setIsLoadingAirports(true);
-      const response = await fetch('http://localhost:8080/api/v1/airports');
+      const response = await fetch(`${API_BASE_URL}/airports`);
       const result = await response.json();
       
       if (result.success && result.data) {
@@ -114,7 +116,7 @@ const Admin = () => {
     try {
       setIsLoadingAirplanes(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/v1/admin/airplanes', {
+      const response = await fetch(`${API_BASE_URL}/admin/airplanes`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -136,7 +138,7 @@ const Admin = () => {
     try {
       setIsLoadingBookings(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/v1/admin/bookings', {
+      const response = await fetch(`${API_BASE_URL}/admin/bookings`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -181,7 +183,7 @@ const Admin = () => {
       setIsLoadingReports(true);
       const token = localStorage.getItem('token');
       
-      const metricsResponse = await fetch('http://localhost:8080/api/v1/admin/reports/metrics', {
+      const metricsResponse = await fetch(`${API_BASE_URL}/admin/reports/metrics`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const metricsData = await metricsResponse.json();
@@ -211,7 +213,7 @@ const Admin = () => {
         ]);
       }
       
-      const bookingsResponse = await fetch('http://localhost:8080/api/v1/admin/reports/bookings-per-day?days=7', {
+      const bookingsResponse = await fetch(`${API_BASE_URL}/admin/reports/bookings-per-day?days=7`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const bookingsData = await bookingsResponse.json();
@@ -241,7 +243,7 @@ const Admin = () => {
       const token = localStorage.getItem('token');
       const type = reportView === 'table' ? 'metrics' : 'bookings';
       
-      const response = await fetch(`http://localhost:8080/api/v1/admin/reports/export/csv?type=${type}&days=30`, {
+      const response = await fetch(`${API_BASE_URL}/admin/reports/export/csv?type=${type}&days=30`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -270,7 +272,7 @@ const Admin = () => {
       const token = localStorage.getItem('token');
       const type = reportView === 'table' ? 'metrics' : 'chart';
       
-      const response = await fetch(`http://localhost:8080/api/v1/admin/reports/export/pdf?type=${type}&days=30`, {
+      const response = await fetch(`${API_BASE_URL}/admin/reports/export/pdf?type=${type}&days=30`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -426,7 +428,7 @@ const Admin = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/v1/admin/flights/${flightId}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/flights/${flightId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -454,7 +456,7 @@ const Admin = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/v1/admin/bookings/${bookingId}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/bookings/${bookingId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

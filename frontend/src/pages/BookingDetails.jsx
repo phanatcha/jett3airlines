@@ -15,16 +15,64 @@ const BookingDetails = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate('/login', { state: { from: `/booking-details/${bookingId}` } });
-    }
-  }, [isAuthenticated, navigate, bookingId]);
+    const loadBookingDetails = async () => {
+      console.log('=== BookingDetails Loading ===');
+      console.log('Booking ID:', bookingId);
+      
+      // Check if user is authenticated
+      const token = localStorage.getItem('token');
+      console.log('Token exists:', !!token);
+      
+      if (!token) {
+        console.log('No token, redirecting to login');
+        navigate('/login', { state: { from: `/booking-details/${bookingId}` } });
+        return;
+      }
 
-  useEffect(() => {
-    if (isAuthenticated() && bookingId) {
-      fetchBookingDetails();
-    }
-  }, [bookingId]);
+      if (bookingId) {
+        try {
+          setIsLoading(true);
+          setError(null);
+
+          console.log('Fetching booking details from API...');
+          const response = await bookingsAPI.getById(bookingId);
+          console.log('API Response:', response);
+
+          if (response.success) {
+            console.log('Booking data received:', response.data);
+            setBookingData(response.data);
+          } else {
+            console.error('API returned error:', response.error);
+            setError(response.error?.message || 'Failed to load booking details');
+          }
+        } catch (err) {
+          console.error('=== Error fetching booking details ===');
+          console.error('Error object:', err);
+          console.error('Error response:', err.response);
+          console.error('Error message:', err.message);
+          
+          // If 401 error, redirect to login
+          if (err.response?.status === 401) {
+            console.log('401 error, removing token and redirecting');
+            localStorage.removeItem('token');
+            navigate('/login', { state: { from: `/booking-details/${bookingId}` } });
+            return;
+          }
+          
+          setError(err.response?.data?.error?.message || err.message || 'Failed to load booking details');
+        } finally {
+          setIsLoading(false);
+          console.log('=== BookingDetails Loading Complete ===');
+        }
+      } else {
+        console.log('No booking ID provided');
+        setIsLoading(false);
+        setError('No booking ID provided');
+      }
+    };
+
+    loadBookingDetails();
+  }, [bookingId, navigate]);
 
   const fetchBookingDetails = async () => {
     try {
@@ -96,7 +144,11 @@ const BookingDetails = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
+    if (!status || typeof status !== 'string') {
+      return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+    
+    switch (status.toLowerCase()) {
       case 'confirmed':
         return 'bg-green-100 text-green-800 border-green-300';
       case 'pending':
@@ -178,7 +230,7 @@ const BookingDetails = () => {
             <h1 className="text-3xl font-bold">Booking Details</h1>
           </div>
           <div className={`px-4 py-2 rounded-lg border-2 font-semibold ${getStatusColor(booking.status)}`}>
-            {booking.status?.toUpperCase()}
+            {booking.status ? booking.status.toUpperCase() : 'UNKNOWN'}
           </div>
         </div>
 
@@ -326,13 +378,17 @@ const BookingDetails = () => {
                 paymentStatus === 'refunded' ? 'text-blue-600' :
                 'text-gray-600'
               }`}>
-                {paymentStatus?.toUpperCase() || 'PENDING'}
+                {paymentStatus && typeof paymentStatus === 'string' ? paymentStatus.toUpperCase() : 'PENDING'}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Total Amount</p>
               <p className="font-semibold text-lg">
-                ${totalCost ? totalCost.toFixed(2) : '0.00'}
+                ${(() => {
+                  if (!totalCost) return '0.00';
+                  const cost = typeof totalCost === 'string' ? parseFloat(totalCost) : totalCost;
+                  return isNaN(cost) ? '0.00' : cost.toFixed(2);
+                })()}
               </p>
             </div>
           </div>

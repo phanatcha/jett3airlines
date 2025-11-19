@@ -59,19 +59,17 @@ const Payment = () => {
     };
 
     const calculateCostFromSeats = () => {
-      console.log('Payment - Calculating cost from seats...');
+      console.log('Payment - Calculating cost from fare package...');
       console.log('Selected Seats:', selectedSeats);
       console.log('Fare Options:', fareOptions);
       
-      let cost = 0;
+      // Start with fare package price (seat is included)
+      let cost = fareOptions.totalPrice || fareOptions.farePrice || 0;
+      console.log('Fare Package Price (includes seat):', cost);
+      console.log('fareOptions.totalPrice:', fareOptions.totalPrice);
+      console.log('fareOptions.farePrice:', fareOptions.farePrice);
     
-    if (selectedSeats && selectedSeats.length > 0) {
-      selectedSeats.forEach(seat => {
-        const seatPrice = seat.price || seat.seat_price || 0;
-        console.log(`Seat ${seat.seatId}: price = ${seatPrice}`);
-        cost += parseFloat(seatPrice) || 0;
-      });
-    }
+
 
     if (cost === 0 && selectedSeats && selectedSeats.length > 0) {
       cost = selectedSeats.length * 200;
@@ -580,18 +578,51 @@ const Payment = () => {
 
           {/* Price Summary */}
           <div className="border-t pt-4">
-            <h3 className="text-xl font-bold mb-2">Price Summary</h3>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Base Fare</span>
-              <span>${totalCost.toFixed(2)}</span>
+            <h3 className="text-xl font-bold mb-3">Price Summary</h3>
+            
+            {/* Fare Package (includes seat) */}
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-600">
+                {fareOptions.fareClass || 'Economy Saver'} Fare ({selectedSeats?.length || 0} passenger{selectedSeats?.length !== 1 ? 's' : ''})
+              </span>
+              <span className="font-semibold">${(fareOptions.farePrice || 0).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Total Taxes</span>
-              <span>$0.00</span>
+            
+            {/* Seat included note */}
+            {selectedSeats && selectedSeats.length > 0 && (
+              <div className="flex justify-between text-sm mb-2 text-gray-500">
+                <span className="text-gray-500 text-xs">• Seat selection included in fare</span>
+                <span className="text-gray-500">—</span>
+              </div>
+            )}
+            
+            {/* Additional Services */}
+            {(fareOptions.support === 'yes' || fareOptions.support === 'Yes') && (
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600">Support Service</span>
+                <span className="font-semibold">$50.00</span>
+              </div>
+            )}
+            
+            {(fareOptions.fasttrack === 'yes' || fareOptions.fasttrack === 'Yes') && (
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600">Fast Track</span>
+                <span className="font-semibold">$30.00</span>
+              </div>
+            )}
+            
+            {/* Taxes */}
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-600">Taxes & Fees</span>
+              <span className="font-semibold">$0.00</span>
             </div>
-            <div className="flex justify-between font-semibold mt-2 text-lg">
-              <span>Total</span>
-              <span>${totalCost.toFixed(2)}</span>
+            
+            {/* Total */}
+            <div className="border-t mt-3 pt-3">
+              <div className="flex justify-between font-bold text-lg">
+                <span>Total Amount</span>
+                <span className="text-blue-900">${totalCost.toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>

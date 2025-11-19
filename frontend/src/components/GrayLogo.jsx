@@ -21,7 +21,7 @@ const GrayLogo = () => {
       }}
     >
       <img
-        src="jett3airlines-gray-logo.svg"
+        src="/jett3airlines-gray-logo.svg"
         alt="Jett3Airlines logo"
         className="w-8 h-8 object-contain"
       />

@@ -97,6 +97,48 @@ export class BookingsController {
         return;
       }
 
+      // Validate seat class matches fare class (if provided)
+      if (bookingData.fare_class || bookingData.cabin_class) {
+        const cabinClass = bookingData.cabin_class || 'Economy';
+        const seats = await seatModel.getSeatsByIds(seatIds);
+        
+        const incompatibleSeats = seats.filter(seat => {
+          const seatClass = seat.class?.toUpperCase() || '';
+          const seatPrice = seat.price || 0;
+          
+          if (cabinClass === 'Business') {
+            return !seatClass.includes('BUSINESS');
+          } else if (cabinClass === 'Premium Economy') {
+            // Premium Economy fare - only allow Premium Economy seats ($600)
+            return !seatClass.includes('PREMIUM') && seatPrice !== 600;
+          } else {
+            // Economy fare - only allow basic Economy seats (exclude Premium Economy $600 seats)
+            const isEconomy = seatClass.includes('ECONOMY') && !seatClass.includes('PREMIUM');
+            const isPremiumPrice = seatPrice >= 600;
+            return !isEconomy || isPremiumPrice;
+          }
+        });
+
+        if (incompatibleSeats.length > 0) {
+          res.status(400).json({
+            success: false,
+            error: {
+              code: 'SEAT_CLASS_MISMATCH',
+              message: `Selected seats do not match your fare class (${cabinClass})`,
+              details: {
+                fareClass: cabinClass,
+                incompatibleSeats: incompatibleSeats.map(s => ({
+                  seatId: s.seat_id,
+                  seatNo: s.seat_no,
+                  seatClass: s.class
+                }))
+              }
+            }
+          });
+          return;
+        }
+      }
+
       for (let i = 0; i < bookingData.passengers.length; i++) {
         const passenger = bookingData.passengers[i];
         const passengerErrors = passengerModel.validatePassengerData({
