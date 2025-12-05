@@ -292,6 +292,10 @@ See [Quick Start Guide](INTEGRATION_QUICKSTART.md) for more troubleshooting tips
 - Optimized database queries
 - Connection pooling
 
+## Website
+
+- https://jett3airlines.vercel.app/
+
 ## Future Enhancements
 
 - [ ] Real-time flight updates with WebSockets
@@ -311,7 +315,9 @@ This project is licensed under the ISC License.
 
 ## Contributors
 
-- Development Team
+- Phanatcha Thedthong
+- Napat Pankaew
+- Nudhanai Suriyakrai
 
 ## Support
 
